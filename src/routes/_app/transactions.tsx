@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { CategoryDot, Kicker, PageFrame } from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { Badge } from '#/components/ui/badge'
@@ -23,6 +24,7 @@ import {
   SheetTitle,
 } from '#/components/ui/sheet'
 import { currentMonth } from '#/lib/money'
+import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_app/transactions')({
   component: TransactionsPage,
@@ -53,8 +55,8 @@ function TransactionsPage() {
 
   return (
     <AppShell title="Transactions">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-2">
+      <PageFrame width="xl" className="gap-4">
+        <div className="toolbar">
           <Input
             placeholder="Search merchants…"
             value={search}
@@ -87,30 +89,33 @@ function TransactionsPage() {
           </Select>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border/80">
-          <table className="w-full text-[13px]">
-            <thead className="bg-muted/40 text-left text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+        <div className="overflow-hidden rounded-lg border border-border/70">
+          <table className="ledger-table">
+            <thead>
               <tr>
-                <th className="px-3 py-2 font-semibold">Date</th>
-                <th className="px-3 py-2 font-semibold">Merchant</th>
-                <th className="px-3 py-2 font-semibold">Category</th>
-                <th className="px-3 py-2 font-semibold">Account</th>
-                <th className="px-3 py-2 text-right font-semibold">Amount</th>
+                <th className="w-[108px]">Date</th>
+                <th>Merchant</th>
+                <th className="w-[160px]">Category</th>
+                <th className="w-[140px]">Account</th>
+                <th className="w-[110px] text-right">Amount</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/70">
+            <tbody>
               {(results ?? []).map((tx) => (
                 <tr
                   key={tx._id}
-                  className="cursor-pointer transition-colors hover:bg-muted/40"
+                  className={cn(
+                    'cursor-pointer',
+                    selectedId === tx._id && 'bg-muted/50',
+                  )}
                   onClick={() => setSelectedId(tx._id)}
                 >
-                  <td className="px-3 py-2.5 tabular-nums text-muted-foreground">
+                  <td className="tabular-nums text-muted-foreground">
                     {tx.date}
                   </td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
+                  <td>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-medium text-[var(--sea-ink)]">
                         {tx.merchantName ?? tx.originalDescription}
                       </span>
                       {tx.pending ? (
@@ -125,21 +130,20 @@ function TransactionsPage() {
                       ) : null}
                     </div>
                   </td>
-                  <td className="px-3 py-2.5">
-                    <span className="inline-flex items-center gap-1.5">
+                  <td>
+                    <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                       {tx.categoryColor ? (
-                        <span
-                          className="size-1.5 rounded-full"
-                          style={{ background: tx.categoryColor }}
-                        />
+                        <CategoryDot color={tx.categoryColor} className="size-1.5" />
                       ) : null}
-                      {tx.categoryName ?? '—'}
+                      <span className="truncate">
+                        {tx.categoryName ?? '—'}
+                      </span>
                     </span>
                   </td>
-                  <td className="px-3 py-2.5 text-muted-foreground">
+                  <td className="truncate text-muted-foreground">
                     {tx.accountName}
                   </td>
-                  <td className="px-3 py-2.5 text-right">
+                  <td className="text-right">
                     <Money amount={tx.amount} plaid />
                   </td>
                 </tr>
@@ -148,7 +152,7 @@ function TransactionsPage() {
                 <tr>
                   <td
                     colSpan={5}
-                    className="px-3 py-10 text-center text-muted-foreground"
+                    className="px-3 py-12 text-center text-muted-foreground"
                   >
                     No transactions match these filters.
                   </td>
@@ -159,11 +163,11 @@ function TransactionsPage() {
         </div>
 
         {status === 'CanLoadMore' ? (
-          <Button variant="outline" onClick={() => loadMore(40)}>
+          <Button variant="outline" size="sm" onClick={() => loadMore(40)}>
             Load more
           </Button>
         ) : null}
-      </div>
+      </PageFrame>
 
       <Sheet
         open={!!selected}
@@ -179,23 +183,19 @@ function TransactionsPage() {
                   {selected.merchantName ?? selected.originalDescription}
                 </SheetTitle>
               </SheetHeader>
-              <div className="mt-6 space-y-5 px-1">
+              <div className="mt-6 space-y-6 px-1">
                 <div>
-                  <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    Amount
-                  </p>
-                  <p className="mt-1 text-2xl">
+                  <Kicker>Amount</Kicker>
+                  <p className="mt-1.5 text-[1.75rem] font-semibold tracking-tight">
                     <Money amount={selected.amount} plaid />
                   </p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="mt-1 text-[13px] text-muted-foreground">
                     {selected.date} · {selected.accountName}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-                    Category
-                  </p>
+                  <Kicker>Category</Kicker>
                   <Select
                     value={selected.categoryId ?? undefined}
                     onValueChange={(value) => {
@@ -225,7 +225,7 @@ function TransactionsPage() {
                       })()
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Choose category" />
                     </SelectTrigger>
                     <SelectContent>

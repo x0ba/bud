@@ -2,9 +2,17 @@ import { createFileRoute } from '@tanstack/react-router'
 import { usePaginatedQuery, useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import {
+  DataList,
+  HeroMetric,
+  Kicker,
+  PageFrame,
+  RowMeta,
+  RowTitle,
+  SectionHeader,
+} from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
-import { Skeleton } from '#/components/ui/skeleton'
 import { currentMonth, daysUntil, formatUsdPlain } from '#/lib/money'
 
 export const Route = createFileRoute('/_app/accounts/$accountId')({
@@ -28,11 +36,7 @@ function AccountDetailPage() {
   )
 
   if (account === undefined) {
-    return (
-      <AppShell title="Account">
-        <Skeleton className="h-40 w-full" />
-      </AppShell>
-    )
+    return <AppShell title="Account" />
   }
 
   if (account === null) {
@@ -52,21 +56,15 @@ function AccountDetailPage() {
 
   return (
     <AppShell title={account.name}>
-      <div className="mx-auto flex max-w-3xl flex-col gap-8">
-        <section className="space-y-1">
-          <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            {account.institutionName ?? 'Balance'}
-          </p>
-          <p className="display-title text-[2.5rem] leading-none tabular-nums tracking-tight">
-            {formatUsdPlain(account.currentBalance)}
-          </p>
-          {account.mask ? (
-            <p className="text-sm text-muted-foreground">···{account.mask}</p>
-          ) : null}
-        </section>
+      <PageFrame>
+        <HeroMetric
+          label={account.institutionName ?? 'Balance'}
+          value={formatUsdPlain(account.currentBalance)}
+          meta={account.mask ? `···${account.mask}` : undefined}
+        />
 
         {isCard ? (
-          <section className="grid gap-4 sm:grid-cols-3">
+          <section className="grid gap-5 sm:grid-cols-3">
             <Metric
               label="Statement balance"
               value={
@@ -120,28 +118,25 @@ function AccountDetailPage() {
         )}
 
         <section>
-          <h2 className="mb-2 text-[13px] font-semibold">Transactions</h2>
-          <ul className="divide-y divide-border/70 border-y border-border/70">
+          <SectionHeader title="Transactions" />
+          <DataList>
             {(results ?? []).map((tx) => (
-              <li
-                key={tx._id}
-                className="flex items-center justify-between gap-3 py-2.5 text-[13px]"
-              >
+              <li key={tx._id} className="data-row">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">
+                  <RowTitle>
                     {tx.merchantName ?? tx.originalDescription}
-                  </p>
-                  <p className="text-[12px] text-muted-foreground">
+                  </RowTitle>
+                  <RowMeta>
                     {tx.date}
                     {tx.categoryName ? ` · ${tx.categoryName}` : ''}
-                  </p>
+                  </RowMeta>
                 </div>
                 <Money amount={tx.amount} plaid />
               </li>
             ))}
-          </ul>
+          </DataList>
         </section>
-      </div>
+      </PageFrame>
     </AppShell>
   )
 }
@@ -149,10 +144,10 @@ function AccountDetailPage() {
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-1">
-      <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}
+      <Kicker>{label}</Kicker>
+      <p className="text-[15px] font-semibold tracking-tight tabular-nums text-[var(--sea-ink)]">
+        {value}
       </p>
-      <p className="text-[15px] font-medium tabular-nums">{value}</p>
     </div>
   )
 }

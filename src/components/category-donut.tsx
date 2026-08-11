@@ -49,6 +49,7 @@ export function CategoryDonut({
             strokeDashoffset={-offset}
             strokeLinecap="butt"
             transform={`rotate(-90 ${r} ${r})`}
+            className="transition-[stroke-dasharray,stroke-dashoffset] duration-[250ms] ease-[cubic-bezier(0.23,1,0.32,1)]"
           />
         )
         offset += len

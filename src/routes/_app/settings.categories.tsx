@@ -3,6 +3,7 @@ import { useMutation, useQuery } from 'convex/react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
+import { CategoryDot, DataList, PageFrame } from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -13,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
-import { Skeleton } from '#/components/ui/skeleton'
 
 export const Route = createFileRoute('/_app/settings/categories')({
   component: CategoriesPage,
@@ -29,22 +29,20 @@ function CategoriesPage() {
 
   return (
     <AppShell title="Categories">
-      {!categories ? (
-        <Skeleton className="h-40 w-full" />
-      ) : (
-        <div className="mx-auto flex max-w-2xl flex-col gap-6">
-          <ul className="divide-y divide-border/70 border-y border-border/70">
+      {categories ? (
+        <PageFrame width="sm" className="gap-6">
+          <DataList>
             {categories.map((c) => (
-              <li
-                key={c._id}
-                className="flex items-center justify-between py-2.5 text-[13px]"
-              >
+              <li key={c._id} className="data-row">
                 <span className="flex items-center gap-2">
+                  <CategoryDot color={c.color} className="size-2.5" />
                   <span
-                    className="size-2.5 rounded-full"
-                    style={{ background: c.color }}
-                  />
-                  <span className={c.parentId ? 'pl-3 text-muted-foreground' : 'font-medium'}>
+                    className={
+                      c.parentId
+                        ? 'pl-3 text-muted-foreground'
+                        : 'font-medium text-[var(--sea-ink)]'
+                    }
+                  >
                     {c.name}
                   </span>
                 </span>
@@ -53,9 +51,9 @@ function CategoriesPage() {
                 </span>
               </li>
             ))}
-          </ul>
+          </DataList>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="toolbar">
             <Input
               placeholder="New category"
               value={name}
@@ -76,12 +74,13 @@ function CategoriesPage() {
               </SelectContent>
             </Select>
             <Button
+              size="sm"
               onClick={() => {
                 if (!name.trim()) return
                 void create({
                   name: name.trim(),
                   icon: 'tag',
-                  color: '#328f97',
+                  color: '#3d7a72',
                   budgetType,
                 }).then(() => {
                   setName('')
@@ -92,8 +91,8 @@ function CategoriesPage() {
               Add
             </Button>
           </div>
-        </div>
-      )}
+        </PageFrame>
+      ) : null}
     </AppShell>
   )
 }

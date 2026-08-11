@@ -1,9 +1,15 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
+import {
+  CategoryDot,
+  DataList,
+  PageFrame,
+  SectionHeader,
+  Stat,
+} from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { CategoryDonut } from '#/components/category-donut'
-import { Skeleton } from '#/components/ui/skeleton'
 import { currentMonth, formatUsdPlain } from '#/lib/money'
 
 export const Route = createFileRoute('/_app/cash-flow')({
@@ -17,13 +23,14 @@ function CashFlowPage() {
 
   return (
     <AppShell title="Cash flow">
-      {!budget || !byCategory ? (
-        <Skeleton className="h-48 w-full" />
-      ) : (
-        <div className="mx-auto flex max-w-3xl flex-col gap-8">
+      {budget && byCategory ? (
+        <PageFrame>
           <section className="grid gap-6 sm:grid-cols-3">
             <Stat label="Income" value={formatUsdPlain(budget.totals.income)} />
-            <Stat label="Expenses" value={formatUsdPlain(budget.totals.spent)} />
+            <Stat
+              label="Expenses"
+              value={formatUsdPlain(budget.totals.spent)}
+            />
             <Stat
               label="Savings rate"
               value={
@@ -34,7 +41,7 @@ function CashFlowPage() {
             />
           </section>
 
-          <section className="grid gap-8 sm:grid-cols-[180px_1fr]">
+          <section className="grid gap-8 sm:grid-cols-[180px_1fr] sm:items-start">
             <CategoryDonut
               segments={byCategory.slice(0, 8).map((c) => ({
                 name: c.name,
@@ -43,50 +50,31 @@ function CashFlowPage() {
               }))}
             />
             <div>
-              <h2 className="mb-2 text-[13px] font-semibold">
-                Where money went · {month}
-              </h2>
-              <ul className="divide-y divide-border/70 border-y border-border/70">
+              <SectionHeader title={`Where money went · ${month}`} />
+              <DataList>
                 {byCategory.map((c) => (
-                  <li
-                    key={c.name}
-                    className="flex items-center justify-between py-2 text-[13px]"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span
-                        className="size-2 rounded-full"
-                        style={{ background: c.color }}
-                      />
-                      {c.name}
+                  <li key={c.name} className="data-row">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <CategoryDot color={c.color} />
+                      <span className="truncate font-medium text-[var(--sea-ink)]">
+                        {c.name}
+                      </span>
                     </span>
-                    <span className="tabular-nums">
+                    <span className="amount-cell text-[var(--sea-ink)]">
                       {formatUsdPlain(c.amount)}
                     </span>
                   </li>
                 ))}
                 {byCategory.length === 0 ? (
-                  <li className="py-6 text-sm text-muted-foreground">
+                  <li className="py-6 text-[13px] text-muted-foreground">
                     No spending this month yet.
                   </li>
                 ) : null}
-              </ul>
+              </DataList>
             </div>
           </section>
-        </div>
-      )}
+        </PageFrame>
+      ) : null}
     </AppShell>
-  )
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
-        {value}
-      </p>
-    </div>
   )
 }

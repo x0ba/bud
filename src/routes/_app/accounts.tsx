@@ -2,11 +2,17 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useAction, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
+import {
+  DataList,
+  EmptyState,
+  PageFrame,
+  RowMeta,
+  RowTitle,
+} from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { Skeleton } from '#/components/ui/skeleton'
 import { daysUntil, formatUsdPlain } from '#/lib/money'
 import { cn } from '#/lib/utils'
 
@@ -24,32 +30,23 @@ function AccountsPage() {
       title="Accounts"
       actions={<PlaidLinkButton label="Add institution" />}
     >
-      {!accounts || !items ? (
-        <Skeleton className="h-40 w-full" />
-      ) : (
-        <div className="mx-auto flex max-w-3xl flex-col gap-8">
+      {accounts && items ? (
+        <PageFrame>
           {items.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-border px-6 py-12 text-center">
-              <p className="display-title text-2xl text-[var(--sea-ink)]">
-                Connect your banks
-              </p>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-                Link checking, cards, and brokerages via Plaid sandbox to start
-                answering where your money goes.
-              </p>
-              <div className="mt-5">
-                <PlaidLinkButton />
-              </div>
-            </div>
+            <EmptyState
+              title="Connect your banks"
+              description="Link checking, cards, and brokerages via Plaid sandbox to start answering where your money goes."
+              action={<PlaidLinkButton />}
+            />
           ) : null}
 
           {items.map((item) => {
             const itemAccounts = accounts.filter((a) => a.itemId === item._id)
             return (
-              <section key={item._id} className="space-y-3">
+              <section key={item._id} className="space-y-2.5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-[15px] font-semibold">
+                    <h2 className="text-[13px] font-semibold tracking-tight text-[var(--sea-ink)]">
                       {item.institutionName}
                     </h2>
                     <Badge
@@ -82,9 +79,11 @@ function AccountsPage() {
                   </div>
                 </div>
                 {item.errorMessage ? (
-                  <p className="text-sm text-destructive">{item.errorMessage}</p>
+                  <p className="text-[13px] text-destructive">
+                    {item.errorMessage}
+                  </p>
                 ) : null}
-                <ul className="divide-y divide-border/70 border-y border-border/70">
+                <DataList>
                   {itemAccounts.map((a) => {
                     const util =
                       a.limit && a.limit > 0
@@ -96,19 +95,19 @@ function AccountsPage() {
                         <Link
                           to="/accounts/$accountId"
                           params={{ accountId: a._id }}
-                          className="flex items-center justify-between gap-3 py-3 no-underline hover:bg-muted/30"
+                          className="data-row no-underline transition-[background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/35 active:scale-[0.995]"
                         >
-                          <div>
-                            <p className="text-[13px] font-medium text-foreground">
+                          <div className="min-w-0">
+                            <RowTitle>
                               {a.name}
                               {a.mask ? (
-                                <span className="text-muted-foreground">
+                                <span className="font-normal text-muted-foreground">
                                   {' '}
                                   ···{a.mask}
                                 </span>
                               ) : null}
-                            </p>
-                            <p className="text-[12px] text-muted-foreground capitalize">
+                            </RowTitle>
+                            <RowMeta className="capitalize">
                               {a.type}
                               {a.subtype ? ` · ${a.subtype}` : ''}
                               {a.type === 'credit' && a.nextPaymentDueDate
@@ -116,10 +115,10 @@ function AccountsPage() {
                                   ? ` · due in ${days}d`
                                   : ` · due ${a.nextPaymentDueDate}`
                                 : ''}
-                            </p>
+                            </RowMeta>
                           </div>
                           <div className="text-right">
-                            <p className="text-[13px] font-medium tabular-nums">
+                            <p className="amount-cell text-[var(--sea-ink)]">
                               {formatUsdPlain(a.currentBalance)}
                             </p>
                             {util != null ? (
@@ -127,7 +126,7 @@ function AccountsPage() {
                                 className={cn(
                                   'text-[11px] tabular-nums',
                                   util > 0.3
-                                    ? 'text-amber-600'
+                                    ? 'text-amber-700'
                                     : 'text-muted-foreground',
                                 )}
                               >
@@ -139,12 +138,12 @@ function AccountsPage() {
                       </li>
                     )
                   })}
-                </ul>
+                </DataList>
               </section>
             )
           })}
-        </div>
-      )}
+        </PageFrame>
+      ) : null}
     </AppShell>
   )
 }

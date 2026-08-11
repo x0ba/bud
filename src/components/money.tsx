@@ -18,9 +18,10 @@ export function Money({
   return (
     <span
       className={cn(
-        'font-medium tabular-nums tracking-tight',
+        'amount-cell',
         isOut && 'text-[var(--sea-ink)]',
         isIn && 'text-[var(--palm)]',
+        !isOut && !isIn && 'text-muted-foreground',
         className,
       )}
     >

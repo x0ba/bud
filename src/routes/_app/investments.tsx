@@ -1,17 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
 import { api } from '../../../convex/_generated/api'
+import {
+  DataList,
+  HeroMetric,
+  PageFrame,
+  RowMeta,
+  RowTitle,
+  SectionHeader,
+} from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { CategoryDonut } from '#/components/category-donut'
-import { Skeleton } from '#/components/ui/skeleton'
 import { formatUsdPlain } from '#/lib/money'
 
 const TYPE_COLORS: Record<string, string> = {
-  equity: '#328f97',
-  etf: '#2f6a4a',
+  equity: '#3d7a72',
+  etf: '#4a6b52',
   'mutual fund': '#c27803',
-  cash: '#6b7280',
-  other: '#94a3b8',
+  cash: '#78716c',
+  other: '#a8a29e',
 }
 
 export const Route = createFileRoute('/_app/investments')({
@@ -23,25 +30,19 @@ function InvestmentsPage() {
 
   return (
     <AppShell title="Investments">
-      {!data ? (
-        <Skeleton className="h-48 w-full" />
-      ) : (
-        <div className="mx-auto flex max-w-4xl flex-col gap-8">
-          <section className="space-y-1">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-              Portfolio value
-            </p>
-            <p className="display-title text-[2.75rem] leading-none tabular-nums tracking-tight">
-              {formatUsdPlain(data.totalValue)}
-            </p>
-          </section>
+      {data ? (
+        <PageFrame width="lg">
+          <HeroMetric
+            label="Portfolio value"
+            value={formatUsdPlain(data.totalValue)}
+          />
 
           {data.holdings.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed border-border/80 px-4 py-10 text-center text-[13px] text-muted-foreground">
               Connect an investment account via Plaid to see holdings.
             </p>
           ) : (
-            <section className="grid gap-8 lg:grid-cols-[200px_1fr]">
+            <section className="grid gap-8 lg:grid-cols-[200px_1fr] lg:items-start">
               <CategoryDonut
                 segments={data.byType.map((t) => ({
                   name: t.type,
@@ -50,25 +51,22 @@ function InvestmentsPage() {
                 }))}
               />
               <div>
-                <h2 className="mb-2 text-[13px] font-semibold">Holdings</h2>
-                <ul className="divide-y divide-border/70 border-y border-border/70">
+                <SectionHeader title="Holdings" />
+                <DataList>
                   {data.holdings.map((h) => (
-                    <li
-                      key={h._id}
-                      className="flex items-center justify-between gap-3 py-2.5 text-[13px]"
-                    >
-                      <div>
-                        <p className="font-medium">
+                    <li key={h._id} className="data-row">
+                      <div className="min-w-0">
+                        <RowTitle>
                           {h.symbol ? `${h.symbol} · ` : ''}
                           {h.name}
-                        </p>
-                        <p className="text-[12px] text-muted-foreground">
+                        </RowTitle>
+                        <RowMeta>
                           {h.quantity} shares
                           {h.accountName ? ` · ${h.accountName}` : ''}
-                        </p>
+                        </RowMeta>
                       </div>
                       <div className="text-right">
-                        <p className="tabular-nums font-medium">
+                        <p className="amount-cell text-[var(--sea-ink)]">
                           {formatUsdPlain(h.institutionValue)}
                         </p>
                         {h.costBasis != null ? (
@@ -79,12 +77,12 @@ function InvestmentsPage() {
                       </div>
                     </li>
                   ))}
-                </ul>
+                </DataList>
               </div>
             </section>
           )}
-        </div>
-      )}
+        </PageFrame>
+      ) : null}
     </AppShell>
   )
 }

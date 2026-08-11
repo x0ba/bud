@@ -3,6 +3,12 @@ import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
+import {
+  DataList,
+  HeroMetric,
+  PageFrame,
+  SectionHeader,
+} from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -13,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
-import { Skeleton } from '#/components/ui/skeleton'
 import { formatUsdPlain } from '#/lib/money'
 
 export const Route = createFileRoute('/_app/net-worth')({
@@ -65,35 +70,28 @@ function NetWorthPage() {
         </Button>
       }
     >
-      {!summary ? (
-        <Skeleton className="h-48 w-full" />
-      ) : (
-        <div className="mx-auto flex max-w-4xl flex-col gap-8">
-          <section className="space-y-1">
-            <p className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-              Net worth
-            </p>
-            <p className="display-title text-[2.75rem] leading-none tabular-nums tracking-tight">
-              {formatUsdPlain(summary.netWorth)}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Assets {formatUsdPlain(summary.assets)} · Liabilities{' '}
-              {formatUsdPlain(summary.liabilities)}
-            </p>
-          </section>
+      {summary ? (
+        <PageFrame width="lg">
+          <HeroMetric
+            label="Net worth"
+            value={formatUsdPlain(summary.netWorth)}
+            meta={
+              <>
+                Assets {formatUsdPlain(summary.assets)} · Liabilities{' '}
+                {formatUsdPlain(summary.liabilities)}
+              </>
+            }
+          />
 
           <section className="space-y-3">
-            <div className="flex gap-1">
+            <div className="flex gap-0.5">
               {(['1M', '3M', 'YTD', '1Y', 'ALL'] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRange(r)}
-                  className={
-                    range === r
-                      ? 'rounded-md bg-muted px-2.5 py-1 text-[12px] font-medium'
-                      : 'rounded-md px-2.5 py-1 text-[12px] text-muted-foreground hover:text-foreground'
-                  }
+                  className="range-pill"
+                  data-active={range === r}
                 >
                   {r}
                 </button>
@@ -114,7 +112,7 @@ function NetWorthPage() {
                 />
               </svg>
             ) : (
-              <p className="rounded-lg border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
+              <p className="rounded-lg border border-dashed border-border/80 px-4 py-10 text-center text-[13px] text-muted-foreground">
                 No snapshots yet. Sync accounts and click “Snapshot today”.
               </p>
             )}
@@ -122,42 +120,40 @@ function NetWorthPage() {
 
           <section className="grid gap-8 md:grid-cols-2">
             <div>
-              <h2 className="mb-2 text-[13px] font-semibold">Accounts</h2>
-              <ul className="divide-y divide-border/70 border-y border-border/70">
+              <SectionHeader title="Accounts" />
+              <DataList>
                 {summary.accounts.map((a) => (
-                  <li
-                    key={a.accountId}
-                    className="flex justify-between py-2 text-[13px]"
-                  >
+                  <li key={a.accountId} className="data-row">
                     <span>
-                      {a.name}
+                      <span className="font-medium text-[var(--sea-ink)]">
+                        {a.name}
+                      </span>
                       <span className="text-muted-foreground capitalize">
                         {' '}
                         · {a.type}
                       </span>
                     </span>
-                    <span className="tabular-nums">
+                    <span className="amount-cell text-[var(--sea-ink)]">
                       {formatUsdPlain(a.balance)}
                     </span>
                   </li>
                 ))}
-              </ul>
+              </DataList>
             </div>
 
             <div className="space-y-3">
-              <h2 className="text-[13px] font-semibold">Manual assets</h2>
-              <ul className="divide-y divide-border/70 border-y border-border/70">
+              <SectionHeader title="Manual assets" />
+              <DataList>
                 {summary.manualAssets.map((m) => (
-                  <li
-                    key={m._id}
-                    className="flex items-center justify-between py-2 text-[13px]"
-                  >
+                  <li key={m._id} className="data-row">
                     <span>
-                      {m.name}
+                      <span className="font-medium text-[var(--sea-ink)]">
+                        {m.name}
+                      </span>
                       <span className="text-muted-foreground"> · {m.type}</span>
                     </span>
-                    <span className="flex items-center gap-2">
-                      <span className="tabular-nums">
+                    <span className="flex items-center gap-2.5">
+                      <span className="amount-cell text-[var(--sea-ink)]">
                         {formatUsdPlain(m.value)}
                       </span>
                       <button
@@ -171,13 +167,13 @@ function NetWorthPage() {
                   </li>
                 ))}
                 {summary.manualAssets.length === 0 ? (
-                  <li className="py-3 text-sm text-muted-foreground">
+                  <li className="py-3 text-[13px] text-muted-foreground">
                     Add home, car, or other assets.
                   </li>
                 ) : null}
-              </ul>
+              </DataList>
 
-              <div className="flex flex-wrap gap-2">
+              <div className="toolbar">
                 <Input
                   placeholder="Name"
                   value={name}
@@ -204,7 +200,7 @@ function NetWorthPage() {
                   inputMode="decimal"
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
-                  className="w-[120px]"
+                  className="w-[120px] tabular-nums"
                 />
                 <Button
                   size="sm"
@@ -226,8 +222,8 @@ function NetWorthPage() {
               </div>
             </div>
           </section>
-        </div>
-      )}
+        </PageFrame>
+      ) : null}
     </AppShell>
   )
 }

@@ -2,10 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
+import { DataList, PageFrame } from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
-import { Skeleton } from '#/components/ui/skeleton'
 
 export const Route = createFileRoute('/_app/settings/rules')({
   component: RulesPage,
@@ -18,22 +18,20 @@ function RulesPage() {
 
   return (
     <AppShell title="Rules">
-      {!rules ? (
-        <Skeleton className="h-40 w-full" />
-      ) : (
-        <div className="mx-auto max-w-2xl">
-          <p className="mb-4 text-sm text-muted-foreground">
+      {rules ? (
+        <PageFrame width="sm">
+          <p className="text-[13px] text-muted-foreground text-pretty">
             Rules are created when you recategorize a transaction and choose
             “Always categorize…”. Most-specific match wins.
           </p>
-          <ul className="divide-y divide-border/70 border-y border-border/70">
+          <DataList>
             {rules.map((r) => (
               <li
                 key={r._id}
                 className="flex items-start justify-between gap-3 py-3 text-[13px]"
               >
-                <div className="space-y-1">
-                  <p className="font-medium">
+                <div className="min-w-0 space-y-1.5">
+                  <p className="font-medium text-[var(--sea-ink)] text-pretty">
                     {r.matcher.merchantName
                       ? `Merchant is “${r.matcher.merchantName}”`
                       : r.matcher.descriptionContains
@@ -52,7 +50,7 @@ function RulesPage() {
                     ) : null}
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex shrink-0 gap-1.5">
                   <Button
                     size="sm"
                     variant="outline"
@@ -80,13 +78,13 @@ function RulesPage() {
               </li>
             ))}
             {rules.length === 0 ? (
-              <li className="py-8 text-center text-sm text-muted-foreground">
+              <li className="py-8 text-center text-[13px] text-muted-foreground">
                 No rules yet. Recategorize a transaction to create one.
               </li>
             ) : null}
-          </ul>
-        </div>
-      )}
+          </DataList>
+        </PageFrame>
+      ) : null}
     </AppShell>
   )
 }
