@@ -1,0 +1,85 @@
+import { useAction, useMutation } from 'convex/react'
+import { useCallback, useEffect, useState } from 'react'
+import { usePlaidLink } from 'react-plaid-link'
+import { toast } from 'sonner'
+import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
+import { Button } from '#/components/ui/button'
+
+export function PlaidLinkButton({
+  label = 'Connect account',
+  itemId,
+  variant = 'default',
+}: {
+  label?: string
+  itemId?: Id<'plaidItems'>
+  variant?: 'default' | 'outline' | 'secondary'
+}) {
+  const ensureReady = useMutation(api.users.ensureReady)
+  const createLinkToken = useAction(api.plaidActions.createLinkToken)
+  const createUpdateLinkToken = useAction(api.plaidActions.createUpdateLinkToken)
+  const exchangePublicToken = useAction(api.plaidActions.exchangePublicToken)
+  const [linkToken, setLinkToken] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const onSuccess = useCallback(
+    async (
+      publicToken: string | null,
+      metadata: {
+        institution: { institution_id: string; name: string } | null
+      },
+    ) => {
+      if (!publicToken) return
+      try {
+        if (!itemId) {
+          await exchangePublicToken({
+            publicToken,
+            institutionId: metadata.institution?.institution_id,
+            institutionName: metadata.institution?.name ?? 'Institution',
+          })
+          toast.success('Accounts connected — syncing transactions…')
+        } else {
+          toast.success('Connection updated — syncing…')
+        }
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Failed to connect')
+      } finally {
+        setLinkToken(null)
+      }
+    },
+    [exchangePublicToken, itemId],
+  )
+
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess,
+    onExit: () => setLinkToken(null),
+  })
+
+  useEffect(() => {
+    if (linkToken && ready) open()
+  }, [linkToken, ready, open])
+
+  const start = async () => {
+    setLoading(true)
+    try {
+      await ensureReady({})
+      const res = itemId
+        ? await createUpdateLinkToken({ itemId })
+        : await createLinkToken({})
+      setLinkToken(res.linkToken)
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : 'Could not start Plaid Link',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Button variant={variant} disabled={loading} onClick={() => void start()}>
+      {loading ? 'Starting…' : label}
+    </Button>
+  )
+}
