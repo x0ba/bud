@@ -1,18 +1,29 @@
 import { Link, useRouterState } from '@tanstack/react-router'
+import type { LucideIcon } from 'lucide-react'
 import {
   ArrowLeftRight,
-  CreditCard,
   Landmark,
   LayoutDashboard,
   LineChart,
   List,
+  PanelLeft,
+  PanelLeftClose,
   PieChart,
   Repeat,
   Settings2,
   Tags,
   Wallet,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Button } from '#/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '#/components/ui/tooltip'
 import { cn } from '#/lib/utils'
+
+const SIDEBAR_COLLAPSED_KEY = 'bud.sidebar-collapsed'
 
 const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,67 +41,163 @@ const settings = [
   { to: '/settings/rules', label: 'Rules', icon: Settings2 },
 ] as const
 
-export function AppSidebar() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
+function NavLink({
+  to,
+  label,
+  icon: Icon,
+  active,
+  collapsed,
+}: {
+  to: string
+  label: string
+  icon: LucideIcon
+  active: boolean
+  collapsed: boolean
+}) {
+  const link = (
+    <Link
+      to={to}
+      aria-label={collapsed ? label : undefined}
+      className={cn(
+        'flex items-center gap-2.5 rounded-md text-[13px] font-medium no-underline transition-[color,background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]',
+        collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-[7px]',
+        active
+          ? 'bg-muted text-[var(--sea-ink)]'
+          : 'text-[var(--sea-ink-soft)] hover:bg-muted/60 hover:text-[var(--sea-ink)]',
+      )}
+    >
+      <Icon
+        className={cn('size-4 shrink-0', active ? 'opacity-90' : 'opacity-70')}
+        strokeWidth={active ? 2 : 1.75}
+      />
+      <span
+        className={cn(
+          'truncate transition-opacity duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)]',
+          collapsed ? 'sr-only' : 'opacity-100',
+        )}
+      >
+        {label}
+      </span>
+    </Link>
+  )
+
+  if (!collapsed) return link
 
   return (
-    <aside className="flex h-full w-[220px] shrink-0 flex-col border-r border-border/80 bg-background">
-      <div className="flex h-14 items-center gap-2.5 px-5">
-        <div className="flex size-7 items-center justify-center rounded-md bg-[var(--lagoon-deep)] text-white">
-          <CreditCard className="size-3.5" strokeWidth={2.25} />
-        </div>
-        <span className="display-title text-[1.35rem] leading-none tracking-tight text-[var(--sea-ink)]">
-          Bud
-        </span>
+    <Tooltip>
+      <TooltipTrigger asChild>{link}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+export function AppSidebar() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1')
+    } catch {
+      // ignore storage access errors
+    }
+  }, [])
+
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? '1' : '0')
+      } catch {
+        // ignore storage access errors
+      }
+      return next
+    })
+  }
+
+  return (
+    <aside
+      data-collapsed={collapsed || undefined}
+      className={cn(
+        'flex h-full shrink-0 flex-col bg-background [view-transition-name:app-sidebar]',
+        'transition-[width] duration-[200ms] ease-[cubic-bezier(0.23,1,0.32,1)]',
+        'motion-reduce:transition-none',
+        collapsed ? 'w-14' : 'w-[212px]',
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-12 items-center',
+          collapsed ? 'justify-center px-1.5' : 'justify-between gap-2 px-3 pl-5',
+        )}
+      >
+        {!collapsed ? (
+          <span className="display-title text-[1.3rem] leading-none tracking-tight text-[var(--sea-ink)]">
+            Bud
+          </span>
+        ) : null}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={!collapsed}
+              className="text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)]"
+            >
+              {collapsed ? <PanelLeft /> : <PanelLeftClose />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
-      <nav className="flex flex-1 flex-col gap-6 px-3 py-3">
-        <div className="flex flex-col gap-0.5">
+      <nav
+        className={cn(
+          'flex flex-1 flex-col gap-7 pt-0.5 pb-3',
+          collapsed ? 'px-1.5' : 'px-2.5',
+        )}
+      >
+        <div className="flex flex-col gap-px">
           {nav.map((item) => {
             const active =
               item.to === '/'
                 ? pathname === '/'
                 : pathname.startsWith(item.to)
-            const Icon = item.icon
             return (
-              <Link
+              <NavLink
                 key={item.to}
                 to={item.to}
-                className={cn(
-                  'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors duration-150',
-                  active
-                    ? 'bg-[color-mix(in_oklab,var(--lagoon)_18%,transparent)] text-[var(--sea-ink)]'
-                    : 'text-[var(--sea-ink-soft)] hover:bg-muted/70 hover:text-[var(--sea-ink)]',
-                )}
-              >
-                <Icon className="size-4 opacity-80" strokeWidth={1.75} />
-                {item.label}
-              </Link>
+                label={item.label}
+                icon={item.icon}
+                active={active}
+                collapsed={collapsed}
+              />
             )
           })}
         </div>
 
-        <div className="flex flex-col gap-0.5">
-          <p className="px-2.5 pb-1 text-[10px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-            Settings
-          </p>
+        <div className="flex flex-col gap-px">
+          {!collapsed ? (
+            <p className="kicker px-2.5 pb-1.5">Settings</p>
+          ) : null}
           {settings.map((item) => {
             const active = pathname.startsWith(item.to)
-            const Icon = item.icon
             return (
-              <Link
+              <NavLink
                 key={item.to}
                 to={item.to}
-                className={cn(
-                  'flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors duration-150',
-                  active
-                    ? 'bg-[color-mix(in_oklab,var(--lagoon)_18%,transparent)] text-[var(--sea-ink)]'
-                    : 'text-[var(--sea-ink-soft)] hover:bg-muted/70 hover:text-[var(--sea-ink)]',
-                )}
-              >
-                <Icon className="size-4 opacity-80" strokeWidth={1.75} />
-                {item.label}
-              </Link>
+                label={item.label}
+                icon={item.icon}
+                active={active}
+                collapsed={collapsed}
+              />
             )
           })}
         </div>
