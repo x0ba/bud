@@ -10,10 +10,12 @@ export function PlaidLinkButton({
   label = 'Connect account',
   itemId,
   variant = 'default',
+  size = 'default',
 }: {
   label?: string
   itemId?: Id<'plaidItems'>
-  variant?: 'default' | 'outline' | 'secondary'
+  variant?: 'default' | 'outline' | 'secondary' | 'ghost'
+  size?: 'default' | 'sm' | 'xs'
 }) {
   const ensureReady = useMutation(api.users.ensureReady)
   const createLinkToken = useAction(api.plaidActions.createLinkToken)
@@ -78,7 +80,12 @@ export function PlaidLinkButton({
   }
 
   return (
-    <Button variant={variant} disabled={loading} onClick={() => void start()}>
+    <Button
+      variant={variant}
+      size={size}
+      disabled={loading}
+      onClick={() => void start()}
+    >
       {loading ? 'Starting…' : label}
     </Button>
   )

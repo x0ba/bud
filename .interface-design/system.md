@@ -80,7 +80,7 @@ Inputs/selects: inset `bg-muted/40`, no hard shadow; focus lifts to `bg-backgrou
 
 ### Shell
 
-`h-12` header · page title 15/600 · main `px-8 pt-1 pb-10`.
+Document scroll · sticky `h-dvh` sidebar · sticky header (`.app-shell-header`, 3rem, opaque `--background`, no border — content clips at its edge, no frost or fade) · page title 15/600 · main `px-8 pt-4 pb-10`.
 
 ## Rejected defaults
 

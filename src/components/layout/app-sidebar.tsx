@@ -121,7 +121,7 @@ export function AppSidebar() {
     <aside
       data-collapsed={collapsed || undefined}
       className={cn(
-        'flex h-full shrink-0 flex-col bg-background [view-transition-name:app-sidebar]',
+        'sticky top-0 flex h-dvh shrink-0 flex-col overflow-y-auto bg-background [view-transition-name:app-sidebar]',
         'transition-[width] duration-[200ms] ease-[cubic-bezier(0.23,1,0.32,1)]',
         'motion-reduce:transition-none',
         collapsed ? 'w-14' : 'w-[212px]',

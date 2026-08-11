@@ -11,10 +11,10 @@ export function AppShell({
   actions?: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-dvh bg-background text-foreground">
       <AppSidebar />
-      <div className="flex min-w-0 flex-1 flex-col [view-transition-name:app-main]">
-        <header className="sticky top-0 z-10 flex h-12 items-center justify-between bg-background/85 px-8 backdrop-blur-md">
+      <div className="min-w-0 flex-1 [view-transition-name:app-main]">
+        <header className="app-shell-header">
           <div className="min-w-0">
             {title ? (
               <h1 className="truncate text-[15px] font-semibold tracking-tight text-[var(--sea-ink)]">
@@ -27,7 +27,7 @@ export function AppShell({
             <HeaderUser />
           </div>
         </header>
-        <main className="flex-1 overflow-auto px-8 pt-1 pb-10">{children}</main>
+        <main className="px-8 pt-4 pb-10">{children}</main>
       </div>
     </div>
   )

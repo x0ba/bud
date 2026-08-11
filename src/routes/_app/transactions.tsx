@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, usePaginatedQuery, useQuery } from 'convex/react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { CategoryDot, Kicker, PageFrame } from '#/components/dense'
+import { CategoryDot, Kicker, PageFrame, Stat } from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { Badge } from '#/components/ui/badge'
@@ -23,7 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet'
-import { currentMonth } from '#/lib/money'
+import { currentMonth, formatDayLabel, formatUsdPlain } from '#/lib/money'
 import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_app/transactions')({
@@ -53,9 +53,46 @@ function TransactionsPage() {
 
   const selected = results?.find((t) => t._id === selectedId) ?? null
 
+  // Chunk the ledger by day so the date drops out of every row, and total each
+  // day — a run of 40 identical rows becomes a handful of scannable groups.
+  // Plaid convention: positive amount = money out.
+  const { groups, totals } = useMemo(() => {
+    const byDate = new Map<string, typeof results>()
+    let out = 0
+    let incoming = 0
+    for (const tx of results ?? []) {
+      if (tx.amount > 0) out += tx.amount
+      else incoming += -tx.amount
+      const bucket = byDate.get(tx.date)
+      if (bucket) bucket.push(tx)
+      else byDate.set(tx.date, [tx])
+    }
+    return {
+      groups: [...byDate.entries()].map(([date, rows]) => ({
+        date,
+        rows,
+        spent: rows.reduce((sum, r) => sum + Math.max(r.amount, 0), 0),
+      })),
+      totals: { out, incoming, count: results?.length ?? 0 },
+    }
+  }, [results])
+
   return (
     <AppShell title="Transactions">
-      <PageFrame width="xl" className="gap-4">
+      <PageFrame width="xl" className="gap-5">
+        <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
+          <div className="flex gap-10">
+            <Stat label="Out" value={formatUsdPlain(totals.out)} />
+            {totals.incoming > 0 ? (
+              <Stat label="In" value={formatUsdPlain(totals.incoming)} />
+            ) : null}
+          </div>
+          <p className="text-[12px] tabular-nums text-muted-foreground">
+            {totals.count} shown
+            {status === 'CanLoadMore' ? ' · more available' : ''}
+          </p>
+        </section>
+
         <div className="toolbar">
           <Input
             placeholder="Search merchants…"
@@ -89,19 +126,24 @@ function TransactionsPage() {
           </Select>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border/70">
-          <table className="ledger-table">
-            <thead>
-              <tr>
-                <th className="w-[108px]">Date</th>
-                <th>Merchant</th>
-                <th className="w-[160px]">Category</th>
-                <th className="w-[140px]">Account</th>
-                <th className="w-[110px] text-right">Amount</th>
+        <table className="ledger-table">
+          <thead>
+            <tr>
+              <th>Merchant</th>
+              <th className="w-[170px]">Category</th>
+              <th className="w-[150px]">Account</th>
+              <th className="w-[120px] text-right">Amount</th>
+            </tr>
+          </thead>
+          {groups.map((group) => (
+            <tbody key={group.date}>
+              <tr className="ledger-group">
+                <td colSpan={3}>{formatDayLabel(group.date)}</td>
+                <td className="text-right">
+                  {group.spent > 0 ? formatUsdPlain(group.spent) : null}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {(results ?? []).map((tx) => (
+              {group.rows.map((tx) => (
                 <tr
                   key={tx._id}
                   className={cn(
@@ -110,9 +152,6 @@ function TransactionsPage() {
                   )}
                   onClick={() => setSelectedId(tx._id)}
                 >
-                  <td className="tabular-nums text-muted-foreground">
-                    {tx.date}
-                  </td>
                   <td>
                     <div className="flex min-w-0 items-center gap-2">
                       <span className="truncate font-medium text-[var(--sea-ink)]">
@@ -133,11 +172,12 @@ function TransactionsPage() {
                   <td>
                     <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                       {tx.categoryColor ? (
-                        <CategoryDot color={tx.categoryColor} className="size-1.5" />
+                        <CategoryDot
+                          color={tx.categoryColor}
+                          className="size-1.5"
+                        />
                       ) : null}
-                      <span className="truncate">
-                        {tx.categoryName ?? '—'}
-                      </span>
+                      <span className="truncate">{tx.categoryName ?? '—'}</span>
                     </span>
                   </td>
                   <td className="truncate text-muted-foreground">
@@ -148,24 +188,28 @@ function TransactionsPage() {
                   </td>
                 </tr>
               ))}
-              {(results ?? []).length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-3 py-12 text-center text-muted-foreground"
-                  >
-                    No transactions match these filters.
-                  </td>
-                </tr>
-              ) : null}
             </tbody>
-          </table>
-        </div>
+          ))}
+          {groups.length === 0 ? (
+            <tbody>
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-3 py-12 text-center text-muted-foreground"
+                >
+                  No transactions match these filters.
+                </td>
+              </tr>
+            </tbody>
+          ) : null}
+        </table>
 
         {status === 'CanLoadMore' ? (
-          <Button variant="outline" size="sm" onClick={() => loadMore(40)}>
-            Load more
-          </Button>
+          <div>
+            <Button variant="outline" size="sm" onClick={() => loadMore(40)}>
+              Load more
+            </Button>
+          </div>
         ) : null}
       </PageFrame>
 
