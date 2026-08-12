@@ -27,9 +27,16 @@ import {
   SelectValue,
 } from '#/components/ui/select'
 import { formatDateShort, formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_app/net-worth')({
+  loader: () => {
+    prewarmQueries(
+      { query: api.netWorth.summary },
+      { query: api.netWorth.history, args: { range: '3M' } },
+    )
+  },
   component: NetWorthPage,
 })
 

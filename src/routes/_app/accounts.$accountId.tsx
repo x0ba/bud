@@ -14,8 +14,17 @@ import {
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { currentMonth, daysUntil, formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 
 export const Route = createFileRoute('/_app/accounts/$accountId')({
+  loader: ({ params }) => {
+    const accountId = params.accountId as Id<'accounts'>
+    const month = currentMonth()
+    prewarmQueries(
+      { query: api.accounts.get, args: { accountId } },
+      { query: api.accounts.spendingThisMonth, args: { accountId, month } },
+    )
+  },
   component: AccountDetailPage,
 })
 

@@ -14,8 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '#/components/ui/select'
+import { prewarmQueries } from '#/lib/prewarm'
 
 export const Route = createFileRoute('/_app/settings/categories')({
+  loader: () => {
+    prewarmQueries({ query: api.categories.list })
+  },
   component: CategoriesPage,
 })
 

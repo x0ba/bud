@@ -17,8 +17,16 @@ import { FlowBar } from '#/components/flow-bar'
 import { AppShell } from '#/components/layout/app-shell'
 import { Input } from '#/components/ui/input'
 import { currentMonth, formatMonthLabel, formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 
 export const Route = createFileRoute('/_app/cash-flow')({
+  loader: () => {
+    const month = currentMonth()
+    prewarmQueries(
+      { query: api.budgets.getMonth, args: { month } },
+      { query: api.transactions.spendingByCategory, args: { month } },
+    )
+  },
   component: CashFlowPage,
 })
 

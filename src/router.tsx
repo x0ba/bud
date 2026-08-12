@@ -6,8 +6,9 @@ export function getRouter() {
     routeTree,
     scrollRestoration: true,
     defaultPreload: 'intent',
-    defaultPreloadStaleTime: 0,
-    defaultViewTransition: true,
+    defaultPreloadDelay: 50,
+    // Keep route modules + loaders warm across hovers; Convex prewarm owns data freshness.
+    defaultPreloadStaleTime: 30_000,
   })
 
   return router

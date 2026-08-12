@@ -17,9 +17,13 @@ import { PaceBar } from '#/components/pace-bar'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { currentMonth, formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_app/budget')({
+  loader: () => {
+    prewarmQueries({ query: api.budgets.getMonth, args: { month: currentMonth() } })
+  },
   component: BudgetPage,
 })
 

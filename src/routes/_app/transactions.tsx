@@ -41,6 +41,8 @@ function TransactionsPage() {
 
   const accounts = useQuery(api.accounts.list)
   const categories = useQuery(api.categories.list)
+  // Args must match the loader prewarm exactly when no account filter is set —
+  // `{ month, accountId: undefined }` is a different cache key than `{ month }`.
   const summary = useQuery(
     api.transactions.flowSummary,
     accountId ? { month, accountId } : { month },
@@ -60,8 +62,12 @@ function TransactionsPage() {
 
   const selected = results?.find((t) => t._id === selectedId) ?? null
 
+  // Ledger rows still come from pagination (empty until first page). Stats use
+  // flowSummary so hover-prewarm can deliver Out/In before the route mounts.
   const listReady = status !== 'LoadingFirstPage'
 
+  // Chunk the ledger by day so the date drops out of every row, and total each
+  // day — a run of 40 identical rows becomes a handful of scannable groups.
   const groups = useMemo(() => {
     const byDate = new Map<string, NonNullable<typeof results>>()
     for (const tx of results ?? []) {

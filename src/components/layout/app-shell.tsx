@@ -13,7 +13,7 @@ export function AppShell({
   return (
     <div className="flex min-h-dvh bg-background text-foreground">
       <AppSidebar />
-      <div className="min-w-0 flex-1 [view-transition-name:app-main]">
+      <div className="min-w-0 flex-1">
         <header className="app-shell-header">
           <div className="min-w-0">
             {title ? (

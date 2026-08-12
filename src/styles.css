@@ -565,46 +565,6 @@ pre code {
   transform: scaleX(1);
 }
 
-/* Route transition: fade the outgoing pane away; new pane is already there.
-   Avoids the ghostly opacity-0 enter + plus-lighter washout on paper UI. */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-}
-
-::view-transition-image-pair(app-main) {
-  isolation: isolate;
-}
-
-::view-transition-old(app-main),
-::view-transition-new(app-main) {
-  mix-blend-mode: normal;
-  animation-duration: var(--duration-fast);
-  animation-timing-function: var(--ease-out);
-}
-
-::view-transition-old(app-main) {
-  animation-name: route-fade-out;
-  z-index: 1;
-}
-
-::view-transition-new(app-main) {
-  animation: none;
-}
-
-@keyframes route-fade-out {
-  to {
-    opacity: 0;
-  }
-}
-
-/* Keep chrome still while the main pane transitions */
-::view-transition-group(app-sidebar),
-::view-transition-old(app-sidebar),
-::view-transition-new(app-sidebar) {
-  animation: none;
-}
-
 /* Occasional page-enter with slight lift — keep under 300ms */
 .rise-in {
   animation: rise-in var(--duration-panel) var(--ease-out) both;
@@ -644,12 +604,6 @@ pre code {
   .range-pill:active {
     transform: none;
   }
-
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
-  }
 }
 
 .site-footer {
@@ -664,5 +618,8 @@ pre code {
   body {
     background-color: var(--background);
     color: var(--foreground);
+  }
+  html {
+    scrollbar-gutter: stable;
   }
 }

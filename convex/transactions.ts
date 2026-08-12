@@ -127,6 +127,7 @@ export const list = authedQuery({
   },
 })
 
+/** Month (and optional account) flow totals — cacheable via prewarm on nav hover. */
 export const flowSummary = authedQuery({
   args: {
     month: v.string(),
