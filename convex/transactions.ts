@@ -126,12 +126,14 @@ async function paginateFilteredTransactions(
       .order('desc')
   }
 
-  const filterArgs: ListFilterArgs & { userId: Id<'users'>; search?: string } =
-    {
-      ...args,
-      userId,
-      search,
-    }
+  const filterArgs: ListFilterArgs = {
+    userId,
+    accountId: args.accountId,
+    categoryId: args.categoryId,
+    includeHidden: args.includeHidden,
+    includeTransfers: args.includeTransfers,
+    search,
+  }
 
   while (filtered.length < pageSize && !isDone) {
     const result = await queryPage().paginate({ numItems: pageSize, cursor })
