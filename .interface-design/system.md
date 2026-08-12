@@ -58,6 +58,26 @@ Fraunces only for brand wordmark / empty-state titles. Manrope for UI.
 - `EmptyState` — dashed border, Fraunces title
 - `CategoryDot` — 8px color swatch
 
+### Taxonomy list (`settings/categories`)
+
+For taxonomies rather than ledgers — many short names, no money.
+
+- **The repeated field becomes the section.** Budget type was a word on every
+  row; it's now 5 section headers (Flex / Fixed / Non-monthly / Income /
+  Transfers). Never repeat a value on every row when it can group them.
+- **One family = one hairline.** Parent + children share a single `li` so the
+  eye jumps family → family. Children are a tight stack under the parent
+  (`mt-1 space-y-0.5 pl-5`, 12/400 muted) — no second column of dots, no
+  connector rails.
+- **Three tiers:** section 15/600 · parent 13/500 ink + colour dot ·
+  child 12/400 muted.
+- **Add in place.** Section header `+ Add` opens a name-only composer at the
+  top of that section (type implied). Parent-row `+` (hover/focus) opens a
+  composer under that family (parent + colour + type implied). One composer
+  open at a time. Escape cancels; Enter submits. No bottom-of-page form.
+- Page width `sm`. No section counts — the list is the answer.
+- Filter input `w-[220px]` with an inset `size-3.5` search glyph at `left-2.5`.
+
 ### CSS helpers (`src/styles.css`)
 
 - `.kicker`, `.hero-figure`, `.data-list`, `.data-row`
@@ -88,3 +108,8 @@ Document scroll · sticky `h-dvh` sidebar · sticky header (`.app-shell-header`,
 - Heavy bordered cards for every list → hairline rows
 - Flat table type → merchant + amount hierarchy
 - Cool mint SaaS chrome → warm paper ledger
+- A field repeated on every row → that field becomes the section
+- Connector rails / tree lines for nesting → weight + indent inside one family
+- Multi-column masonry for a taxonomy → single scannable list
+- Add form parked at the bottom of the page → composer opens where the item lands
+- Inventing a hero figure for a page with no money on it → no hero at all
