@@ -13,48 +13,19 @@ let sessionEnterPending = true
  */
 const enterPendingByPath = new Set<string>()
 
-export function AppShell({
-  children,
-  title,
-  actions,
-}: {
-  children?: React.ReactNode
-  title?: string
-  actions?: React.ReactNode
-}) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const sawEmpty = useRef(false)
-  const fadeRef = useRef<boolean | null>(null)
-  const [enterActive, setEnterActive] = useState(false)
-  const hasContent = Children.toArray(children).length > 0
-
-  if (!hasContent) {
-    sawEmpty.current = true
-    enterPendingByPath.add(pathname)
-  }
-
-  if (fadeRef.current === null && hasContent) {
-    const shouldFade =
-      sessionEnterPending ||
-      sawEmpty.current ||
-      enterPendingByPath.has(pathname)
-    fadeRef.current = shouldFade
-    if (shouldFade) {
-      sessionEnterPending = false
-      // Stay pending for this path until after paint (Strict Mode remount).
-      enterPendingByPath.add(pathname)
-    }
-  }
-
-  const fadeIn = fadeRef.current === true
+function useEnterActive(shouldEnter: boolean, pathname: string) {
+  const [active, setActive] = useState(false)
 
   useEffect(() => {
-    if (!fadeIn) return
+    if (!shouldEnter) {
+      setActive(false)
+      return
+    }
     let cancelled = false
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
-        if (!cancelled) setEnterActive(true)
+        if (!cancelled) setActive(true)
       })
     })
     const id = window.setTimeout(() => {
@@ -66,10 +37,65 @@ export function AppShell({
       cancelAnimationFrame(raf2)
       window.clearTimeout(id)
     }
-  }, [fadeIn, pathname])
+  }, [shouldEnter, pathname])
+
+  return active
+}
+
+export function AppShell({
+  children,
+  title,
+  actions,
+}: {
+  children?: React.ReactNode
+  title?: string
+  actions?: React.ReactNode
+}) {
+  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const sawEmpty = useRef(false)
+  const shellFadeRef = useRef<boolean | null>(null)
+  const contentFadeRef = useRef<boolean | null>(null)
+  const hasContent = Children.toArray(children).length > 0
+
+  if (shellFadeRef.current === null) {
+    shellFadeRef.current = sessionEnterPending
+    if (sessionEnterPending) {
+      sessionEnterPending = false
+      enterPendingByPath.add(pathname)
+    }
+  }
+
+  if (!hasContent) {
+    sawEmpty.current = true
+    enterPendingByPath.add(pathname)
+  }
+
+  if (contentFadeRef.current === null && hasContent) {
+    // Session shell fade already covers first paint with content. Otherwise
+    // fade main only after an empty wait (sidebar stays put on route changes).
+    const shellCoversThisPaint =
+      shellFadeRef.current === true && !sawEmpty.current
+    contentFadeRef.current = shellCoversThisPaint
+      ? false
+      : sawEmpty.current || enterPendingByPath.has(pathname)
+    if (contentFadeRef.current) {
+      enterPendingByPath.add(pathname)
+    }
+  }
+
+  const shellFade = shellFadeRef.current === true
+  const contentFade = contentFadeRef.current === true
+  const shellEnterActive = useEnterActive(shellFade, pathname)
+  const contentEnterActive = useEnterActive(contentFade, pathname)
 
   return (
-    <div className="flex min-h-dvh bg-background text-foreground">
+    <div
+      className={cn(
+        'flex min-h-dvh bg-background text-foreground',
+        shellFade && 'content-enter',
+        shellFade && shellEnterActive && 'content-enter-active',
+      )}
+    >
       <AppSidebar />
       <div className="min-w-0 flex-1">
         <header className="app-shell-header">
@@ -89,8 +115,8 @@ export function AppShell({
           {hasContent ? (
             <div
               className={cn(
-                fadeIn && 'content-enter',
-                fadeIn && enterActive && 'content-enter-active',
+                contentFade && 'content-enter',
+                contentFade && contentEnterActive && 'content-enter-active',
               )}
             >
               {children}
