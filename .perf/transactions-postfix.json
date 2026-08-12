@@ -1,0 +1,30 @@
+{
+  "capturedAt": "2026-08-11T18:12:40",
+  "browser_samples_ms": [
+    {
+      "statsMs": 84.6,
+      "rowMs": 224.3
+    },
+    {
+      "statsMs": 68.3,
+      "rowMs": 180.3
+    },
+    {
+      "statsMs": 76.1,
+      "rowMs": 154.9
+    }
+  ],
+  "browser_stats_avg_ms": 76.33333333333333,
+  "baseline_stats_ms": 169.4,
+  "delta_stats_ms": 93.06666666666668,
+  "delta_stats_pct": 0.5493900039354584,
+  "fixes": [
+    "WarmMonthQueries keeps flowSummary subscribed in _app layout",
+    "transactions.list applies month bounds in by_user_date index",
+    "list joins via db.get for page-referenced accounts/categories only"
+  ],
+  "artifacts": {
+    "baseline": ".perf/transactions-baseline.json",
+    "postfix": ".perf/transactions-postfix.json"
+  }
+}
