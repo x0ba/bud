@@ -2,7 +2,7 @@ import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import type { Doc, Id } from './_generated/dataModel'
 import { authedMutation, authedQuery } from './lib/customFunctions'
-import { monthBounds } from './lib/money'
+import { expenseAmount, incomeAmount, monthBounds } from './lib/money'
 
 const transactionDoc = v.object({
   _id: v.id('transactions'),
@@ -153,8 +153,8 @@ export const flowSummary = authedQuery({
       if (args.accountId && tx.accountId !== args.accountId) continue
       if (!args.includeHidden && tx.isHidden) continue
       if (!args.includeTransfers && tx.isTransfer) continue
-      if (tx.amount > 0) out += tx.amount
-      else incoming += -tx.amount
+      out += expenseAmount(tx.amount)
+      incoming += incomeAmount(tx.amount)
     }
     return { out, incoming }
   },

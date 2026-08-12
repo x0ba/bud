@@ -23,6 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet'
+import { expenseAmount } from '../../../convex/lib/money'
 import { currentMonth, formatDayLabel, formatUsdPlain } from '#/lib/money'
 import { cn } from '#/lib/utils'
 
@@ -61,8 +62,6 @@ function TransactionsPage() {
 
   const listReady = status !== 'LoadingFirstPage'
 
-  // Chunk the ledger by day so the date drops out of every row, and total each
-  // day — a run of 40 identical rows becomes a handful of scannable groups.
   const groups = useMemo(() => {
     const byDate = new Map<string, NonNullable<typeof results>>()
     for (const tx of results ?? []) {
@@ -73,7 +72,7 @@ function TransactionsPage() {
     return [...byDate.entries()].map(([date, rows]) => ({
       date,
       rows,
-      spent: rows.reduce((sum, r) => sum + Math.max(r.amount, 0), 0),
+      spent: rows.reduce((sum, r) => sum + expenseAmount(r.amount), 0),
     }))
   }, [results])
 
