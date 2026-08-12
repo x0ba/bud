@@ -8,12 +8,12 @@
   "scripts": {
     "dev": "dotenv -e .env.local -- sh -c \"NODE_OPTIONS='--import ./instrument.server.mjs' vite dev --port 3000\"",
     "generate-routes": "tsr generate",
-    "build": "vite build && cp instrument.server.mjs .output/server",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint",
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
-    "start": "node --import ./.output/server/instrument.server.mjs .output/server/index.mjs"
+    "start": "node .output/server/index.mjs"
   },
   "dependencies": {
     "@clerk/tanstack-react-start": "^1.4.21",

@@ -1,4 +1,8 @@
 import { createCsrfMiddleware, createStart } from '@tanstack/react-start'
+import {
+  sentryGlobalFunctionMiddleware,
+  sentryGlobalRequestMiddleware,
+} from '@sentry/tanstackstart-react'
 
 import { clerkMiddleware } from '@clerk/tanstack-react-start/server'
 
@@ -7,5 +11,10 @@ const csrfMiddleware = createCsrfMiddleware({
 })
 
 export const startInstance = createStart(() => ({
-  requestMiddleware: [csrfMiddleware, clerkMiddleware()],
+  requestMiddleware: [
+    sentryGlobalRequestMiddleware,
+    csrfMiddleware,
+    clerkMiddleware(),
+  ],
+  functionMiddleware: [sentryGlobalFunctionMiddleware],
 }))
