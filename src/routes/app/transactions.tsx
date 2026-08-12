@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import type { RequestForQueries } from 'convex/react'
-import { useMutation, useQueries, useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
@@ -31,97 +30,40 @@ import {
 import { Switch } from '#/components/ui/switch'
 import { expenseAmount } from '../../../convex/lib/money'
 import { currentMonth, formatDayLabel, formatUsdPlain } from '#/lib/money'
+import { firstPageArgs, usePagedQuery } from '#/lib/paged'
 import { prewarmQueries } from '#/lib/prewarm'
 import { PHONE, useMediaQuery } from '#/lib/use-media-query'
 import { cn } from '#/lib/utils'
 
 const PAGE_SIZE = 40
-const FIRST_PAGE_OPTS = { numItems: PAGE_SIZE, cursor: null }
+
+function ledgerFilters(opts: {
+  month: string
+  search?: string
+  accountId?: Id<'accounts'>
+}) {
+  return {
+    search: opts.search || undefined,
+    month: opts.month || undefined,
+    accountId: opts.accountId,
+  }
+}
 
 export const Route = createFileRoute('/app/transactions')({
   loader: () => {
+    const month = currentMonth()
     prewarmQueries(
       { query: api.accounts.list },
       { query: api.categories.list },
-      { query: api.transactions.flowSummary, args: { month: currentMonth() } },
+      { query: api.transactions.flowSummary, args: { month } },
       {
         query: api.transactions.list,
-        args: { month: currentMonth(), paginationOpts: FIRST_PAGE_OPTS },
+        args: firstPageArgs(ledgerFilters({ month }), PAGE_SIZE),
       },
     )
   },
   component: TransactionsPage,
 })
-
-type LedgerFilters = {
-  search?: string
-  month?: string
-  accountId?: Id<'accounts'>
-}
-
-type LedgerPage = (typeof api.transactions.list)['_returnType']
-
-const NO_CURSORS: string[] = []
-
-/**
- * Cursor pagination with deterministic args. `usePaginatedQuery` stamps a
- * unique client id into its first-page args, so it can never hit the
- * subscription the loader prewarms on hover — which made the ledger pop in
- * after the rest of the page. Plain `useQueries` with the same args as the
- * loader gets the first page from the already-warm subscription instead.
- */
-function useLedgerPages(filters: LedgerFilters) {
-  const filterKey = JSON.stringify(filters)
-  const [pages, setPages] = useState({ key: filterKey, cursors: NO_CURSORS })
-  const cursors = pages.key === filterKey ? pages.cursors : NO_CURSORS
-
-  const queries = useMemo(() => {
-    const request: RequestForQueries = {}
-    for (const [i, cursor] of [null, ...cursors].entries()) {
-      request[i] = {
-        query: api.transactions.list,
-        args: {
-          ...filters,
-          paginationOpts: { numItems: PAGE_SIZE, cursor },
-        },
-      }
-    }
-    return request
-    // filterKey stands in for `filters`, whose identity changes every render.
-  }, [filterKey, cursors])
-
-  const pageResults = useQueries(queries)
-
-  const loaded: LedgerPage[] = []
-  for (let i = 0; i <= cursors.length; i++) {
-    const page = pageResults[i]
-    if (page === undefined) break
-    if (page instanceof Error) throw page
-    loaded.push(page as LedgerPage)
-  }
-
-  const lastPage = loaded.at(-1)
-  const status =
-    loaded.length === 0
-      ? ('LoadingFirstPage' as const)
-      : loaded.length <= cursors.length
-        ? ('LoadingMore' as const)
-        : lastPage?.isDone
-          ? ('Exhausted' as const)
-          : ('CanLoadMore' as const)
-
-  return {
-    results: loaded.flatMap((page) => page.page),
-    status,
-    loadMore: () => {
-      if (status !== 'CanLoadMore' || !lastPage) return
-      setPages({
-        key: filterKey,
-        cursors: [...cursors, lastPage.continueCursor],
-      })
-    },
-  }
-}
 
 function TransactionsPage() {
   const [search, setSearch] = useState('')
@@ -138,11 +80,11 @@ function TransactionsPage() {
     api.transactions.flowSummary,
     accountId ? { month, accountId } : { month },
   )
-  const { results, status, loadMore } = useLedgerPages({
-    ...(search ? { search } : {}),
-    ...(month ? { month } : {}),
-    ...(accountId ? { accountId } : {}),
-  })
+  const { results, status, loadMore } = usePagedQuery(
+    api.transactions.list,
+    ledgerFilters({ month, search, accountId }),
+    { initialNumItems: PAGE_SIZE },
+  )
 
   const selected = results.find((t) => t._id === selectedId) ?? null
 

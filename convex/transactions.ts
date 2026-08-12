@@ -1,6 +1,7 @@
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
 import type { Doc, Id } from './_generated/dataModel'
+import type { QueryCtx } from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
 import { expenseAmount, incomeAmount, monthBounds } from './lib/money'
 
@@ -27,6 +28,128 @@ const transactionDoc = v.object({
   categoryColor: v.optional(v.string()),
 })
 
+type ListFilterArgs = {
+  userId: Id<'users'>
+  accountId?: Id<'accounts'>
+  categoryId?: Id<'categories'>
+  search?: string
+  includeHidden?: boolean
+  includeTransfers?: boolean
+}
+
+function transactionMatchesFilters(
+  tx: Doc<'transactions'>,
+  args: ListFilterArgs,
+): boolean {
+  if (tx.userId !== args.userId) return false
+  if (args.accountId && tx.accountId !== args.accountId) return false
+  if (args.categoryId && tx.categoryId !== args.categoryId) return false
+  if (!args.includeHidden && tx.isHidden) return false
+  if (!args.includeTransfers && tx.isTransfer) return false
+  if (args.search) {
+    const hay =
+      `${tx.merchantName ?? ''} ${tx.originalDescription}`.toLowerCase()
+    if (!hay.includes(args.search)) return false
+  }
+  return true
+}
+
+async function paginateFilteredTransactions(
+  ctx: QueryCtx,
+  userId: Id<'users'>,
+  args: ListFilterArgs & {
+    paginationOpts: { numItems: number; cursor: string | null }
+  },
+) {
+  const pageSize = args.paginationOpts.numItems
+  let cursor = args.paginationOpts.cursor
+  const filtered: Doc<'transactions'>[] = []
+  let isDone = false
+  let continueCursor = ''
+  const bounds = args.month ? monthBounds(args.month) : null
+  const search = args.search?.toLowerCase().trim()
+
+  const queryPage = () => {
+    if (args.categoryId && bounds) {
+      return ctx.db
+        .query('transactions')
+        .withIndex('by_user_category_date', (q) =>
+          q
+            .eq('userId', userId)
+            .eq('categoryId', args.categoryId!)
+            .gte('date', bounds.start)
+            .lte('date', bounds.end),
+        )
+        .order('desc')
+    }
+    if (args.categoryId) {
+      return ctx.db
+        .query('transactions')
+        .withIndex('by_user_category_date', (q) =>
+          q.eq('userId', userId).eq('categoryId', args.categoryId!),
+        )
+        .order('desc')
+    }
+    if (args.accountId && bounds) {
+      return ctx.db
+        .query('transactions')
+        .withIndex('by_account_date', (q) =>
+          q
+            .eq('accountId', args.accountId!)
+            .gte('date', bounds.start)
+            .lte('date', bounds.end),
+        )
+        .order('desc')
+    }
+    if (args.accountId) {
+      return ctx.db
+        .query('transactions')
+        .withIndex('by_account_date', (q) =>
+          q.eq('accountId', args.accountId!),
+        )
+        .order('desc')
+    }
+    if (bounds) {
+      return ctx.db
+        .query('transactions')
+        .withIndex('by_user_date', (q) =>
+          q
+            .eq('userId', userId)
+            .gte('date', bounds.start)
+            .lte('date', bounds.end),
+        )
+        .order('desc')
+    }
+    return ctx.db
+      .query('transactions')
+      .withIndex('by_user_date', (q) => q.eq('userId', userId))
+      .order('desc')
+  }
+
+  const filterArgs: ListFilterArgs & { userId: Id<'users'>; search?: string } =
+    {
+      ...args,
+      userId,
+      search,
+    }
+
+  while (filtered.length < pageSize && !isDone) {
+    const result = await queryPage().paginate({ numItems: pageSize, cursor })
+
+    for (const tx of result.page) {
+      if (!transactionMatchesFilters(tx, filterArgs)) continue
+      filtered.push(tx)
+      if (filtered.length >= pageSize) break
+    }
+
+    cursor = result.continueCursor
+    continueCursor = result.continueCursor
+    isDone = result.isDone
+  }
+
+  return { page: filtered, isDone, continueCursor }
+}
+
 export const list = authedQuery({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -43,42 +166,12 @@ export const list = authedQuery({
     continueCursor: v.string(),
   }),
   handler: async (ctx, args) => {
-    const bounds = args.month ? monthBounds(args.month) : null
-    const result = bounds
-      ? await ctx.db
-          .query('transactions')
-          .withIndex('by_user_date', (q) =>
-            q
-              .eq('userId', ctx.user._id)
-              .gte('date', bounds.start)
-              .lte('date', bounds.end),
-          )
-          .order('desc')
-          .paginate(args.paginationOpts)
-      : await ctx.db
-          .query('transactions')
-          .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
-          .order('desc')
-          .paginate(args.paginationOpts)
+    const result = await paginateFilteredTransactions(ctx, ctx.user._id, args)
 
-    const search = args.search?.toLowerCase().trim()
-    const filtered = result.page.filter((tx) => {
-      if (args.accountId && tx.accountId !== args.accountId) return false
-      if (args.categoryId && tx.categoryId !== args.categoryId) return false
-      if (!args.includeHidden && tx.isHidden) return false
-      if (!args.includeTransfers && tx.isTransfer) return false
-      if (search) {
-        const hay =
-          `${tx.merchantName ?? ''} ${tx.originalDescription}`.toLowerCase()
-        if (!hay.includes(search)) return false
-      }
-      return true
-    })
-
-    const accountIds = [...new Set(filtered.map((tx) => tx.accountId))]
+    const accountIds = [...new Set(result.page.map((tx) => tx.accountId))]
     const categoryIds = [
       ...new Set(
-        filtered.flatMap((tx) => (tx.categoryId ? [tx.categoryId] : [])),
+        result.page.flatMap((tx) => (tx.categoryId ? [tx.categoryId] : [])),
       ),
     ]
     const [accounts, categories] = await Promise.all([
@@ -94,7 +187,7 @@ export const list = authedQuery({
       if (category) categoryMap.set(category._id, category)
     }
 
-    const page = filtered.map((tx) => {
+    const page = result.page.map((tx) => {
       const account = accountMap.get(tx.accountId)
       const category = tx.categoryId
         ? categoryMap.get(tx.categoryId)
