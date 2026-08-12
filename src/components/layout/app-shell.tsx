@@ -1,4 +1,4 @@
-import { Children, useEffect, useRef } from 'react'
+import { Children, useEffect, useRef, useState } from 'react'
 import { useRouterState } from '@tanstack/react-router'
 import HeaderUser from '#/integrations/clerk/header-user'
 import { cn } from '#/lib/utils'
@@ -25,6 +25,7 @@ export function AppShell({
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const sawEmpty = useRef(false)
   const fadeRef = useRef<boolean | null>(null)
+  const [enterActive, setEnterActive] = useState(false)
   const hasContent = Children.toArray(children).length > 0
 
   if (!hasContent) {
@@ -49,10 +50,22 @@ export function AppShell({
 
   useEffect(() => {
     if (!fadeIn) return
+    let cancelled = false
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (!cancelled) setEnterActive(true)
+      })
+    })
     const id = window.setTimeout(() => {
       enterPendingByPath.delete(pathname)
     }, 350)
-    return () => window.clearTimeout(id)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+      window.clearTimeout(id)
+    }
   }, [fadeIn, pathname])
 
   return (
@@ -74,7 +87,14 @@ export function AppShell({
         </header>
         <main className="px-8 pt-4 pb-10">
           {hasContent ? (
-            <div className={cn(fadeIn && 'content-enter')}>{children}</div>
+            <div
+              className={cn(
+                fadeIn && 'content-enter',
+                fadeIn && enterActive && 'content-enter-active',
+              )}
+            >
+              {children}
+            </div>
           ) : null}
         </main>
       </div>
