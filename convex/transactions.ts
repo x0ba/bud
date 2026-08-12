@@ -1,7 +1,8 @@
 import { paginationOptsValidator } from 'convex/server'
 import { v } from 'convex/values'
+import type { Doc, Id } from './_generated/dataModel'
 import { authedMutation, authedQuery } from './lib/customFunctions'
-import { monthBounds } from './lib/money'
+import { expenseAmount, incomeAmount, monthBounds } from './lib/money'
 
 const transactionDoc = v.object({
   _id: v.id('transactions'),
@@ -42,73 +43,120 @@ export const list = authedQuery({
     continueCursor: v.string(),
   }),
   handler: async (ctx, args) => {
-    let bounds: { start: string; end: string } | null = null
-    if (args.month) bounds = monthBounds(args.month)
-
-    const result = await ctx.db
-      .query('transactions')
-      .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
-      .order('desc')
-      .paginate(args.paginationOpts)
-
-    const accounts = await ctx.db
-      .query('accounts')
-      .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
-      .collect()
-    const accountMap = new Map(accounts.map((a) => [a._id, a]))
-
-    const categories = await ctx.db
-      .query('categories')
-      .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
-      .collect()
-    const categoryMap = new Map(categories.map((c) => [c._id, c]))
+    const bounds = args.month ? monthBounds(args.month) : null
+    const result = bounds
+      ? await ctx.db
+          .query('transactions')
+          .withIndex('by_user_date', (q) =>
+            q
+              .eq('userId', ctx.user._id)
+              .gte('date', bounds.start)
+              .lte('date', bounds.end),
+          )
+          .order('desc')
+          .paginate(args.paginationOpts)
+      : await ctx.db
+          .query('transactions')
+          .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
+          .order('desc')
+          .paginate(args.paginationOpts)
 
     const search = args.search?.toLowerCase().trim()
+    const filtered = result.page.filter((tx) => {
+      if (args.accountId && tx.accountId !== args.accountId) return false
+      if (args.categoryId && tx.categoryId !== args.categoryId) return false
+      if (!args.includeHidden && tx.isHidden) return false
+      if (!args.includeTransfers && tx.isTransfer) return false
+      if (search) {
+        const hay =
+          `${tx.merchantName ?? ''} ${tx.originalDescription}`.toLowerCase()
+        if (!hay.includes(search)) return false
+      }
+      return true
+    })
 
-    const page = result.page
-      .filter((tx) => {
-        if (args.accountId && tx.accountId !== args.accountId) return false
-        if (args.categoryId && tx.categoryId !== args.categoryId) return false
-        if (!args.includeHidden && tx.isHidden) return false
-        if (!args.includeTransfers && tx.isTransfer) return false
-        if (bounds && (tx.date < bounds.start || tx.date > bounds.end))
-          return false
-        if (search) {
-          const hay = `${tx.merchantName ?? ''} ${tx.originalDescription}`.toLowerCase()
-          if (!hay.includes(search)) return false
-        }
-        return true
-      })
-      .map((tx) => {
-        const account = accountMap.get(tx.accountId)
-        const category = tx.categoryId
-          ? categoryMap.get(tx.categoryId)
-          : undefined
-        return {
-          _id: tx._id,
-          accountId: tx.accountId,
-          date: tx.date,
-          amount: tx.amount,
-          merchantName: tx.merchantName,
-          originalDescription: tx.originalDescription,
-          pending: tx.pending,
-          categoryId: tx.categoryId,
-          categorySource: tx.categorySource,
-          isTransfer: tx.isTransfer,
-          isHidden: tx.isHidden,
-          notes: tx.notes,
-          tags: tx.tags,
-          accountName: account?.name,
-          categoryName: category?.name,
-          categoryColor: category?.color,
-        }
-      })
+    const accountIds = [...new Set(filtered.map((tx) => tx.accountId))]
+    const categoryIds = [
+      ...new Set(
+        filtered.flatMap((tx) => (tx.categoryId ? [tx.categoryId] : [])),
+      ),
+    ]
+    const [accounts, categories] = await Promise.all([
+      Promise.all(accountIds.map((id) => ctx.db.get(id))),
+      Promise.all(categoryIds.map((id) => ctx.db.get(id))),
+    ])
+    const accountMap = new Map<Id<'accounts'>, Doc<'accounts'>>()
+    for (const account of accounts) {
+      if (account) accountMap.set(account._id, account)
+    }
+    const categoryMap = new Map<Id<'categories'>, Doc<'categories'>>()
+    for (const category of categories) {
+      if (category) categoryMap.set(category._id, category)
+    }
+
+    const page = filtered.map((tx) => {
+      const account = accountMap.get(tx.accountId)
+      const category = tx.categoryId
+        ? categoryMap.get(tx.categoryId)
+        : undefined
+      return {
+        _id: tx._id,
+        accountId: tx.accountId,
+        date: tx.date,
+        amount: tx.amount,
+        merchantName: tx.merchantName,
+        originalDescription: tx.originalDescription,
+        pending: tx.pending,
+        categoryId: tx.categoryId,
+        categorySource: tx.categorySource,
+        isTransfer: tx.isTransfer,
+        isHidden: tx.isHidden,
+        notes: tx.notes,
+        tags: tx.tags,
+        accountName: account?.name,
+        categoryName: category?.name,
+        categoryColor: category?.color,
+      }
+    })
 
     return {
       page,
       isDone: result.isDone,
       continueCursor: result.continueCursor,
     }
+  },
+})
+
+export const flowSummary = authedQuery({
+  args: {
+    month: v.string(),
+    accountId: v.optional(v.id('accounts')),
+    includeHidden: v.optional(v.boolean()),
+    includeTransfers: v.optional(v.boolean()),
+  },
+  returns: v.object({
+    out: v.number(),
+    incoming: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const { start, end } = monthBounds(args.month)
+    const txs = await ctx.db
+      .query('transactions')
+      .withIndex('by_user_date', (q) =>
+        q.eq('userId', ctx.user._id).gte('date', start).lte('date', end),
+      )
+      .collect()
+
+    let out = 0
+    let incoming = 0
+    for (const tx of txs) {
+      if (args.accountId && tx.accountId !== args.accountId) continue
+      if (!args.includeHidden && tx.isHidden) continue
+      if (!args.includeTransfers && tx.isTransfer) continue
+      out += expenseAmount(tx.amount)
+      incoming += incomeAmount(tx.amount)
+    }
+    return { out, incoming }
   },
 })
 

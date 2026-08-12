@@ -1,0 +1,30 @@
+{
+  "capturedAt": "2026-08-11T18:10:26",
+  "surface": "browser CDP + Convex UDF logs",
+  "dataShape": {
+    "transactionsTotal": 102,
+    "augustTxApprox": 8
+  },
+  "convex": {
+    "flowSummary_uncached_max_ms": 8.5,
+    "list_uncached_max_ms": 111.2,
+    "list_readDocs_uncached": 79
+  },
+  "browser": {
+    "coldNav_dashboard_to_outIn_ms": 169.4,
+    "coldNav_dashboard_to_firstRow_ms": 169.4,
+    "note": "stats and first ledger row appeared same frame"
+  },
+  "hypotheses": [
+    {
+      "family": "Scheduling",
+      "signal": "flowSummary cold on route enter despite 8ms server",
+      "action": "keep live useQuery in _app layout"
+    },
+    {
+      "family": "Indirection",
+      "signal": "list paginates all user txs then filters month in JS; 111ms/79 docs",
+      "action": "month bounds in by_user_date index + get() joins"
+    }
+  ]
+}
