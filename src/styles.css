@@ -566,8 +566,8 @@ pre code {
 }
 
 /* Content enter after load — not named `fade-in` (tw-animate owns that utility).
-   Soft: don't start from 0. From-state paints first; `-active` toggles after
-   paint so a busy commit cannot finish the enter before the first frame. */
+   From-state paints first; `-active` toggles after paint so a busy commit cannot
+   finish the enter before the first frame. */
 .content-enter {
   opacity: 0.4;
 }

@@ -50,12 +50,22 @@ export function AppShell({
 
   useEffect(() => {
     if (!fadeIn) return
-    // After paint: from-state is already on screen, then ease to full opacity.
-    setEnterActive(true)
+    let cancelled = false
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (!cancelled) setEnterActive(true)
+      })
+    })
     const id = window.setTimeout(() => {
       enterPendingByPath.delete(pathname)
     }, 350)
-    return () => window.clearTimeout(id)
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+      window.clearTimeout(id)
+    }
   }, [fadeIn, pathname])
 
   return (
