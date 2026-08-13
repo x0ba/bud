@@ -1,0 +1,9 @@
+{
+  // Plaid secrets stay in the Cursor Cloud environment Secrets tab
+  // (PLAID_CLIENT_ID, PLAID_SECRET, optional PLAID_ENV). Do not put
+  // their values in this file. start copies them onto Convex.
+  "name": "bud",
+  "snapshot": "bld-20260813-8a4f5038-502e-417e-81de-3890810fa336",
+  "install": "pnpm install",
+  "start": "bash scripts/seed-convex-plaid-env.sh"
+}

@@ -123,7 +123,9 @@ Browser **sign-up** is blocked by Clerk bot-protection (Cloudflare Turnstile) th
 Then sign in through the UI (sign-in has no CAPTCHA); enter `424242` if prompted for a new-device code. On first authenticated load, `EnsureUser` calls the `users.ensureReady` Convex mutation which seeds the default category tree — a good end-to-end signal that Clerk→Convex auth works.
 
 ### Plaid
-`/accounts` → "Connect account" needs Convex env vars `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV=sandbox` (set via `npx convex env set ...`). Without them the app runs and is fully navigable but you cannot link a bank or load transactions.
+`/accounts` → "Connect account" needs Convex env vars `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV=sandbox`. Those values live in this cloud environment's **Secrets** tab (not in the repo). The environment `start` command runs `scripts/seed-convex-plaid-env.sh`, which copies them onto the anonymous Convex deployment after `npx convex init`.
+
+If you start Convex yourself and Plaid linking still fails, re-run `bash scripts/seed-convex-plaid-env.sh` once `.env.local` exists. Without the Cursor secrets, the rest of the app is still navigable but you cannot link a bank or load transactions.
 
 ### Other
 - `pnpm lint` currently reports ~24 pre-existing errors in committed code (`convex/` and `src/`); the lint tooling itself works. `unrs-resolver`'s build script is skipped by pnpm but lint still runs (it ships prebuilt binaries).
