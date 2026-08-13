@@ -819,3 +819,13 @@ pre code {
     scrollbar-gutter: stable;
   }
 }
+
+/* Gutter already reserved the scrollbar lane. react-remove-scroll still
+   injects margin-right (and padding-right) when a sheet/dialog locks scroll,
+   which shrinks the page under the overlay. Beat its unlayered !important
+   rule with higher specificity so the ledger does not jump left. */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px;
+}
