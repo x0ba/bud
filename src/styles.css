@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
 
@@ -139,7 +139,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -243,7 +244,8 @@ pre code {
 }
 
 .display-title {
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: var(--font-display);
+  font-weight: 500;
 }
 
 /* Opaque top bar — sticky on document scroll, content clips at its edge. */
@@ -385,12 +387,13 @@ pre code {
   color: var(--palm);
 }
 
-/* Page body — 12-column field, masonry at xl.
+/* Page body — 12-column field at xl.
 
    A regular grid would still open a row for every line of cards, so a short
-   Fixed panel would leave a hole down to the next row. Native grid-lanes (or
-   the older masonry track) packs each card as high as its columns allow.
-   Chromium gets the same packing via a 1px-row polyfill on [data-masonry]. */
+   panel would leave a hole down to the next row. JS packs into the shortest
+   column each card fits, then pins it there so collapsing only lifts the
+   cards below — native masonry/grid-lanes would yank cards across columns.
+   Placement uses 1px rows on [data-masonry]. */
 .page-body {
   display: grid;
   width: 100%;
@@ -414,22 +417,6 @@ pre code {
   .page-body[data-masonry='polyfill'] {
     grid-auto-rows: 1px;
     row-gap: 0;
-  }
-}
-
-@supports (grid-template-rows: masonry) and (not (display: grid-lanes)) {
-  @media (width >= 80rem) {
-    .page-body {
-      grid-template-rows: masonry;
-    }
-  }
-}
-
-@supports (display: grid-lanes) {
-  @media (width >= 80rem) {
-    .page-body {
-      display: grid-lanes;
-    }
   }
 }
 
@@ -1136,4 +1123,14 @@ pre code {
   html {
     scrollbar-gutter: stable;
   }
+}
+
+/* Gutter already reserved the scrollbar lane. react-remove-scroll still
+   injects margin-right (and padding-right) when a sheet/dialog locks scroll,
+   which shrinks the page under the overlay. Beat its unlayered !important
+   rule with higher specificity so the ledger does not jump left. */
+html body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px;
 }

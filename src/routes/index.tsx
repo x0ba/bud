@@ -8,7 +8,7 @@ import { Landing } from '#/components/landing/page'
 import landingCss from '#/components/landing/landing.css?url'
 
 const FONTS =
-  'https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap'
+  'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap'
 
 const hasSession = createServerFn({ method: 'GET' }).handler(async () =>
   Sentry.startSpan({ name: 'Landing page session check' }, async () => {
