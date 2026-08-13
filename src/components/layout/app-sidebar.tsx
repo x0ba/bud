@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   LineChart,
   List,
-  PanelLeft,
   PanelLeftClose,
   PieChart,
   Repeat,
@@ -14,7 +13,7 @@ import {
   Tags,
   Wallet,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Button } from '#/components/ui/button'
 import {
   Tooltip,
@@ -25,6 +24,8 @@ import { SproutMark } from '#/components/sprout'
 import { cn } from '#/lib/utils'
 
 const SIDEBAR_COLLAPSED_KEY = 'bud.sidebar-collapsed'
+const ICON_RAIL = 'flex w-14 shrink-0 items-center justify-center'
+const EASE = 'ease-[cubic-bezier(0.23,1,0.32,1)]'
 
 const nav = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
@@ -41,6 +42,28 @@ const settings = [
   { to: '/app/settings/categories', label: 'Categories', icon: Tags },
   { to: '/app/settings/rules', label: 'Rules', icon: Settings2 },
 ] as const
+
+function IconSquare({
+  active,
+  children,
+}: {
+  active: boolean
+  children: ReactNode
+}) {
+  return (
+    <span
+      className={cn(
+        'flex size-8 items-center justify-center rounded-md transition-[color,background-color] duration-[150ms]',
+        EASE,
+        active
+          ? 'bg-muted text-[var(--sea-ink)]'
+          : 'text-[var(--sea-ink-soft)] group-hover:bg-muted/60 group-hover:text-[var(--sea-ink)]',
+      )}
+    >
+      {children}
+    </span>
+  )
+}
 
 function NavLink({
   to,
@@ -60,21 +83,27 @@ function NavLink({
       to={to}
       aria-label={collapsed ? label : undefined}
       className={cn(
-        'flex items-center gap-2.5 rounded-md text-[13px] font-medium no-underline transition-[color,background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]',
-        collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-[7px]',
-        active
-          ? 'bg-muted text-[var(--sea-ink)]'
-          : 'text-[var(--sea-ink-soft)] hover:bg-muted/60 hover:text-[var(--sea-ink)]',
+        'group flex w-full items-center overflow-hidden text-[13px] font-medium no-underline',
+        'transition-transform duration-[150ms]',
+        EASE,
+        'active:scale-[0.98]',
+        active ? 'text-[var(--sea-ink)]' : 'text-[var(--sea-ink-soft)]',
       )}
     >
-      <Icon
-        className={cn('size-4 shrink-0', active ? 'opacity-90' : 'opacity-70')}
-        strokeWidth={active ? 2 : 1.75}
-      />
+      <span className={ICON_RAIL}>
+        <IconSquare active={active}>
+          <Icon
+            className={cn('size-4', active ? 'opacity-90' : 'opacity-70')}
+            strokeWidth={active ? 2 : 1.75}
+          />
+        </IconSquare>
+      </span>
       <span
+        aria-hidden={collapsed || undefined}
         className={cn(
-          'truncate transition-opacity duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)]',
-          collapsed ? 'sr-only' : 'opacity-100',
+          'shrink-0 pr-3 whitespace-nowrap transition-opacity duration-[200ms] motion-reduce:transition-none',
+          EASE,
+          collapsed ? 'opacity-0' : 'opacity-100',
         )}
       >
         {label}
@@ -125,26 +154,44 @@ export function AppSidebar() {
     <aside
       data-collapsed={collapsed || undefined}
       className={cn(
-        'sticky top-0 flex h-dvh shrink-0 flex-col overflow-y-auto bg-background',
-        'transition-[width] duration-[200ms] ease-[cubic-bezier(0.23,1,0.32,1)]',
-        'motion-reduce:transition-none',
+        'sticky top-0 flex h-dvh min-w-0 shrink-0 flex-col overflow-x-hidden overflow-y-auto bg-background',
+        'transition-[width] duration-[200ms] motion-reduce:transition-none',
+        EASE,
         collapsed ? 'w-14' : 'w-[212px]',
       )}
     >
-      <div
-        className={cn(
-          'flex h-12 items-center',
-          collapsed
-            ? 'justify-center px-1.5'
-            : 'justify-between gap-2 px-3 pl-5',
-        )}
-      >
-        {!collapsed ? (
-          <span className="display-title flex items-center gap-[9px] text-[19px] font-semibold leading-none tracking-tight text-[var(--sea-ink)]">
-            <SproutMark className="size-[22px] shrink-0" />
-            Bud
-          </span>
-        ) : null}
+      <div className="flex h-12 items-center">
+        <div className={ICON_RAIL}>
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={toggleCollapsed}
+                  aria-label="Expand sidebar"
+                  aria-expanded={false}
+                  className="flex size-8 items-center justify-center rounded-md text-[var(--sea-ink)] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <SproutMark className="size-[22px]" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                Expand sidebar
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <SproutMark className="size-[22px] text-[var(--sea-ink)]" />
+          )}
+        </div>
+        <span
+          className={cn(
+            'display-title shrink-0 text-[19px] font-semibold leading-none tracking-tight text-[var(--sea-ink)] transition-opacity duration-[200ms] motion-reduce:transition-none',
+            EASE,
+            collapsed ? 'pointer-events-none opacity-0' : 'opacity-100',
+          )}
+        >
+          Bud
+        </span>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -152,25 +199,27 @@ export function AppSidebar() {
               variant="ghost"
               size="icon-xs"
               onClick={toggleCollapsed}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              aria-expanded={!collapsed}
-              className="text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)]"
+              aria-label="Collapse sidebar"
+              aria-expanded
+              tabIndex={collapsed ? -1 : 0}
+              aria-hidden={collapsed || undefined}
+              className={cn(
+                'mr-2 ml-auto shrink-0 text-[var(--sea-ink-soft)] hover:text-[var(--sea-ink)]',
+                collapsed && 'pointer-events-none',
+              )}
             >
-              {collapsed ? <PanelLeft /> : <PanelLeftClose />}
+              <PanelLeftClose />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            {collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          </TooltipContent>
+          {collapsed ? null : (
+            <TooltipContent side="right" sideOffset={8}>
+              Collapse sidebar
+            </TooltipContent>
+          )}
         </Tooltip>
       </div>
 
-      <nav
-        className={cn(
-          'flex flex-1 flex-col gap-7 pt-0.5 pb-3',
-          collapsed ? 'px-1.5' : 'px-2.5',
-        )}
-      >
+      <nav className="flex flex-1 flex-col gap-7 pt-0.5 pb-3">
         <div className="flex flex-col gap-px">
           {nav.map((item) => {
             const active =
@@ -191,7 +240,16 @@ export function AppSidebar() {
         </div>
 
         <div className="flex flex-col gap-px">
-          {!collapsed ? <p className="kicker px-2.5 pb-1.5">Settings</p> : null}
+          <p
+            aria-hidden={collapsed || undefined}
+            className={cn(
+              'kicker shrink-0 pr-3 pl-14 whitespace-nowrap transition-opacity duration-[200ms] motion-reduce:transition-none',
+              EASE,
+              collapsed ? 'h-0 overflow-hidden pb-0 opacity-0' : 'pb-1.5 opacity-100',
+            )}
+          >
+            Settings
+          </p>
           {settings.map((item) => {
             const active = pathname.startsWith(item.to)
             return (
