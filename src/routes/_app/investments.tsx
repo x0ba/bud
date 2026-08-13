@@ -12,6 +12,7 @@ import {
 import { AppShell } from '#/components/layout/app-shell'
 import { CategoryDonut } from '#/components/category-donut'
 import { formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 
 const TYPE_COLORS: Record<string, string> = {
   equity: '#3d7a72',
@@ -22,6 +23,9 @@ const TYPE_COLORS: Record<string, string> = {
 }
 
 export const Route = createFileRoute('/_app/investments')({
+  loader: () => {
+    prewarmQueries({ query: api.investments.portfolio })
+  },
   component: InvestmentsPage,
 })
 

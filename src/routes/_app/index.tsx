@@ -25,8 +25,15 @@ import {
   formatMonthLabel,
   formatUsdPlain,
 } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 
 export const Route = createFileRoute('/_app/')({
+  loader: () => {
+    prewarmQueries(
+      { query: api.dashboard.overview },
+      { query: api.budgets.getMonth },
+    )
+  },
   component: DashboardPage,
 })
 

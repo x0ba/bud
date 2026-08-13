@@ -6,8 +6,12 @@ import { DataList, PageFrame } from '#/components/dense'
 import { AppShell } from '#/components/layout/app-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
+import { prewarmQueries } from '#/lib/prewarm'
 
 export const Route = createFileRoute('/_app/settings/rules')({
+  loader: () => {
+    prewarmQueries({ query: api.rules.list })
+  },
   component: RulesPage,
 })
 

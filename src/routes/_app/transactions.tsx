@@ -25,11 +25,19 @@ import {
 } from '#/components/ui/sheet'
 import { expenseAmount } from '../../../convex/lib/money'
 import { currentMonth, formatDayLabel, formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
 const PAGE_SIZE = 40
 
 export const Route = createFileRoute('/_app/transactions')({
+  loader: () => {
+    prewarmQueries(
+      { query: api.accounts.list },
+      { query: api.categories.list },
+      { query: api.transactions.flowSummary, args: { month: currentMonth() } },
+    )
+  },
   component: TransactionsPage,
 })
 
@@ -41,9 +49,8 @@ function TransactionsPage() {
 
   const accounts = useQuery(api.accounts.list)
   const categories = useQuery(api.categories.list)
-  // Args must match the WarmRouteData subscription exactly when no account
-  // filter is set. `{ month, accountId: undefined }` is a different cache key
-  // than `{ month }`.
+  // Args must match the loader prewarm exactly when no account filter is set —
+  // `{ month, accountId: undefined }` is a different cache key than `{ month }`.
   const summary = useQuery(
     api.transactions.flowSummary,
     accountId ? { month, accountId } : { month },

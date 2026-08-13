@@ -57,7 +57,6 @@ function NavLink({
   const link = (
     <Link
       to={to}
-      preload="render"
       aria-label={collapsed ? label : undefined}
       className={cn(
         'flex items-center gap-2.5 rounded-md text-[13px] font-medium no-underline transition-[color,background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]',

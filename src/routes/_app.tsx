@@ -1,11 +1,8 @@
 import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
 import { auth } from '@clerk/tanstack-react-start/server'
-import { useQuery } from 'convex/react'
-import { api } from '../../convex/_generated/api'
 import { EnsureUser } from '#/components/ensure-user'
 import { AppFrame } from '#/components/layout/app-shell'
-import { currentMonth } from '#/lib/money'
 
 const requireAuth = createServerFn({ method: 'GET' }).handler(async () => {
   const session = await auth()
@@ -36,33 +33,9 @@ export const Route = createFileRoute('/_app')({
 function AppLayout() {
   return (
     <EnsureUser>
-      <WarmRouteData />
       <AppFrame>
         <Outlet />
       </AppFrame>
     </EnsureUser>
   )
-}
-
-/**
- * Live subscriptions for every sidebar route's queries, held for the whole
- * session so any sidebar click renders with data already in the Convex
- * client. Args must match the page's useQuery call exactly; a different
- * args object is a different cache entry.
- */
-function WarmRouteData() {
-  const month = currentMonth()
-  useQuery(api.dashboard.overview)
-  useQuery(api.budgets.getMonth, {})
-  useQuery(api.budgets.getMonth, { month })
-  useQuery(api.transactions.flowSummary, { month })
-  useQuery(api.transactions.spendingByCategory, { month })
-  useQuery(api.accounts.list)
-  useQuery(api.accounts.listItems)
-  useQuery(api.categories.list)
-  useQuery(api.netWorth.summary)
-  useQuery(api.netWorth.history, { range: '3M' })
-  useQuery(api.investments.portfolio)
-  useQuery(api.rules.list)
-  return null
 }

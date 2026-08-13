@@ -20,9 +20,16 @@ import { AppShell } from '#/components/layout/app-shell'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import { Button } from '#/components/ui/button'
 import { daysUntil, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
+import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_app/accounts')({
+  loader: () => {
+    prewarmQueries(
+      { query: api.accounts.list },
+      { query: api.accounts.listItems },
+    )
+  },
   component: AccountsPage,
 })
 

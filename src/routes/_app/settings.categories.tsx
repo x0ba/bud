@@ -16,9 +16,13 @@ import {
 import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
+import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/_app/settings/categories')({
+  loader: () => {
+    prewarmQueries({ query: api.categories.list })
+  },
   component: CategoriesPage,
 })
 
