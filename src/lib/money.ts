@@ -46,22 +46,30 @@ export function formatMonthLabel(month: string): string {
   })
 }
 
+function startOfLocalDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+}
+
+/** Parse a `YYYY-MM-DD` as local calendar time, not UTC midnight. */
+function parseLocalDate(dateStr: string): Date | null {
+  const date = new Date(dateStr + 'T12:00:00')
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
 /** Axis-style label for a `YYYY-MM-DD` date — "May 12". */
 export function formatDateShort(dateStr: string): string {
-  const date = new Date(dateStr + 'T12:00:00')
-  if (Number.isNaN(date.getTime())) return dateStr
+  const date = parseLocalDate(dateStr)
+  if (!date) return dateStr
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 /** Group subhead label for a `YYYY-MM-DD` ledger date. */
 export function formatDayLabel(dateStr: string): string {
-  const date = new Date(dateStr + 'T12:00:00')
-  if (Number.isNaN(date.getTime())) return dateStr
+  const date = parseLocalDate(dateStr)
+  if (!date) return dateStr
 
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
   const diffDays = Math.round(
-    (startOfDay(new Date()) - startOfDay(date)) / 86_400_000,
+    (startOfLocalDay(new Date()) - startOfLocalDay(date)) / 86_400_000,
   )
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Yesterday'
@@ -88,10 +96,41 @@ export function formatSyncedAgo(ts?: number | null): string | null {
   return `${days}d ago`
 }
 
+/** Calendar days from today to a `YYYY-MM-DD` date. Due today is 0. */
 export function daysUntil(dateStr?: string | null): number | null {
   if (!dateStr) return null
-  const due = new Date(dateStr + 'T12:00:00')
-  const now = new Date()
-  const ms = due.getTime() - now.getTime()
-  return Math.ceil(ms / (1000 * 60 * 60 * 24))
+  const due = parseLocalDate(dateStr)
+  if (!due) return null
+  return Math.round(
+    (startOfLocalDay(due) - startOfLocalDay(new Date())) / 86_400_000,
+  )
+}
+
+/**
+ * Plaid often keeps last cycle's due date after you pay, and `is_overdue`
+ * can stick when a later sync sends null. Treat a card as overdue only when
+ * the issuer still says so *and* the due date has passed — a $0 minimum
+ * means the bill is paid.
+ */
+export function cardPaymentStatus(
+  card: {
+    nextPaymentDueDate?: string | null
+    isOverdue?: boolean | null
+    minimumPayment?: number | null
+  },
+  dueSoonWithin = 7,
+): { days: number | null; overdue: boolean; dueSoon: boolean } {
+  const days = daysUntil(card.nextPaymentDueDate)
+  const paidOff = card.minimumPayment === 0
+  const overdue =
+    !paidOff &&
+    card.isOverdue === true &&
+    (days == null || days < 0)
+  const dueSoon =
+    !overdue &&
+    !paidOff &&
+    days != null &&
+    days >= 0 &&
+    days <= dueSoonWithin
+  return { days, overdue, dueSoon }
 }

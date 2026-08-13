@@ -25,6 +25,7 @@ export const overview = authedQuery({
         dueDate: v.optional(v.string()),
         balance: v.number(),
         minimumPayment: v.optional(v.number()),
+        isOverdue: v.optional(v.boolean()),
       }),
     ),
     itemAlerts: v.array(
@@ -136,6 +137,7 @@ export const overview = authedQuery({
         dueDate: a.nextPaymentDueDate,
         balance: a.currentBalance,
         minimumPayment: a.minimumPayment,
+        isOverdue: a.isOverdue,
       }))
       .sort((a, b) => (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999'))
       .slice(0, 4)

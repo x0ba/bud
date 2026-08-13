@@ -19,7 +19,7 @@ import { Money } from '#/components/money'
 import { PaceBar } from '#/components/pace-bar'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import {
-  daysUntil,
+  cardPaymentStatus,
   formatDayLabel,
   formatMonthLabel,
   formatUsdPlain,
@@ -82,18 +82,25 @@ function DashboardPage() {
     }))
 
     for (const card of data.creditDue) {
-      const days = daysUntil(card.dueDate)
-      if (days == null || days > DUE_SOON_DAYS) continue
+      const { days, overdue, dueSoon } = cardPaymentStatus(
+        {
+          nextPaymentDueDate: card.dueDate,
+          isOverdue: card.isOverdue,
+          minimumPayment: card.minimumPayment,
+        },
+        DUE_SOON_DAYS,
+      )
+      if (!overdue && !dueSoon) continue
       const minimum =
         card.minimumPayment != null
           ? ` · min ${formatUsdPlain(card.minimumPayment)}`
           : ''
       items.push({
         key: card.accountId,
-        severity: days < 0 ? 'urgent' : undefined,
+        severity: overdue ? 'urgent' : undefined,
         title: card.name,
         detail:
-          (days < 0
+          (overdue
             ? 'Payment overdue'
             : days === 0
               ? 'Due today'

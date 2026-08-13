@@ -12,7 +12,7 @@ import {
 import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
-import { currentMonth, daysUntil, formatUsdPlain } from '#/lib/money'
+import { cardPaymentStatus, currentMonth, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
 export const Route = createFileRoute('/_app/accounts/$accountId')({
@@ -59,7 +59,7 @@ function AccountDetailPage() {
     account.limit && account.limit > 0
       ? account.currentBalance / account.limit
       : null
-  const days = daysUntil(account.nextPaymentDueDate)
+  const { days, overdue } = cardPaymentStatus(account)
   const isCard = account.type === 'credit'
 
   return (
@@ -92,11 +92,13 @@ function AccountDetailPage() {
                 <MiniStat
                   label="Due"
                   value={
-                    account.nextPaymentDueDate
-                      ? days != null
-                        ? `${days}d · ${account.nextPaymentDueDate}`
-                        : account.nextPaymentDueDate
-                      : '—'
+                    overdue
+                      ? `past due · ${account.nextPaymentDueDate}`
+                      : days != null && days >= 0 && account.nextPaymentDueDate
+                        ? days === 0
+                          ? `today · ${account.nextPaymentDueDate}`
+                          : `${days}d · ${account.nextPaymentDueDate}`
+                        : '—'
                   }
                 />
                 <MiniStat

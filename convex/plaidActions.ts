@@ -243,7 +243,7 @@ export const syncItem = internalAction({
               aprPercentage: a.apr_percentage,
               aprType: a.apr_type,
             })),
-            isOverdue: c.is_overdue ?? undefined,
+            isOverdue: c.is_overdue === true,
           })),
         })
       } catch {

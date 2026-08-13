@@ -474,7 +474,7 @@ export const updateLiabilities = internalMutation({
             }),
           ),
         ),
-        isOverdue: v.optional(v.boolean()),
+        isOverdue: v.boolean(),
       }),
     ),
   },

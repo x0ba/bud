@@ -18,7 +18,7 @@ import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import { Button } from '#/components/ui/button'
-import { daysUntil, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
+import { cardPaymentStatus, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
@@ -327,9 +327,7 @@ function AccountRow({
   const limit = account.limit ?? 0
   const utilization =
     limit > 0 ? Math.min(1, account.currentBalance / limit) : null
-  const days = daysUntil(account.nextPaymentDueDate)
-  const overdue = account.isOverdue === true || (days != null && days < 0)
-  const dueSoon = !overdue && days != null && days <= 7
+  const { days, overdue, dueSoon } = cardPaymentStatus(account)
   const hot = utilization != null && utilization > HIGH_UTILIZATION
 
   const available =
@@ -362,7 +360,8 @@ function AccountRow({
           </RowTitle>
           <RowMeta className="capitalize">
             {kind}
-            {days != null && account.nextPaymentDueDate ? (
+            {account.nextPaymentDueDate &&
+            (overdue || (days != null && days >= 0)) ? (
               <span
                 className={cn(
                   'normal-case',
@@ -374,7 +373,11 @@ function AccountRow({
                 )}
               >
                 {' · '}
-                {overdue ? 'past due' : `due in ${days}d`}
+                {overdue
+                  ? 'past due'
+                  : days === 0
+                    ? 'due today'
+                    : `due in ${days}d`}
               </span>
             ) : null}
           </RowMeta>
@@ -531,13 +534,13 @@ function buildAlerts(live: Array<Account>, items: Array<Item>): Array<Alert> {
 
   for (const account of live) {
     if (account.type !== 'credit') continue
-    const days = daysUntil(account.nextPaymentDueDate)
+    const { days, overdue, dueSoon } = cardPaymentStatus(account)
     const minimum =
       account.minimumPayment != null
         ? `${formatUsdPlain(account.minimumPayment)} minimum`
         : null
 
-    if (account.isOverdue === true || (days != null && days < 0)) {
+    if (overdue) {
       alerts.push({
         id: account._id,
         severity: 'urgent',
@@ -546,11 +549,14 @@ function buildAlerts(live: Array<Account>, items: Array<Item>): Array<Alert> {
           .filter(Boolean)
           .join(' balance · '),
       })
-    } else if (days != null && days <= 7) {
+    } else if (dueSoon && days != null) {
       alerts.push({
         id: account._id,
         severity: 'warn',
-        title: `${account.name} due in ${days} ${days === 1 ? 'day' : 'days'}`,
+        title:
+          days === 0
+            ? `${account.name} due today`
+            : `${account.name} due in ${days} ${days === 1 ? 'day' : 'days'}`,
         detail: [formatUsdPlain(account.currentBalance), minimum]
           .filter(Boolean)
           .join(' balance · '),
