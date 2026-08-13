@@ -92,7 +92,7 @@ export function DashboardMock() {
 
           <div className="lp-app-panel">
             <div className="lp-app-panel-head">
-              Where it&rsquo;s going <em>$6,412</em>
+              Where it&rsquo;s going <em>$6,603</em>
             </div>
             <div className="lp-app-panel-body">
               <div className="lp-donut-row">
@@ -113,6 +113,89 @@ export function DashboardMock() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/* The month the mocks share: $2,600 of flex with $282 left, $3,980 of fixed
+   bills against $4,400 planned, and $305 of travel filed on its own. */
+const flexSpend = [
+  { name: 'Groceries', amount: '$612' },
+  { name: 'Restaurants', amount: '$438' },
+  { name: 'Coffee', amount: '$186' },
+]
+
+const fixedLines = [
+  { name: 'Rent', spent: '$2,400', planned: '2,400', fill: '100%' },
+  { name: 'Health insurance', spent: '$640', planned: '640', fill: '100%' },
+  { name: 'Car payment', spent: '$465', planned: '465', fill: '100%' },
+  { name: 'Utilities', spent: '$180', planned: '220', fill: '82%' },
+  { name: 'Internet', spent: '$89', planned: '89', fill: '100%' },
+]
+
+/** The budget screen: one pool for everyday spending, fixed lines under it. */
+export function BudgetMock() {
+  return (
+    <div className="lp-m">
+      <div className="lp-m-head">
+        Budget <em>July</em>
+      </div>
+
+      <div className="lp-m-body">
+        <p className="lp-m-kicker">Left to spend</p>
+        <p className="lp-m-figure">$397</p>
+        <p className="lp-m-delta">$6,603 spent of $7,000 planned</p>
+      </div>
+
+      <div className="lp-m-pool">
+        <div className="lp-m-pool-head">
+          <span>
+            Flex pool
+            <em>Groceries, dining, shopping &mdash; one monthly number.</em>
+          </span>
+          <span className="lp-m-field">2,600</span>
+        </div>
+
+        <div className="lp-pace">
+          <span>
+            <b>$282</b> left
+          </span>
+          <span>2,318 of 2,600</span>
+        </div>
+        <div className="lp-pace-track">
+          <i style={{ '--w': '89%' } as CSSProperties} />
+          <span className="lp-m-today" style={{ left: '87%' }} />
+        </div>
+        <div className="lp-m-pace-note">
+          <span>89% of flex spent</span>
+          <span>87% through month</span>
+        </div>
+      </div>
+
+      <div className="lp-m-rows">
+        {flexSpend.map((row) => (
+          <div key={row.name} className="lp-m-row">
+            <span className="lp-m-name">{row.name}</span>
+            <b className="lp-m-amt">{row.amount}</b>
+          </div>
+        ))}
+      </div>
+
+      <div className="lp-m-group">
+        <span>Fixed</span>
+        <b>$3,980 of $4,400</b>
+      </div>
+      {fixedLines.map((row) => (
+        <div key={row.name} className="lp-m-fix">
+          <span className="lp-m-name">
+            {row.name} <em>{row.spent} spent</em>
+          </span>
+          <span className="lp-m-mini" aria-hidden="true">
+            <i style={{ width: row.fill }} />
+          </span>
+          <span className="lp-m-field">{row.planned}</span>
+        </div>
+      ))}
     </div>
   )
 }

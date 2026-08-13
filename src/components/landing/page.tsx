@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 
 import {
   AccountsMock,
+  BudgetMock,
   CategoriesMock,
   DashboardMock,
   NetWorthMock,
@@ -10,17 +11,33 @@ import {
 } from './mocks'
 import { useInView, useLandingCta, useNavState } from './shared'
 
-const institutions = [
-  'Chase',
-  'Amex',
-  'Fidelity',
-  'Schwab',
-  'Ally',
-  'Capital One',
+const institutions: Array<{
+  name: string
+  src: string
+  shape?: 'mark'
+}> = [
+  { name: 'Chase', src: '/landing/logos/chase.svg' },
+  { name: 'American Express', src: '/landing/logos/amex.svg', shape: 'mark' },
+  { name: 'Fidelity', src: '/landing/logos/fidelity.svg' },
+  { name: 'Charles Schwab', src: '/landing/logos/schwab.svg' },
+  { name: 'Ally', src: '/landing/logos/ally.svg' },
+  { name: 'Capital One', src: '/landing/logos/capitalone.svg' },
+  { name: 'Bank of America', src: '/landing/logos/bofa.svg' },
+  { name: 'Citi', src: '/landing/logos/citi.svg' },
+  { name: 'Discover', src: '/landing/logos/discover.svg' },
+  { name: 'Visa', src: '/landing/logos/visa.svg' },
+  { name: 'Mastercard', src: '/landing/logos/mastercard.svg', shape: 'mark' },
+  { name: 'PayPal', src: '/landing/logos/paypal.svg' },
+  { name: 'SoFi', src: '/landing/logos/sofi.svg' },
+  { name: 'PNC', src: '/landing/logos/pnc.svg' },
+  { name: 'Vanguard', src: '/landing/logos/vanguard.svg' },
+  { name: 'Robinhood', src: '/landing/logos/robinhood.svg' },
+  { name: 'Morgan Stanley', src: '/landing/logos/morgan.svg' },
 ]
 
 const features = [
   {
+    id: 'accounts',
     tone: 'mint',
     title: 'All your accounts in one place',
     body: 'Checking, savings, credit cards, and brokerages from 12,000+ institutions, side by side. Balances refresh on their own, so the total is the total.',
@@ -52,6 +69,7 @@ const features = [
     ),
   },
   {
+    id: 'net-worth',
     tone: 'lavender',
     title: 'Net worth tracking',
     body: 'A snapshot every day across every account, plus the things a bank cannot see: the house, the car, the cash in a drawer.',
@@ -70,6 +88,7 @@ const features = [
     ),
   },
   {
+    id: 'recurring',
     tone: 'peach',
     title: 'Recurring transactions',
     badge: 'In progress',
@@ -88,6 +107,7 @@ const features = [
     ),
   },
   {
+    id: 'categories',
     tone: 'sky',
     title: 'Automatic categorization',
     body: 'Everything arrives sorted. Move one charge to the right category and Bud offers to remember the merchant, then fixes the ones it already filed wrong.',
@@ -116,23 +136,8 @@ const positions = [
     body: 'A charge on a card is spending. Paying that card off is a transfer, not a second expense.',
   },
   {
-    title: 'Your own deployment',
-    body: 'Bud runs on your Convex project with your Plaid keys. No ads, no data sold, no one else reading the ledger.',
-  },
-]
-
-const steps = [
-  {
-    title: 'Connect an account',
-    body: 'Plaid handles the bank login. Balances and transactions start arriving within a minute.',
-  },
-  {
-    title: 'Set one flex number',
-    body: 'Name the fixed bills, then pick a single amount for everything else you spend day to day.',
-  },
-  {
-    title: 'Check in weekly',
-    body: 'Open the dashboard for pace, cards coming due, and what you kept. Two minutes, not an evening.',
+    title: 'Seasonal bills sit apart',
+    body: 'Travel, gifts, and the annual renewals keep their own line, so one trip does not read as a bad month.',
   },
 ]
 
@@ -144,26 +149,7 @@ export function Landing() {
     <div className="lp">
       <nav className="lp-nav" data-state={navState}>
         <div className="lp-nav-inner">
-          <span className="lp-mark">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M12 21.5V11"
-                stroke="#0d1117"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M12 12.5C12 7.9 8.9 4.6 4.2 4c-.4 4.8 2.6 8.5 7.8 8.5z"
-                fill="#2f7d73"
-              />
-              <path
-                d="M12 15c0-4.1 2.8-7.1 7-7.6.4 4.3-2.4 7.6-7 7.6z"
-                fill="#0d1117"
-                opacity="0.82"
-              />
-            </svg>
-            Bud
-          </span>
+          <Mark />
           <div className="lp-nav-actions">
             {cta.signedIn ? null : (
               <Link to="/sign-in" className="lp-btn lp-btn-outline lp-btn-sm">
@@ -177,8 +163,8 @@ export function Landing() {
         </div>
       </nav>
 
-      <div className="lp-wrap">
-        <header className="lp-hero">
+      <div className="lp-frame">
+        <header className="lp-slab lp-hero">
           <h1 className="lp-h1">
             A clear account of where your <em>money</em> goes
           </h1>
@@ -192,11 +178,12 @@ export function Landing() {
             <p className="lp-logos-note">
               Connects to 12,000+ institutions through Plaid
             </p>
-            {institutions.map((name) => (
-              <span key={name} className="lp-logo">
-                {name}
-              </span>
-            ))}
+            <div className="lp-logos-marquee">
+              <div className="lp-logos-track">
+                <LogoSet />
+                <LogoSet duplicate />
+              </div>
+            </div>
           </div>
 
           <div className="lp-stage">
@@ -204,7 +191,7 @@ export function Landing() {
           </div>
         </header>
 
-        <section className="lp-section" id="features">
+        <section className="lp-slab lp-slab-ink lp-section" id="features">
           <div className="lp-head">
             <p className="lp-eyebrow">What Bud keeps current</p>
             <h2 className="lp-display">Upkeep</h2>
@@ -218,65 +205,149 @@ export function Landing() {
               <Feature key={feature.title} {...feature} />
             ))}
           </div>
+        </section>
 
-          <div className="lp-positions">
-            {positions.map((position) => (
-              <article key={position.title}>
-                <h3>{position.title}</h3>
-                <p>{position.body}</p>
-              </article>
-            ))}
+        <section className="lp-slab lp-section" id="budget">
+          <div className="lp-head">
+            <p className="lp-eyebrow">What you decide</p>
+            <h2 className="lp-display">Budget</h2>
+            <p className="lp-sub">
+              Name the fixed bills once. Everything else you spend shares a
+              single pool.
+            </p>
+          </div>
+
+          <div className="lp-budget">
+            <div className="lp-positions">
+              {positions.map((position) => (
+                <article key={position.title}>
+                  <span className="lp-positions-rule" aria-hidden="true" />
+                  <h3>{position.title}</h3>
+                  <p>{position.body}</p>
+                </article>
+              ))}
+            </div>
+
+            <div className="lp-feature-visual" data-tone="mint">
+              <BudgetMock />
+            </div>
           </div>
         </section>
       </div>
 
-      <section className="lp-strip" id="how">
-        <div className="lp-wrap">
-          <div className="lp-head">
-            <p className="lp-eyebrow">How it works</p>
-            <h2 className="lp-h2">Set up once, then check in</h2>
-          </div>
-          <div className="lp-steps">
-            {steps.map((step) => (
-              <div key={step.title} className="lp-step">
-                <span className="lp-step-rule" aria-hidden="true" />
-                <h3>{step.title}</h3>
-                <p>{step.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <footer className="lp-foot">
+        <div className="lp-frame lp-foot-bar">
+          <Link to="/" className="lp-foot-brand" aria-label="Bud home">
+            <Mark />
+          </Link>
 
-      <div className="lp-wrap">
-        <section className="lp-close">
-          <h2>Start with one account</h2>
-          <p>
-            Connect a checking account and the month fills in on its own. Add
-            cards and brokerages when you are ready.
-          </p>
-          <div className="lp-close-cta">
-            <Link to={cta.primaryTo} className="lp-btn">
-              {cta.primaryLabel}
-            </Link>
+          <div className="lp-foot-cols">
+            <nav className="lp-foot-col" aria-label="Product">
+              <p>Product</p>
+              <a href="#accounts">Accounts</a>
+              <a href="#net-worth">Net worth</a>
+              <a href="#recurring">Recurring</a>
+              <a href="#budget">Budget</a>
+            </nav>
+            <nav className="lp-foot-col" aria-label="Stack">
+              <p>Stack</p>
+              <a href="https://plaid.com" target="_blank" rel="noreferrer">
+                Plaid
+              </a>
+              <a href="https://clerk.com" target="_blank" rel="noreferrer">
+                Clerk
+              </a>
+              <a href="https://www.convex.dev" target="_blank" rel="noreferrer">
+                Convex
+              </a>
+            </nav>
+          </div>
+
+          <div className="lp-foot-cta">
             {cta.signedIn ? null : (
-              <Link to="/sign-in" className="lp-btn lp-btn-outline">
+              <Link to="/sign-in" className="lp-btn lp-btn-outline lp-btn-sm">
                 Sign in
               </Link>
             )}
+            <Link to={cta.primaryTo} className="lp-btn lp-btn-outline lp-btn-sm">
+              {cta.primaryLabel}
+            </Link>
           </div>
-        </section>
+        </div>
 
-        <footer className="lp-foot">
-          <span>Bud</span>
-          <span>Bank data by Plaid · sign-in by Clerk · data in Convex</span>
-        </footer>
-      </div>
+        <div className="lp-foot-well" aria-hidden="true">
+          <svg className="lp-foot-watermark" viewBox="0 0 24 24">
+            <path
+              d="M12 21.5V11"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+            />
+            <path
+              d="M12 12.5C12 7.9 8.9 4.6 4.2 4c-.4 4.8 2.6 8.5 7.8 8.5z"
+              fill="currentColor"
+              opacity="0.55"
+            />
+            <path
+              d="M12 15c0-4.1 2.8-7.1 7-7.6.4 4.3-2.4 7.6-7 7.6z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      </footer>
     </div>
   )
 }
 
+function LogoSet({ duplicate = false }: { duplicate?: boolean }) {
+  return (
+    <ul className="lp-logos-set" aria-hidden={duplicate || undefined}>
+      {institutions.map((institution) => (
+        <li
+          key={institution.name}
+          className="lp-logo"
+          data-shape={institution.shape}
+        >
+          <img
+            src={institution.src}
+            alt={duplicate ? '' : institution.name}
+            height={institution.shape === 'mark' ? 30 : 24}
+            draggable={false}
+          />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Mark() {
+  return (
+    <span className="lp-mark">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 21.5V11"
+          stroke="#0d1117"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M12 12.5C12 7.9 8.9 4.6 4.2 4c-.4 4.8 2.6 8.5 7.8 8.5z"
+          fill="#2f7d73"
+        />
+        <path
+          d="M12 15c0-4.1 2.8-7.1 7-7.6.4 4.3-2.4 7.6-7 7.6z"
+          fill="#0d1117"
+          opacity="0.82"
+        />
+      </svg>
+      Bud
+    </span>
+  )
+}
+
 function Feature({
+  id,
   tone,
   title,
   body,
@@ -284,6 +355,7 @@ function Feature({
   icon,
   visual,
 }: {
+  id: string
   tone: string
   title: string
   body: string
@@ -294,7 +366,7 @@ function Feature({
   const { ref, inView } = useInView<HTMLElement>()
 
   return (
-    <article ref={ref} className="lp-feature" data-in={inView}>
+    <article ref={ref} id={id} className="lp-feature" data-in={inView}>
       <h3>
         <span className="lp-feature-icon">{icon}</span>
         {title}
