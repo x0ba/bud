@@ -73,6 +73,7 @@ function InvestmentsPage() {
                       color: typeColor(t.type),
                     }))}
                     size={140}
+                    centerLabel="held"
                   />
                   <DataList className="w-full">
                     {data.byType.map((t) => (

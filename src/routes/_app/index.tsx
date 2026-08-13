@@ -238,8 +238,9 @@ function DashboardPage() {
                   All accounts
                 </Link>
               }
+              flush
             >
-              <ul className="flex flex-col gap-2 pt-1">
+              <ul className="flex flex-col">
                 {attention.map((item) => (
                   <li
                     key={item.key}

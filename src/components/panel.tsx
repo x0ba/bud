@@ -11,6 +11,7 @@ const PANEL_STATE_PREFIX = 'bud.panel.'
  * full width. Spans are written out so Tailwind can see the class names.
  */
 const SPAN_CLASS = {
+  3: 'xl:col-span-3',
   4: 'xl:col-span-4',
   5: 'xl:col-span-5',
   6: 'xl:col-span-6',

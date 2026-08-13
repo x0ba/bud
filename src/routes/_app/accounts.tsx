@@ -117,8 +117,9 @@ function AccountsPage() {
               id="accounts-alerts"
               title="Needs attention"
               hint={`${view.alerts.length} ${view.alerts.length === 1 ? 'item' : 'items'}`}
+              flush
             >
-              <ul className="flex flex-col gap-2 pt-1">
+              <ul className="flex flex-col">
                 {view.alerts.map((alert) => (
                   <li
                     key={alert.id}

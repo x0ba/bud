@@ -199,11 +199,6 @@ function CategoriesPage() {
               span={4}
               title={section.title}
               description={section.description}
-              hint={
-                section.groups.length > 0
-                  ? `${section.groups.length}`
-                  : undefined
-              }
               flush
               action={
                 <Button

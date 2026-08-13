@@ -2,9 +2,11 @@
 export function CategoryDonut({
   segments,
   size = 120,
+  centerLabel = 'spent',
 }: {
   segments: Array<{ name: string; color: string; amount: number }>
   size?: number
+  centerLabel?: string
 }) {
   const total = segments.reduce((s, x) => s + x.amount, 0)
   if (total <= 0) {
@@ -62,7 +64,7 @@ export function CategoryDonut({
         className="fill-muted-foreground"
         style={{ fontSize: 10, fontWeight: 500 }}
       >
-        spent
+        {centerLabel}
       </text>
       <text
         x={r}

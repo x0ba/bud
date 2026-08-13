@@ -503,6 +503,19 @@ pre code {
   --attention: var(--destructive);
 }
 
+/* Inside a panel the walls already frame it, so the band gives up its box and
+   keeps only the severity rule — one boundary per thing, not two. */
+.panel-content-flush .attention-band {
+  border-radius: 0;
+  border-width: 0 0 1px 2px;
+  border-bottom-color: color-mix(in oklab, var(--border) 70%, transparent);
+  padding: 0.625rem 0.75rem;
+}
+
+.panel-content-flush .attention-band:last-child {
+  border-bottom-width: 0;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -164,7 +164,7 @@ function BudgetPage() {
           <PageBody>
           <Panel
             id="budget-flex"
-            span={5}
+            span={4}
             title="Flex pool"
             description="Groceries, dining, shopping — one monthly number."
             value={formatUsdPlain(data.totals.flexSpent)}
@@ -216,7 +216,7 @@ function BudgetPage() {
 
           <Panel
             id="budget-fixed"
-            span={7}
+            span={5}
             title="Fixed"
             description="Rent, insurance, subscriptions — same every month."
             value={formatUsdPlain(rollup.fixedSpent)}
@@ -293,7 +293,7 @@ function BudgetPage() {
 
           <Panel
             id="budget-non-monthly"
-            span={5}
+            span={3}
             title="Non-monthly"
             description="Travel and irregular expenses this month."
             value={formatUsdPlain(rollup.nonMonthlySpent)}
