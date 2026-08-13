@@ -137,14 +137,14 @@ function BudgetPage() {
                 )
               }
             />
-            <div className="flex flex-wrap items-end gap-3">
+            <div className="flex w-full min-w-0 flex-wrap items-end gap-3">
               <div className="min-w-0 flex-1 basis-full sm:flex-none sm:basis-auto">
                 <Kicker>Month</Kicker>
                 <Input
                   type="month"
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="mt-1.5 w-full min-w-0 sm:w-[150px]"
+                  className="mt-1.5 w-full sm:w-44"
                   aria-label="Month"
                 />
               </div>
@@ -154,7 +154,7 @@ function BudgetPage() {
                   inputMode="decimal"
                   value={expectedIncome}
                   onChange={(e) => setExpectedIncome(e.target.value)}
-                  className="mt-1.5 w-full min-w-0 text-right tabular-nums sm:w-[130px]"
+                  className="mt-1.5 w-full text-right tabular-nums sm:w-[130px]"
                   placeholder="0"
                   aria-label="Expected income"
                 />
@@ -185,7 +185,7 @@ function BudgetPage() {
                   inputMode="decimal"
                   value={flexBudget}
                   onChange={(e) => setFlexBudget(e.target.value)}
-                  className="h-8 w-[104px] text-right tabular-nums"
+                  className="w-[104px] text-right tabular-nums"
                   placeholder="Budget"
                   aria-label="Flex budget"
                 />
@@ -284,7 +284,7 @@ function BudgetPage() {
                               [i.categoryId]: e.target.value,
                             }))
                           }
-                          className="h-8 text-right tabular-nums"
+                          className="text-right tabular-nums"
                           placeholder="0"
                           aria-label={`Planned amount for ${i.name}`}
                         />

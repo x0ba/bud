@@ -218,7 +218,7 @@ export function PageSummary({
   return (
     <section
       className={cn(
-        'flex flex-col items-stretch gap-4 pb-4',
+        'flex w-full min-w-0 flex-col items-stretch gap-4 pb-4',
         'sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-10 sm:gap-y-5 sm:pb-5',
         'border-b border-border/70',
         className,

@@ -187,7 +187,7 @@ function TransactionsPage() {
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="min-w-0 flex-1 sm:w-[160px] sm:flex-none"
+              className="min-w-0 flex-1 sm:w-44 sm:flex-none"
             />
             <Select
               value={accountId ?? 'all'}
