@@ -127,7 +127,7 @@ width its rows actually need.
 | ------------ | ----------------------------------------------------------------------------------------------------- |
 | Dashboard    | Needs you (12) · Where it's going (5) · Recent (7)                                                    |
 | Transactions | Ledger (12), flush                                                                                    |
-| Budget       | Flex pool (4) · Fixed (5) · Non-monthly (3)                                                           |
+| Budget       | Flex pool (6) · Fixed (6) · Non-monthly (6)                                                           |
 | Cash flow    | one panel **per budget type** (4 each)                                                                |
 | Net worth    | Trend (12) · Assets (6) · Debts (6)                                                                   |
 | Investments  | Allocation (4) · Holdings (8)                                                                         |
