@@ -92,6 +92,8 @@ an element that also matches a rule here silently loses. This is why:
 
 - the base `a { color }` lives in `@layer base` — otherwise every navigation
   label rendered as a link colour despite the class asking for ink;
+- chrome links (`a.no-underline`) inherit, and the painted label lives on a
+  child, so a stray unlayered `a { color }` cannot reach a nav row;
 - `.mobile-tabbar` hides itself with a media query rather than `md:hidden`.
 
 Before adding a plain CSS rule, check whether call sites pass a utility for the

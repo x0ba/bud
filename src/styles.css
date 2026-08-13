@@ -195,9 +195,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* In `base` so a Tailwind colour utility can still win: unlayered element rules
-   beat layered ones whatever their specificity, which quietly turned every
-   navigation label into a link colour despite the class asking for ink. */
+/* Content links. In `base` so a Tailwind colour utility can still win —
+   an unlayered element rule beats `@layer utilities` whatever the
+   specificity, which quietly turned every navigation label teal. */
 @layer base {
   a {
     color: var(--lagoon-deep);
@@ -212,6 +212,17 @@ body {
   a:hover {
     color: #2f5f59;
   }
+}
+
+/* Chrome / row links opt out. Unlayered so it beats the content-link
+   colour even if that rule is pulled out of `base`. The painted label
+   lives on a child, not the `<a>`. */
+a.no-underline {
+  color: inherit;
+}
+
+a.no-underline:hover {
+  color: inherit;
 }
 
 code {

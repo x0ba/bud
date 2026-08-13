@@ -87,7 +87,6 @@ function NavLink({
         'transition-transform duration-[150ms]',
         EASE,
         'active:scale-[0.98]',
-        active ? 'text-[var(--sea-ink)]' : 'text-[var(--sea-ink-soft)]',
       )}
     >
       <span className={ICON_RAIL}>
@@ -101,9 +100,12 @@ function NavLink({
       <span
         aria-hidden={collapsed || undefined}
         className={cn(
-          'shrink-0 pr-3 whitespace-nowrap transition-opacity duration-[200ms] motion-reduce:transition-none',
+          'shrink-0 pr-3 whitespace-nowrap transition-[opacity,color] duration-[200ms] motion-reduce:transition-none',
           EASE,
           collapsed ? 'opacity-0' : 'opacity-100',
+          active
+            ? 'text-[var(--sea-ink)]'
+            : 'text-[var(--sea-ink-soft)] group-hover:text-[var(--sea-ink)]',
         )}
       >
         {label}
@@ -247,7 +249,9 @@ export function AppSidebar() {
             className={cn(
               'kicker shrink-0 pr-3 pl-14 whitespace-nowrap transition-opacity duration-[200ms] motion-reduce:transition-none',
               EASE,
-              collapsed ? 'h-0 overflow-hidden pb-0 opacity-0' : 'pb-1.5 opacity-100',
+              collapsed
+                ? 'h-0 overflow-hidden pb-0 opacity-0'
+                : 'pb-1.5 opacity-100',
             )}
           >
             Settings

@@ -173,17 +173,24 @@ function MoreGroup({
               to={to}
               className={cn(
                 'flex min-h-11 items-center gap-3 rounded-lg px-3 text-[15px] font-medium no-underline transition-[background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.99]',
-                active
-                  ? 'bg-muted text-[var(--sea-ink)]'
-                  : 'text-[var(--sea-ink-soft)]',
+                active && 'bg-muted',
               )}
             >
-              <Icon
-                className="size-[1.125rem] shrink-0 opacity-80"
-                strokeWidth={active ? 2 : 1.75}
-                aria-hidden
-              />
-              {label}
+              <span
+                className={cn(
+                  'flex min-w-0 flex-1 items-center gap-3',
+                  active
+                    ? 'text-[var(--sea-ink)]'
+                    : 'text-[var(--sea-ink-soft)]',
+                )}
+              >
+                <Icon
+                  className="size-[1.125rem] shrink-0 opacity-80"
+                  strokeWidth={active ? 2 : 1.75}
+                  aria-hidden
+                />
+                {label}
+              </span>
             </Link>
           </li>
         )
