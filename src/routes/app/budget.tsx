@@ -138,22 +138,22 @@ function BudgetPage() {
               }
             />
             <div className="flex flex-wrap items-end gap-3">
-              <div>
+              <div className="min-w-0 flex-1 sm:flex-none">
                 <Kicker>Month</Kicker>
                 <Input
                   type="month"
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="mt-1.5 w-[150px]"
+                  className="mt-1.5 w-full sm:w-[150px]"
                 />
               </div>
-              <div>
+              <div className="min-w-0 flex-1 sm:flex-none">
                 <Kicker>Expected income</Kicker>
                 <Input
                   inputMode="decimal"
                   value={expectedIncome}
                   onChange={(e) => setExpectedIncome(e.target.value)}
-                  className="mt-1.5 w-[130px] text-right tabular-nums"
+                  className="mt-1.5 w-full text-right tabular-nums sm:w-[130px]"
                   placeholder="0"
                 />
               </div>
@@ -243,7 +243,7 @@ function BudgetPage() {
                     return (
                       <li
                         key={i.categoryId}
-                        className="grid grid-cols-[1fr_64px_104px] items-center gap-4 py-2.5 text-[13px]"
+                        className="grid grid-cols-[minmax(0,1fr)_40px_88px] items-center gap-2.5 py-2.5 text-[13px] sm:grid-cols-[minmax(0,1fr)_64px_104px] sm:gap-4"
                       >
                         <div className="min-w-0">
                           <p className="truncate font-medium text-[var(--sea-ink)]">
@@ -260,7 +260,7 @@ function BudgetPage() {
                           </p>
                         </div>
                         <div
-                          className="h-1 w-16 overflow-hidden rounded-full bg-muted"
+                          className="h-1 w-10 overflow-hidden rounded-full bg-muted sm:w-16"
                           aria-hidden
                         >
                           <div

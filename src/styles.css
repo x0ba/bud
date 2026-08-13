@@ -70,6 +70,17 @@
   --sidebar-accent-foreground: #1c1917;
   --sidebar-border: rgba(28, 25, 23, 0.1);
   --sidebar-ring: #3d7a72;
+
+  /* Layout frame — one gutter for the header, the page, and the panel gaps. */
+  --page-gutter: 0.75rem;
+  --tabbar-height: 3.5rem;
+}
+
+@media (width >= 48rem) {
+  :root {
+    --page-gutter: 2rem;
+    --tabbar-height: 0rem;
+  }
 }
 
 .dark {
@@ -239,8 +250,96 @@ pre code {
   height: 3rem;
   align-items: center;
   justify-content: space-between;
-  padding-inline: 2rem;
+  /* One number frames the page on a phone: the header, the page padding, and
+     the gap between panels are all 12px, so the content sits in a single
+     consistent margin instead of three competing ones. */
+  padding-inline: var(--page-gutter);
+  padding-top: env(safe-area-inset-top);
   background: var(--background);
+}
+
+.app-shell-main {
+  padding-inline: var(--page-gutter);
+  padding-top: 0.75rem;
+  /* Clears the tab bar plus the home indicator, so the last row of the ledger
+     is readable rather than parked under the chrome. */
+  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 1.5rem);
+}
+
+@media (width >= 48rem) {
+  .app-shell-main {
+    padding-top: 1rem;
+    padding-bottom: 2.5rem;
+  }
+}
+
+/* Bottom tab bar — the phone's whole navigation. Sits on the canvas like the
+   sidebar does, with one hairline for the edge: chrome you can find, never
+   chrome you look at. */
+.mobile-tabbar {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 40;
+  display: flex;
+  align-items: stretch;
+  gap: 0.125rem;
+  padding: 0.375rem 0.5rem calc(0.375rem + env(safe-area-inset-bottom));
+  border-top: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  background: var(--background);
+}
+
+.mobile-tab {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1875rem;
+  /* 44px of thumb, whatever the label does. */
+  min-height: 2.75rem;
+  padding: 0.3125rem 0.125rem;
+  border-radius: 8px;
+  color: var(--sea-ink-soft);
+  text-decoration: none;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-press) var(--ease-out);
+}
+
+.mobile-tab svg {
+  opacity: 0.72;
+}
+
+/* Same muted fill the sidebar uses for the current page — one active language
+   across both navigations. */
+.mobile-tab[data-active] {
+  background: var(--muted);
+  color: var(--sea-ink);
+}
+
+.mobile-tab[data-active] svg {
+  opacity: 0.9;
+}
+
+.mobile-tab:active {
+  transform: scale(0.96);
+}
+
+.mobile-tab-label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-tab[data-active] .mobile-tab-label {
+  font-weight: 600;
 }
 
 /* Dense ledger UI — quiet hierarchy for lists, tables, and figures */
@@ -253,8 +352,10 @@ pre code {
   line-height: 1.2;
 }
 
+/* Scales with the viewport so a seven-figure net worth still lands on one line
+   at 390px — the page's one focal figure can't be the thing that clips. */
 .hero-figure {
-  font-size: 2.75rem;
+  font-size: clamp(2rem, 9.2vw, 2.75rem);
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.03em;
@@ -282,7 +383,13 @@ pre code {
   min-width: 0;
   grid-template-columns: 1fr;
   align-items: start;
-  gap: 1rem;
+  gap: 0.75rem;
+}
+
+@media (width >= 48rem) {
+  .page-body {
+    gap: 1rem;
+  }
 }
 
 @media (width >= 80rem) {
@@ -409,9 +516,31 @@ pre code {
   gap: 0.5rem;
 }
 
+/* A folded panel is meant to read as one row of title + figure, and on a phone
+   that only survives while the trailing side stays small. Give the title at
+   least 60% and the header breaks onto a second line exactly when the figure,
+   its hint, and any control would otherwise crush the title into a column of
+   single words. */
+@media (width < 48rem) {
+  .panel-head {
+    min-height: 2.75rem;
+    flex-wrap: wrap;
+    row-gap: 0.375rem;
+  }
+
+  .panel-trigger {
+    min-width: 60%;
+  }
+
+  .panel-trailing {
+    margin-left: auto;
+  }
+}
+
 /* 0fr → 1fr animates the fold without measuring the content. */
 .panel-body {
   display: grid;
+  min-width: 0;
   grid-template-rows: 0fr;
   transition: grid-template-rows var(--duration-ui) var(--ease-out);
 }
@@ -420,7 +549,11 @@ pre code {
   grid-template-rows: 1fr;
 }
 
+/* A grid item defaults to `min-width: auto`, so a nowrap row inside would push
+   the panel past its own track instead of truncating — invisible at desktop
+   widths, and the reason a 385px alert row escaped a 366px panel on a phone. */
 .panel-body-inner {
+  min-width: 0;
   min-height: 0;
   overflow: clip;
 }
@@ -648,6 +781,95 @@ pre code {
   }
 }
 
+/* The ledger as a receipt stub.
+
+   Four columns need ~700px; a phone has 366. Scrolling the table sideways
+   would put the amount — the thing you came for — off-screen, so below `md`
+   each row folds into a 2×2 stub instead: merchant and amount lead on the top
+   line, category and account demote to a muted second line. Same cells, same
+   markup, same reading order; only the geometry changes. */
+@media (width < 48rem) {
+  .ledger-table,
+  .ledger-table tbody,
+  .ledger-table tr,
+  .ledger-table td {
+    display: block;
+  }
+
+  .ledger-table thead {
+    display: none;
+  }
+
+  .ledger-table tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 1px 0.75rem;
+    padding: 0.5625rem 0.75rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+  }
+
+  .ledger-table tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .ledger-table td {
+    padding: 0;
+    border-bottom: 0;
+  }
+
+  /* Merchant + amount on line one, category + account on line two. */
+  .ledger-table tbody tr td:nth-child(3),
+  .ledger-table tbody tr td:nth-child(4) {
+    text-align: right;
+  }
+
+  .ledger-table tbody tr td:nth-child(2),
+  .ledger-table tbody tr td:nth-child(3) {
+    font-size: 12px;
+  }
+
+  .ledger-table tbody tr td:nth-child(4) {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .ledger-table tbody tr td:nth-child(3) {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  /* The day subhead keeps its two-up shape — label left, day's spend right. */
+  .ledger-table tbody tr.ledger-group {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1.125rem 0.75rem 0.375rem;
+    border-bottom: 1px solid color-mix(in oklab, var(--border) 45%, transparent);
+  }
+
+  .ledger-table tbody tr.ledger-group:first-child {
+    padding-top: 0.625rem;
+  }
+
+  .ledger-table tbody tr.ledger-group td {
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+    border-bottom: 0;
+  }
+
+  /* The "nothing matches" row is a single full-width cell, not a stub. */
+  .ledger-table tbody tr:has(td[colspan='4']) {
+    display: block;
+    padding: 0;
+  }
+}
+
 .range-pill {
   border-radius: 6px;
   padding: 0.25rem 0.625rem;
@@ -783,6 +1005,65 @@ pre code {
 
 .pressable:active {
   transform: scale(0.97);
+}
+
+/* A control that hides in a row until you go looking for it. On a mouse it
+   waits for hover; a touch screen has no hover, so it would simply never
+   exist — there it rests at a quiet opacity instead. The pseudo-element pushes
+   the 24px glyph out to a 40px hit area without moving the layout. */
+.row-action {
+  position: relative;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.row-action::after {
+  content: '';
+  position: absolute;
+  inset: -0.5rem;
+}
+
+.group:hover .row-action,
+.row-action:focus-visible,
+.row-action[data-visible] {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .row-action {
+    opacity: 0.5;
+  }
+}
+
+/* Touch sizing. Density is the point of this interface, so rows keep their
+   13px type and hairlines and grow only to the 44px a thumb needs. */
+@media (hover: none) {
+  .data-row,
+  .panel-head {
+    min-height: 2.75rem;
+  }
+
+  .range-pill {
+    padding-block: 0.5rem;
+  }
+
+  /* Vertical-only, so neighbouring buttons in a row can't overlap targets. */
+  [data-slot='button'][data-size='sm'],
+  [data-slot='button'][data-size='xs'],
+  [data-slot='button'][data-size='icon-xs'],
+  [data-slot='button'][data-size='icon-sm'] {
+    position: relative;
+  }
+
+  [data-slot='button'][data-size='sm']::after,
+  [data-slot='button'][data-size='xs']::after,
+  [data-slot='button'][data-size='icon-xs']::after,
+  [data-slot='button'][data-size='icon-sm']::after {
+    content: '';
+    position: absolute;
+    inset-block: -0.375rem;
+    inset-inline: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

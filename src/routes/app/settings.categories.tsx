@@ -12,7 +12,6 @@ import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
 import { prewarmQueries } from '#/lib/prewarm'
-import { cn } from '#/lib/utils'
 
 export const Route = createFileRoute('/app/settings/categories')({
   loader: () => {
@@ -323,12 +322,8 @@ function CategoryGroup({
           aria-label={`Add under ${parent.name}`}
           aria-expanded={childOpen}
           onClick={onAddChild}
-          className={cn(
-            'relative text-muted-foreground after:absolute after:-inset-2',
-            childOpen
-              ? 'opacity-100'
-              : 'opacity-0 focus-visible:opacity-100 group-hover:opacity-100',
-          )}
+          data-visible={childOpen || undefined}
+          className="row-action text-muted-foreground"
         >
           <Plus />
         </Button>
@@ -383,7 +378,7 @@ function InlineComposer({
         onChange={(e) => setName(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-8 w-[200px]"
+        className="h-9 min-w-0 flex-1 sm:h-8 sm:w-[200px] sm:flex-none"
         onKeyDown={(e) => {
           if (e.key === 'Enter') onSubmit(name)
           if (e.key === 'Escape') onCancel()

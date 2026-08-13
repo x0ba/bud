@@ -20,8 +20,11 @@ export const Route = createRootRoute({
       { charSet: 'utf-8' },
       {
         name: 'viewport',
-        content: 'width=device-width, initial-scale=1',
+        // `viewport-fit=cover` is what makes env(safe-area-inset-*) resolve to
+        // anything but zero — the tab bar sits on the home indicator without it.
+        content: 'width=device-width, initial-scale=1, viewport-fit=cover',
       },
+      { name: 'theme-color', content: '#f5f2ea' },
       { title: 'Bud — Where does your money go?' },
     ],
     links: [{ rel: 'stylesheet', href: appCss }],

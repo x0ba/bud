@@ -235,9 +235,9 @@ function NetWorthPage() {
                   : 'Connect an account or add an asset to start the trend.'
             }
           />
-          <div className="flex items-end gap-8">
+          <div className="flex flex-wrap items-end gap-8">
             {debtShare != null ? (
-              <div className="hidden w-[220px] space-y-2 sm:block">
+              <div className="hidden w-[220px] space-y-2 lg:block">
                 <ShareBar
                   value={summary.liabilities}
                   total={summary.assets}
@@ -466,23 +466,23 @@ function NetWorthPage() {
 
             {adding ? (
               <div className="rise-in flex flex-wrap items-end gap-2 rounded-lg border border-border/70 bg-muted/25 p-3">
-                <div>
+                <div className="min-w-0 flex-1 basis-full sm:basis-auto">
                   <Kicker>Name</Kicker>
                   <Input
                     placeholder="Home"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="mt-1.5 w-[150px]"
+                    className="mt-1.5 w-full sm:w-[150px]"
                     aria-label="Asset name"
                   />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1 sm:flex-none">
                   <Kicker>Type</Kicker>
                   <Select
                     value={type}
                     onValueChange={(v) => setType(v as typeof type)}
                   >
-                    <SelectTrigger className="mt-1.5 w-[124px]">
+                    <SelectTrigger className="mt-1.5 w-full sm:w-[124px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -494,14 +494,14 @@ function NetWorthPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
+                <div className="min-w-0 flex-1 sm:flex-none">
                   <Kicker>Value</Kicker>
                   <Input
                     placeholder="0"
                     inputMode="decimal"
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
-                    className="mt-1.5 w-[124px] text-right tabular-nums"
+                    className="mt-1.5 w-full text-right tabular-nums sm:w-[124px]"
                     aria-label="Asset value"
                   />
                 </div>
@@ -616,8 +616,7 @@ function HoldingRow({
             size="icon-xs"
             aria-label={`Remove ${holding.name}`}
             onClick={holding.onRemove}
-            // Hit area expands past the 24px glyph to clear the 40px minimum.
-            className="relative text-muted-foreground opacity-0 after:absolute after:-inset-2 hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+            className="row-action text-muted-foreground hover:text-destructive"
           >
             <X />
           </Button>

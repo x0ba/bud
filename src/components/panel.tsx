@@ -128,7 +128,7 @@ export function Page({
   className?: string
 }) {
   return (
-    <div className={cn('flex w-full min-w-0 flex-col gap-4', className)}>
+    <div className={cn('flex w-full min-w-0 flex-col gap-3 md:gap-4', className)}>
       {children}
     </div>
   )
@@ -139,6 +139,10 @@ export function Page({
  * counterweights on the right, closed with a hairline. Deliberately *not* a
  * panel — a hero inside a card would read as a peer of the data areas instead
  * of leading them.
+ *
+ * On a phone there is no "right", so the counterweights fall under the figure
+ * and stretch to the full width — the hierarchy becomes vertical rather than
+ * disappearing into a wrap.
  */
 export function PageSummary({
   children,
@@ -150,8 +154,9 @@ export function PageSummary({
   return (
     <section
       className={cn(
-        'flex flex-wrap items-end justify-between gap-x-10 gap-y-5',
-        'border-b border-border/70 pb-5',
+        'flex flex-col items-stretch gap-4 pb-4',
+        'sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-10 sm:gap-y-5 sm:pb-5',
+        'border-b border-border/70',
         className,
       )}
     >
