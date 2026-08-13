@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { CategoryDot, Kicker, ShareBar, Stat } from '#/components/dense'
+import { CategoryDot, Kicker, Stat } from '#/components/dense'
 import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
@@ -145,14 +145,6 @@ function TransactionsPage() {
 
   const listReady = status !== 'LoadingFirstPage'
 
-  // Full width gave the ledger room the four text columns weren't using, so
-  // magnitude gets a column: relative size is readable without comparing every
-  // figure to every other one.
-  const largest = useMemo(
-    () => Math.max(...results.map((r) => Math.abs(r.amount)), 1),
-    [results],
-  )
-
   // Chunk the ledger by day so the date drops out of every row, and total each
   // day — a run of 40 identical rows becomes a handful of scannable groups.
   const groups = useMemo(() => {
@@ -224,19 +216,16 @@ function TransactionsPage() {
               <table className="ledger-table">
                 <thead>
                   <tr>
-                    <th className="w-[34%]">Merchant</th>
-                    <th className="w-[22%]">Category</th>
-                    <th className="w-[18%]">Account</th>
-                    <th className="w-[14%]">
-                      <span className="sr-only">Relative size</span>
-                    </th>
-                    <th className="w-[12%] text-right">Amount</th>
+                    <th className="w-[42%]">Merchant</th>
+                    <th className="w-[24%]">Category</th>
+                    <th className="w-[20%]">Account</th>
+                    <th className="w-[14%] text-right">Amount</th>
                   </tr>
                 </thead>
                 {groups.map((group) => (
                   <tbody key={group.date}>
                     <tr className="ledger-group">
-                      <td colSpan={4}>{formatDayLabel(group.date)}</td>
+                      <td colSpan={3}>{formatDayLabel(group.date)}</td>
                       <td className="text-right">
                         {group.spent > 0 ? formatUsdPlain(group.spent) : null}
                       </td>
@@ -286,18 +275,6 @@ function TransactionsPage() {
                         <td className="truncate text-muted-foreground">
                           {tx.accountName}
                         </td>
-                        <td>
-                          <ShareBar
-                            value={tx.amount}
-                            total={largest}
-                            color={
-                              tx.amount < 0
-                                ? 'var(--palm)'
-                                : (tx.categoryColor ??
-                                  'color-mix(in oklab, var(--sea-ink) 30%, transparent)')
-                            }
-                          />
-                        </td>
                         <td className="text-right">
                           <Money amount={tx.amount} plaid />
                         </td>
@@ -309,7 +286,7 @@ function TransactionsPage() {
                   <tbody>
                     <tr>
                       <td
-                        colSpan={5}
+                        colSpan={4}
                         className="px-3 py-12 text-center text-muted-foreground"
                       >
                         No transactions match these filters.

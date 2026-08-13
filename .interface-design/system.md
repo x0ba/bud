@@ -156,10 +156,11 @@ Inputs/selects: inset `bg-muted/40`, no hard shadow; focus lifts to `bg-backgrou
 
 ### Ledger table
 
-Full width gave the four text columns more room than they used any of, so the
-merchant column stopped absorbing it: columns are percentages (34 / 22 / 18 / 14
-/ 12) and the space bought a **magnitude bar** column — relative size without
-comparing every figure to every other one.
+Four columns: merchant / category / account / amount (42 / 24 / 20 / 14). The
+amount is already a comparable tabular figure — a magnitude bar next to it
+looked like unlabeled progress and collapsed to a sliver against any large
+inflow. ShareBar stays on accounts, cash flow, and net worth, where the
+denominator is a real total (limit, category spend, holdings).
 
 ### Nav
 
@@ -175,8 +176,9 @@ Document scroll · sticky `h-dvh` sidebar · sticky header (`.app-shell-header`,
 - 40px of air as the only thing separating sections → panels with walls
 - Cards nested inside cards (attention bands inside a panel) → the band gives up
   its box and keeps only its severity rule
-- One flexible column swallowing all the new width → percentage columns, and
-  spend the surplus on a magnitude bar
+- One flexible column swallowing all the new width → percentage columns
+- Magnitude bars in the ledger (looked like unlabeled progress; the amount
+  already compares) → bars only where the denominator is a real total
 - Equal-height cards in a row → panels hug their content
 - `overflow: hidden` to animate a fold → `clip`, which keeps sticky alive
 - Counts on section headers → the list is the answer
