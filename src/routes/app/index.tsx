@@ -26,7 +26,7 @@ import {
 } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
-export const Route = createFileRoute('/_app/')({
+export const Route = createFileRoute('/app/')({
   loader: () => {
     prewarmQueries(
       { query: api.dashboard.overview },
@@ -229,7 +229,7 @@ function DashboardPage() {
                 </span>
               ) : (
                 <Fragment>
-                  <Link to="/budget" className="font-medium">
+                  <Link to="/app/budget" className="font-medium">
                     Set a flex budget
                   </Link>{' '}
                   to track against a target.
@@ -246,7 +246,7 @@ function DashboardPage() {
               title="Needs you"
               hint={`${attention.length} ${attention.length === 1 ? 'item' : 'items'}`}
               action={
-                <Link to="/accounts" className="section-link">
+                <Link to="/app/accounts" className="section-link">
                   All accounts
                 </Link>
               }
@@ -292,7 +292,7 @@ function DashboardPage() {
             description={`Biggest categories in ${monthLabel}.`}
             value={formatUsdPlain(data.spentThisMonth)}
             action={
-              <Link to="/cash-flow" className="section-link">
+              <Link to="/app/cash-flow" className="section-link">
                 Cash flow
               </Link>
             }
@@ -345,7 +345,7 @@ function DashboardPage() {
                 : undefined
             }
             action={
-              <Link to="/transactions" className="section-link">
+              <Link to="/app/transactions" className="section-link">
                 View all
               </Link>
             }

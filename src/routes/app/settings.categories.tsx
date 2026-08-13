@@ -14,7 +14,7 @@ import { Input } from '#/components/ui/input'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
-export const Route = createFileRoute('/_app/settings/categories')({
+export const Route = createFileRoute('/app/settings/categories')({
   loader: () => {
     prewarmQueries({ query: api.categories.list })
   },

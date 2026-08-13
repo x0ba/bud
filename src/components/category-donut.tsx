@@ -1,4 +1,5 @@
-import { useState, type PointerEvent } from 'react'
+import { useState } from 'react'
+import type { PointerEvent } from 'react'
 import { ChartHoverTip, svgPointToClient } from '#/components/chart-hover-tip'
 import { formatUsdPlain } from '#/lib/money'
 import { cn } from '#/lib/utils'

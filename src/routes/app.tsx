@@ -12,7 +12,7 @@ const requireAuth = createServerFn({ method: 'GET' }).handler(async () => {
   return { userId: session.userId }
 })
 
-export const Route = createFileRoute('/_app')({
+export const Route = createFileRoute('/app')({
   beforeLoad: async () => {
     // The server round trip is only needed to gate the initial SSR request.
     // Client-side navigations and preloads check Clerk's local session state;

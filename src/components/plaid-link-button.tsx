@@ -19,7 +19,9 @@ export function PlaidLinkButton({
 }) {
   const ensureReady = useMutation(api.users.ensureReady)
   const createLinkToken = useAction(api.plaidActions.createLinkToken)
-  const createUpdateLinkToken = useAction(api.plaidActions.createUpdateLinkToken)
+  const createUpdateLinkToken = useAction(
+    api.plaidActions.createUpdateLinkToken,
+  )
   const exchangePublicToken = useAction(api.plaidActions.exchangePublicToken)
   const syncItem = useAction(api.plaidActions.syncItemForUser)
   const [linkToken, setLinkToken] = useState<string | null>(null)

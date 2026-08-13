@@ -29,7 +29,7 @@ function typeColor(type: string): string {
   return TYPE_COLORS[type.toLowerCase()] ?? OTHER_TYPE_COLOR
 }
 
-export const Route = createFileRoute('/_app/investments')({
+export const Route = createFileRoute('/app/investments')({
   loader: () => {
     prewarmQueries({ query: api.investments.portfolio })
   },

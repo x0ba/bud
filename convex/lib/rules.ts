@@ -101,7 +101,8 @@ export function looksLikeTransfer(tx: {
   const primary = tx.plaidCategoryPrimary ?? ''
   if (primary.startsWith('TRANSFER')) return true
   if (primary === 'LOAN_PAYMENTS') return true
-  const text = `${tx.merchantName ?? ''} ${tx.originalDescription}`.toLowerCase()
+  const text =
+    `${tx.merchantName ?? ''} ${tx.originalDescription}`.toLowerCase()
   return (
     text.includes('payment thank you') ||
     text.includes('autopay') ||

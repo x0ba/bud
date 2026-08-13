@@ -30,7 +30,7 @@ import { formatDateShort, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
-export const Route = createFileRoute('/_app/net-worth')({
+export const Route = createFileRoute('/app/net-worth')({
   loader: () => {
     prewarmQueries(
       { query: api.netWorth.summary },

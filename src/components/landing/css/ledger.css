@@ -1,0 +1,541 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN 1 — LEDGER
+   The page as printed statement: one monospace family for everything, ink on
+   warm paper, hairline rules, dot leaders, and a receipt that prints itself.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+.lp1 {
+  --paper: #f6f2e9;
+  --card: #fffdf7;
+  --ink: #15120f;
+  --ink-soft: #5b544b;
+  --ink-faint: #8d857a;
+  --rule: rgba(21, 18, 15, 0.16);
+  --rule-soft: rgba(21, 18, 15, 0.09);
+  --stamp: #1c6a60;
+  --debit: #ab3d2c;
+  --e: cubic-bezier(0.2, 0.9, 0.3, 1);
+
+  min-height: 100vh;
+  background-color: var(--paper);
+  background-image: radial-gradient(
+    rgba(21, 18, 15, 0.045) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+/* Only the underline is reset here. Colour stays with the component classes:
+   `.lp1 a` would outrank a single-class rule like `.lp1-btn` and repaint every
+   button label. */
+.lp1 a {
+  text-decoration: none;
+}
+
+.lp1-wrap {
+  width: min(1120px, calc(100% - 2.5rem));
+  margin-inline: auto;
+}
+
+/* Nav ── */
+.lp1-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 18px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.lp1-mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.lp1-mark-box {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--ink);
+  font-size: 12px;
+  line-height: 1;
+}
+
+.lp1-nav-meta {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.lp1-nav-meta a {
+  color: inherit;
+}
+
+.lp1-nav-meta a:hover {
+  color: var(--ink);
+}
+
+/* Buttons ── */
+.lp1-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border: 1.5px solid var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  transition:
+    transform 140ms var(--e),
+    background-color 140ms var(--e),
+    color 140ms var(--e);
+}
+
+.lp1-btn:hover {
+  background: var(--stamp);
+  border-color: var(--stamp);
+  color: #fffdf7;
+}
+
+.lp1-btn:active {
+  transform: translateY(1px);
+}
+
+.lp1-btn-ghost {
+  background: transparent;
+  color: var(--ink);
+}
+
+.lp1-btn-ghost:hover {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+/* Hero ── */
+.lp1-hero {
+  display: grid;
+  gap: 56px;
+  padding-block: 72px 88px;
+  align-items: start;
+}
+
+@media (width >= 62rem) {
+  .lp1-hero {
+    grid-template-columns: minmax(0, 1fr) 372px;
+    gap: 72px;
+  }
+}
+
+.lp1-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--stamp);
+}
+
+.lp1-h1 {
+  margin: 20px 0 0;
+  font-size: clamp(2.3rem, 5.6vw, 4.1rem);
+  font-weight: 700;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.lp1-h1 em {
+  font-style: normal;
+  color: var(--stamp);
+}
+
+.lp1-lede {
+  max-width: 46ch;
+  margin: 24px 0 0;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.lp1-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.lp1-note {
+  margin: 18px 0 0;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+/* Receipt ── the signature. Torn bottom edge via a zigzag mask.
+   The stamp lives outside the masked paper: a mask clips descendants, so it can
+   only hang over the torn edge from the wrapper. */
+.lp1-receipt-holder {
+  position: relative;
+}
+
+.lp1-receipt {
+  padding: 26px 24px 34px;
+  background: var(--card);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 24px 44px rgba(21, 18, 15, 0.09),
+    0 3px 10px rgba(21, 18, 15, 0.05);
+  mask:
+    conic-gradient(from -45deg at bottom, #0000, #000 1deg 89deg, #0000 90deg)
+      bottom / 18px 9px repeat-x,
+    linear-gradient(#000 0 0) top / 100% calc(100% - 9px) no-repeat;
+}
+
+.lp1-receipt-head {
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--rule);
+  text-align: center;
+}
+
+.lp1-receipt-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.lp1-receipt-sub {
+  margin-top: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.lp1-rows {
+  margin: 0;
+  padding: 14px 0 0;
+  list-style: none;
+}
+
+.lp1-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-block: 6px;
+  font-size: 12.5px;
+  animation: lp1-print 380ms var(--e) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+}
+
+.lp1-row-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.lp1-leader {
+  flex: 1 1 auto;
+  min-width: 14px;
+  border-bottom: 1px dotted var(--rule);
+  transform: translateY(-4px);
+}
+
+.lp1-row-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.lp1-row[data-tone='debit'] .lp1-row-value {
+  color: var(--debit);
+}
+
+.lp1-row[data-tone='credit'] .lp1-row-value {
+  color: var(--stamp);
+}
+
+.lp1-receipt-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  animation: lp1-print 380ms var(--e) both;
+  animation-delay: 700ms;
+}
+
+.lp1-receipt-total span:last-child {
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.lp1-receipt-foot {
+  margin: 20px 0 0;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink-faint);
+  animation: lp1-print 380ms var(--e) both;
+  animation-delay: 780ms;
+}
+
+.lp1-stamp {
+  position: absolute;
+  right: -14px;
+  bottom: -26px;
+  padding: 7px 12px;
+  border: 2px solid var(--stamp);
+  border-radius: 3px;
+  color: var(--stamp);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.35;
+  background: rgba(255, 253, 247, 0.72);
+  transform: rotate(-7deg);
+  opacity: 0;
+  animation: lp1-stamp 420ms var(--e) 900ms both;
+}
+
+@keyframes lp1-print {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lp1-stamp {
+  from {
+    opacity: 0;
+    transform: rotate(-7deg) scale(1.35);
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-7deg) scale(1);
+  }
+}
+
+/* Sections ── */
+.lp1-section {
+  padding-block: 64px;
+  border-top: 1px solid var(--rule);
+}
+
+.lp1-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.lp1-h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.lp1-section-note {
+  max-width: 42ch;
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+/* Steps — a real sequence, so the numbers carry meaning. */
+.lp1-steps {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.lp1-step {
+  display: grid;
+  gap: 6px 22px;
+  padding-block: 22px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+@media (width >= 48rem) {
+  .lp1-step {
+    grid-template-columns: 56px 220px minmax(0, 1fr);
+    align-items: baseline;
+  }
+}
+
+.lp1-step-num {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--stamp);
+}
+
+.lp1-step-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.lp1-step-body {
+  max-width: 58ch;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+/* Feature ledger — dot leaders make the list read as an account statement. */
+.lp1-features {
+  display: grid;
+  gap: 0 56px;
+}
+
+@media (width >= 54rem) {
+  .lp1-features {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.lp1-feature {
+  padding-block: 18px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.lp1-feature-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lp1-feature-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.lp1-feature-tag {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.lp1-feature-body {
+  margin: 7px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* Closing band ── inverted print. */
+.lp1-close {
+  margin-block: 64px 0;
+  padding: 56px 40px;
+  background: var(--ink);
+  color: var(--paper);
+  text-align: center;
+}
+
+.lp1-close-title {
+  margin: 0;
+  font-size: clamp(1.6rem, 4.4vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.lp1-close-note {
+  margin: 16px auto 0;
+  max-width: 48ch;
+  font-size: 13px;
+  color: rgba(246, 242, 233, 0.66);
+}
+
+.lp1-close .lp1-cta {
+  justify-content: center;
+}
+
+.lp1-close .lp1-btn {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+
+.lp1-close .lp1-btn:hover {
+  background: var(--stamp);
+  border-color: var(--stamp);
+  color: #fffdf7;
+}
+
+.lp1-close .lp1-btn-ghost {
+  background: transparent;
+  border-color: rgba(246, 242, 233, 0.4);
+  color: var(--paper);
+}
+
+.lp1-close .lp1-btn-ghost:hover {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+
+.lp1-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block: 26px 96px;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp1-row,
+  .lp1-receipt-total,
+  .lp1-receipt-foot,
+  .lp1-stamp {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}

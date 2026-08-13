@@ -11,11 +11,13 @@ export function formatUsd(
   }).format(Math.abs(value))
 
   if (!opts?.showSign) {
-    return opts?.fromPlaid ? formatted : new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 2,
-    }).format(amount)
+    return opts?.fromPlaid
+      ? formatted
+      : new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          maximumFractionDigits: 2,
+        }).format(amount)
   }
 
   if (value > 0) return `+${formatted}`
@@ -123,14 +125,8 @@ export function cardPaymentStatus(
   const days = daysUntil(card.nextPaymentDueDate)
   const paidOff = card.minimumPayment === 0
   const overdue =
-    !paidOff &&
-    card.isOverdue === true &&
-    (days == null || days < 0)
+    !paidOff && card.isOverdue === true && (days == null || days < 0)
   const dueSoon =
-    !overdue &&
-    !paidOff &&
-    days != null &&
-    days >= 0 &&
-    days <= dueSoonWithin
+    !overdue && !paidOff && days != null && days >= 0 && days <= dueSoonWithin
   return { days, overdue, dueSoon }
 }

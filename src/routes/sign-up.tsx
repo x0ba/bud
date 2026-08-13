@@ -23,7 +23,7 @@ function SignUpPage() {
             Start tracking with clarity.
           </p>
         </div>
-        <SignUp routing="hash" forceRedirectUrl="/" />
+        <SignUp routing="hash" forceRedirectUrl="/app" />
       </div>
     </div>
   )

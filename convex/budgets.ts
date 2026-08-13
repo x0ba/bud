@@ -62,9 +62,7 @@ export const getMonth = authedQuery({
           .withIndex('by_budget', (q) => q.eq('budgetId', budget._id))
           .collect()
       : []
-    const plannedByCat = new Map(
-      budgetItems.map((i) => [i.categoryId, i]),
-    )
+    const plannedByCat = new Map(budgetItems.map((i) => [i.categoryId, i]))
 
     const txs = await ctx.db
       .query('transactions')
@@ -184,7 +182,7 @@ export const upsert = authedMutation({
 
     const existing = await ctx.db
       .query('budgetItems')
-      .withIndex('by_budget', (q) => q.eq('budgetId', budget!._id))
+      .withIndex('by_budget', (q) => q.eq('budgetId', budget._id))
       .collect()
     const existingMap = new Map(existing.map((e) => [e.categoryId, e]))
 
@@ -219,7 +217,7 @@ export const copyFromPrevious = authedMutation({
   returns: v.union(v.id('budgets'), v.null()),
   handler: async (ctx, args) => {
     const [y, m] = args.month.split('-').map(Number)
-    const prevDate = new Date(Date.UTC(y!, m! - 2, 1))
+    const prevDate = new Date(Date.UTC(y, m - 2, 1))
     const prevMonth = monthKey(prevDate)
 
     const prev = await ctx.db
@@ -260,7 +258,7 @@ export const copyFromPrevious = authedMutation({
 
     const existing = await ctx.db
       .query('budgetItems')
-      .withIndex('by_budget', (q) => q.eq('budgetId', budget!._id))
+      .withIndex('by_budget', (q) => q.eq('budgetId', budget._id))
       .collect()
     for (const e of existing) await ctx.db.delete(e._id)
 

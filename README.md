@@ -49,17 +49,21 @@ npx convex env set PLAID_ENV sandbox
 
 ## App routes
 
-| Route | Purpose |
-|---|---|
-| `/` | Dashboard — net worth, pace, cards due, recent txs |
-| `/transactions` | Filterable table + category learning loop |
-| `/budget` | Fixed / flex / non-monthly budgets |
-| `/accounts` | Plaid Link, sync, card utilization |
-| `/net-worth` | Chart + manual assets |
-| `/investments` | Holdings (when institution supports) |
-| `/cash-flow` | Income vs expenses this month |
-| `/settings/categories` | Category tree |
-| `/settings/rules` | Categorization rules |
+| Route                      | Purpose                                            |
+| -------------------------- | -------------------------------------------------- |
+| `/`                        | Landing page; redirects to `/app` when signed in   |
+| `/app`                     | Dashboard — net worth, pace, cards due, recent txs |
+| `/app/transactions`        | Filterable table + category learning loop          |
+| `/app/budget`              | Fixed / flex / non-monthly budgets                 |
+| `/app/accounts`            | Plaid Link, sync, card utilization                 |
+| `/app/net-worth`           | Chart + manual assets                              |
+| `/app/investments`         | Holdings (when institution supports)               |
+| `/app/cash-flow`           | Income vs expenses this month                      |
+| `/app/settings/categories` | Category tree                                      |
+| `/app/settings/rules`      | Categorization rules                               |
+
+Four landing designs live behind `?d=1`–`?d=4` with an on-page switcher, which
+also lets you review them while signed in. Signed out, `/` shows design 1.
 
 ## Scripts
 

@@ -1,11 +1,8 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import type { Id } from './_generated/dataModel'
-import {
-  internalMutation,
-  internalQuery,
-  type MutationCtx,
-} from './_generated/server'
+import { internalMutation, internalQuery } from './_generated/server'
+import type { MutationCtx } from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
 
 function todayKey(d = new Date()): string {

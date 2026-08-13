@@ -52,7 +52,9 @@ export const getItemByPlaidId = internalQuery({
   handler: async (ctx, args) => {
     const item = await ctx.db
       .query('plaidItems')
-      .withIndex('by_plaid_item_id', (q) => q.eq('plaidItemId', args.plaidItemId))
+      .withIndex('by_plaid_item_id', (q) =>
+        q.eq('plaidItemId', args.plaidItemId),
+      )
       .unique()
     if (!item) return null
     return {
@@ -129,7 +131,9 @@ export const storeItemAndAccounts = internalMutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('plaidItems')
-      .withIndex('by_plaid_item_id', (q) => q.eq('plaidItemId', args.plaidItemId))
+      .withIndex('by_plaid_item_id', (q) =>
+        q.eq('plaidItemId', args.plaidItemId),
+      )
       .unique()
 
     let itemId = existing?._id
@@ -298,7 +302,8 @@ export const applyTransactionSyncPage = internalMutation({
       const pfc = raw.personal_finance_category
       const fields = {
         merchantName: raw.merchant_name,
-        originalDescription: raw.original_description || raw.name || 'Transaction',
+        originalDescription:
+          raw.original_description || raw.name || 'Transaction',
         accountId,
         amount: raw.amount,
         plaidCategoryPrimary: pfc?.primary ?? null,
@@ -569,7 +574,7 @@ export const upsertHoldings = internalMutation({
       const existing = await ctx.db
         .query('holdings')
         .withIndex('by_account_security', (q) =>
-          q.eq('accountId', account._id).eq('securityId', security!._id),
+          q.eq('accountId', account._id).eq('securityId', security._id),
         )
         .unique()
       if (existing) {

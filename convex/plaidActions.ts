@@ -1,11 +1,8 @@
 'use node'
 
 import { v } from 'convex/values'
-import {
-  CountryCode,
-  Products,
-  type Transaction as PlaidTransaction,
-} from 'plaid'
+import { CountryCode, Products } from 'plaid'
+import type { Transaction as PlaidTransaction } from 'plaid'
 import { internal } from './_generated/api'
 import type { Id } from './_generated/dataModel'
 import { action, internalAction } from './_generated/server'
@@ -74,13 +71,19 @@ export const createLinkToken = action({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Not authenticated')
 
-    const userId = await ctx.runQuery(internal.plaidMutations.getUserByClerkId, {
-      clerkId: identity.subject,
-    })
-    if (!userId) throw new Error('User not ready — call users.ensureReady first')
+    const userId = await ctx.runQuery(
+      internal.plaidMutations.getUserByClerkId,
+      {
+        clerkId: identity.subject,
+      },
+    )
+    if (!userId)
+      throw new Error('User not ready — call users.ensureReady first')
 
     const client = getPlaidClient()
-    const products = (args.products ?? ['transactions']).map((p) => p as Products)
+    const products = (args.products ?? ['transactions']).map(
+      (p) => p as Products,
+    )
     const additional = CONSENTED_PRODUCTS.filter((p) => !products.includes(p))
     const webhook = getPlaidWebhookUrl()
 
@@ -359,7 +362,9 @@ export const syncAllItems = internalAction({
       {},
     )
     for (const itemId of itemIds) {
-      await ctx.scheduler.runAfter(0, internal.plaidActions.syncItem, { itemId })
+      await ctx.scheduler.runAfter(0, internal.plaidActions.syncItem, {
+        itemId,
+      })
     }
     return null
   },
@@ -394,10 +399,7 @@ export const handleWebhook = internalAction({
       })
     }
 
-    if (
-      args.webhookType === 'ITEM' &&
-      args.webhookCode === 'ERROR'
-    ) {
+    if (args.webhookType === 'ITEM' && args.webhookCode === 'ERROR') {
       await ctx.runMutation(internal.plaidMutations.markItemStatus, {
         itemId: item._id,
         status: 'login_required',

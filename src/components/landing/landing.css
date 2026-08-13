@@ -1,0 +1,12 @@
+/* Landing page styles.
+
+   Four independent design directions live side by side so they can be compared.
+   Each one owns a root class (.lp1 … .lp4) and every selector inside a design is
+   prefixed with that design's number, so no rule can reach into another design
+   or into the app itself. Only the switcher chrome (.lps-*) is shared. */
+
+@import './css/switcher.css';
+@import './css/ledger.css';
+@import './css/chips.css';
+@import './css/spotlight.css';
+@import './css/flow.css';

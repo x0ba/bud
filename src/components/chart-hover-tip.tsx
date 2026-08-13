@@ -59,7 +59,9 @@ export function ChartHoverTip({
       <p className="mt-1 text-[13px] leading-none font-semibold tabular-nums">
         {value}
         {detail ? (
-          <span className="ml-1.5 font-medium text-background/65">{detail}</span>
+          <span className="ml-1.5 font-medium text-background/65">
+            {detail}
+          </span>
         ) : null}
       </p>
     </div>,

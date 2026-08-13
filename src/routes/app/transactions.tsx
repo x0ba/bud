@@ -37,7 +37,7 @@ import { cn } from '#/lib/utils'
 const PAGE_SIZE = 40
 const FIRST_PAGE_OPTS = { numItems: PAGE_SIZE, cursor: null }
 
-export const Route = createFileRoute('/_app/transactions')({
+export const Route = createFileRoute('/app/transactions')({
   loader: () => {
     prewarmQueries(
       { query: api.accounts.list },
