@@ -5,19 +5,19 @@ A self-hosted personal finance app in the spirit of Monarch Money and Copilot Mo
 ## Guiding principles
 
 - **"Where does my money go?" is the core question.** Every screen should help answer it: spending by category, by merchant, over time, versus budget.
-- **Credit cards are first-class.** Most day-to-day spending happens on cards. Card transactions are spending; card *payments* are transfers (never double-counted). Balances, statement cycles, due dates, APRs, and utilization get dedicated UI.
+- **Credit cards are first-class.** Most day-to-day spending happens on cards. Card transactions are spending; card _payments_ are transfers (never double-counted). Balances, statement cycles, due dates, APRs, and utilization get dedicated UI.
 - **Trust the data.** Sync should be reliable and idempotent; corrections the user makes (categories, merchant names, hidden transactions) must never be clobbered by a re-sync.
 - **Learn from the user.** Manual categorization corrections feed a rules engine so the same fix never has to be made twice.
 
 ## Existing stack (already scaffolded)
 
-| Layer | Choice |
-|---|---|
-| Framework | TanStack Start (React 19, file-based routes, server functions) |
-| Backend/DB | Convex (reactive queries, actions, crons, HTTP actions) |
-| Auth | Clerk (`@clerk/tanstack-react-start`) |
-| Styling/UI | Tailwind v4 + shadcn/ui (`components.json` present) |
-| Observability | Sentry (server functions wrapped in `Sentry.startSpan`) |
+| Layer         | Choice                                                         |
+| ------------- | -------------------------------------------------------------- |
+| Framework     | TanStack Start (React 19, file-based routes, server functions) |
+| Backend/DB    | Convex (reactive queries, actions, crons, HTTP actions)        |
+| Auth          | Clerk (`@clerk/tanstack-react-start`)                          |
+| Styling/UI    | Tailwind v4 + shadcn/ui (`components.json` present)            |
+| Observability | Sentry (server functions wrapped in `Sentry.startSpan`)        |
 
 ## To add
 
@@ -92,6 +92,7 @@ recurringStreams  userId, merchantName, categoryId?, cadence (weekly|monthly|yea
 ```
 
 Notes:
+
 - `amount` convention: positive = money out (spending), negative = money in (matches Plaid). All aggregation code lives in one shared lib so sign handling is consistent.
 - Category corrections set `categorySource: "user"`; sync never overwrites user-sourced fields (category, notes, tags, hidden, splits) when a transaction is "modified" by Plaid.
 - Default category tree is seeded per user on signup (editable), mapped from Plaid's personal finance categories.
@@ -99,6 +100,7 @@ Notes:
 ## Feature plan
 
 ### 1. Plaid connection & sync
+
 - Link flow: Convex action creates `link_token` → `react-plaid-link` modal → exchange `public_token` → store item + accounts.
 - Products: `transactions`, `liabilities`, `investments` (as supported per institution).
 - `/transactions/sync` with stored cursor; upsert added/modified, soft-handle removed; reconcile pending → posted via `pendingTransactionId`.
@@ -107,22 +109,28 @@ Notes:
 - Sandbox mode first; environment switch via Convex env vars.
 
 ### 2. Automated categorization (learning)
+
 Deterministic, inspectable rules — no black box:
+
 1. On ingest, apply the first matching `categoryRule` (priority-ordered, most-specific-first: exact merchant+account > exact merchant > description-contains > Plaid category mapping).
 2. If no rule matches, fall back to the mapped Plaid personal-finance category (`categorySource: "plaid"`).
-3. **Learning loop:** when the user re-categorizes a transaction, prompt inline — "Always categorize *Blue Bottle Coffee* as Coffee?" — accepting creates a merchant rule and offers to retroactively apply it to existing matching transactions.
+3. **Learning loop:** when the user re-categorizes a transaction, prompt inline — "Always categorize _Blue Bottle Coffee_ as Coffee?" — accepting creates a merchant rule and offers to retroactively apply it to existing matching transactions.
 4. Rules management screen: view/edit/delete rules, see how often each fired.
+
 - Same loop for merchant-name cleanup (rename "SQ *BLUE BOTTLE #442" → "Blue Bottle").
 - Future (post-MVP): LLM-assisted suggestion for unmatched merchants, still surfaced as a rule the user confirms.
 
 ### 3. Category & flex budgeting
+
 Support both budgeting styles, Copilot-style:
+
 - Every expense category has a `budgetType`: **fixed** (rent, insurance — same every month), **flex** (groceries, dining, shopping — one pooled monthly number), or **non-monthly** (annual/irregular — amortized with rollover).
 - Budget screen shows: income vs. planned, fixed categories with individual targets, one flex pool with per-category drill-down, non-monthly accruals.
 - Progress bars with pace indicators ("62% spent, 55% through the month"), month-over-month copy-forward, rollover support for non-monthly.
 - Transfers, CC payments, and hidden transactions are excluded from budget math automatically.
 
 ### 4. Credit cards (first-class)
+
 - **Cards overview page:** each card shows current vs. statement balance, payment due date + minimum, utilization vs. limit, APR; sorted by next due date.
 - **Payment handling:** paired transfer detection (payment out of checking + payment onto card) auto-marks both `isTransfer` — spending reports count the original purchases, never the payment.
 - **Statement awareness:** spending-this-cycle per card, projected statement balance.
@@ -130,21 +138,25 @@ Support both budgeting styles, Copilot-style:
 - Interest/fee transactions auto-categorized to a visible "Interest & Fees" category (this is real spend, not a transfer).
 
 ### 5. Net worth tracking
+
 - Nightly cron snapshots all account balances + manual assets into `netWorthSnapshots`.
 - Net worth page: line/area chart over time (1M/3M/YTD/1Y/All), assets vs. liabilities split, per-account contribution breakdown, deltas.
 - Manual assets/liabilities (home, car, private assets) with periodic value updates.
 
 ### 6. Investment monitoring
+
 - Holdings synced via `/investments/holdings/get`; investment transactions for activity feed.
 - Portfolio page: total value + day/period change, allocation by account and security type (donut), top holdings table, cost basis vs. market value where available.
 - Investment accounts contribute to net worth but are excluded from spending/budget math.
 
 ### 7. Cash flow & insights
+
 - **Cash flow page:** income vs. expenses by month (bar chart), savings rate, Sankey-style income → categories flow diagram.
 - **Recurring & subscriptions:** detect recurring streams from transaction history (same merchant, regular cadence, similar amount); calendar of upcoming bills; "price increased" alerts (e.g. Netflix went from $15.49 → $17.99).
 - **Spending insights on dashboard:** top categories and merchants this month, month-over-month comparison, largest transactions, unusual-spend callouts.
 
 ### 8. Transactions experience
+
 - Fast, filterable, paginated table (account, category, date range, amount, search, pending, tags).
 - Inline category editing (the primary correction surface for the learning loop), notes, tags, hide, and transaction splitting.
 - Bulk actions: select many → recategorize/tag/hide.

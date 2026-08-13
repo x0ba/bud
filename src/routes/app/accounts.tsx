@@ -22,7 +22,7 @@ import { cardPaymentStatus, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
-export const Route = createFileRoute('/_app/accounts')({
+export const Route = createFileRoute('/app/accounts')({
   loader: () => {
     prewarmQueries(
       { query: api.accounts.list },
@@ -344,7 +344,7 @@ function AccountRow({
   return (
     <li>
       <Link
-        to="/accounts/$accountId"
+        to="/app/accounts/$accountId"
         params={{ accountId: account._id }}
         className="data-row no-underline transition-[background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/70 active:scale-[0.995]"
       >

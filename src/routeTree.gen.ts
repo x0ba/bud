@@ -9,23 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AppRouteImport } from './routes/_app'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
-import { Route as AppBudgetRouteImport } from './routes/_app/budget'
-import { Route as AppCashFlowRouteImport } from './routes/_app/cash-flow'
-import { Route as AppInvestmentsRouteImport } from './routes/_app/investments'
-import { Route as AppNetWorthRouteImport } from './routes/_app/net-worth'
-import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
-import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
-import { Route as AppAccountsAccountIdRouteImport } from './routes/_app/accounts.$accountId'
-import { Route as AppSettingsCategoriesRouteImport } from './routes/_app/settings.categories'
-import { Route as AppSettingsRulesRouteImport } from './routes/_app/settings.rules'
+import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppAccountsRouteImport } from './routes/app/accounts'
+import { Route as AppBudgetRouteImport } from './routes/app/budget'
+import { Route as AppCashFlowRouteImport } from './routes/app/cash-flow'
+import { Route as AppInvestmentsRouteImport } from './routes/app/investments'
+import { Route as AppNetWorthRouteImport } from './routes/app/net-worth'
+import { Route as AppRecurringRouteImport } from './routes/app/recurring'
+import { Route as AppTransactionsRouteImport } from './routes/app/transactions'
+import { Route as AppAccountsAccountIdRouteImport } from './routes/app/accounts.$accountId'
+import { Route as AppSettingsCategoriesRouteImport } from './routes/app/settings.categories'
+import { Route as AppSettingsRulesRouteImport } from './routes/app/settings.rules'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
-  id: '/_app',
+  id: '/app',
+  path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -95,102 +102,111 @@ const AppSettingsRulesRoute = AppSettingsRulesRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/accounts': typeof AppAccountsRouteWithChildren
-  '/budget': typeof AppBudgetRoute
-  '/cash-flow': typeof AppCashFlowRoute
-  '/investments': typeof AppInvestmentsRoute
-  '/net-worth': typeof AppNetWorthRoute
-  '/recurring': typeof AppRecurringRoute
-  '/transactions': typeof AppTransactionsRoute
-  '/accounts/$accountId': typeof AppAccountsAccountIdRoute
-  '/settings/categories': typeof AppSettingsCategoriesRoute
-  '/settings/rules': typeof AppSettingsRulesRoute
+  '/app/accounts': typeof AppAccountsRouteWithChildren
+  '/app/budget': typeof AppBudgetRoute
+  '/app/cash-flow': typeof AppCashFlowRoute
+  '/app/investments': typeof AppInvestmentsRoute
+  '/app/net-worth': typeof AppNetWorthRoute
+  '/app/recurring': typeof AppRecurringRoute
+  '/app/transactions': typeof AppTransactionsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/accounts/$accountId': typeof AppAccountsAccountIdRoute
+  '/app/settings/categories': typeof AppSettingsCategoriesRoute
+  '/app/settings/rules': typeof AppSettingsRulesRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/accounts': typeof AppAccountsRouteWithChildren
-  '/budget': typeof AppBudgetRoute
-  '/cash-flow': typeof AppCashFlowRoute
-  '/investments': typeof AppInvestmentsRoute
-  '/net-worth': typeof AppNetWorthRoute
-  '/recurring': typeof AppRecurringRoute
-  '/transactions': typeof AppTransactionsRoute
-  '/': typeof AppIndexRoute
-  '/accounts/$accountId': typeof AppAccountsAccountIdRoute
-  '/settings/categories': typeof AppSettingsCategoriesRoute
-  '/settings/rules': typeof AppSettingsRulesRoute
+  '/app/accounts': typeof AppAccountsRouteWithChildren
+  '/app/budget': typeof AppBudgetRoute
+  '/app/cash-flow': typeof AppCashFlowRoute
+  '/app/investments': typeof AppInvestmentsRoute
+  '/app/net-worth': typeof AppNetWorthRoute
+  '/app/recurring': typeof AppRecurringRoute
+  '/app/transactions': typeof AppTransactionsRoute
+  '/app': typeof AppIndexRoute
+  '/app/accounts/$accountId': typeof AppAccountsAccountIdRoute
+  '/app/settings/categories': typeof AppSettingsCategoriesRoute
+  '/app/settings/rules': typeof AppSettingsRulesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_app': typeof AppRouteWithChildren
+  '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/_app/accounts': typeof AppAccountsRouteWithChildren
-  '/_app/budget': typeof AppBudgetRoute
-  '/_app/cash-flow': typeof AppCashFlowRoute
-  '/_app/investments': typeof AppInvestmentsRoute
-  '/_app/net-worth': typeof AppNetWorthRoute
-  '/_app/recurring': typeof AppRecurringRoute
-  '/_app/transactions': typeof AppTransactionsRoute
-  '/_app/': typeof AppIndexRoute
-  '/_app/accounts/$accountId': typeof AppAccountsAccountIdRoute
-  '/_app/settings/categories': typeof AppSettingsCategoriesRoute
-  '/_app/settings/rules': typeof AppSettingsRulesRoute
+  '/app/accounts': typeof AppAccountsRouteWithChildren
+  '/app/budget': typeof AppBudgetRoute
+  '/app/cash-flow': typeof AppCashFlowRoute
+  '/app/investments': typeof AppInvestmentsRoute
+  '/app/net-worth': typeof AppNetWorthRoute
+  '/app/recurring': typeof AppRecurringRoute
+  '/app/transactions': typeof AppTransactionsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/accounts/$accountId': typeof AppAccountsAccountIdRoute
+  '/app/settings/categories': typeof AppSettingsCategoriesRoute
+  '/app/settings/rules': typeof AppSettingsRulesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/app'
     | '/sign-in'
     | '/sign-up'
-    | '/accounts'
-    | '/budget'
-    | '/cash-flow'
-    | '/investments'
-    | '/net-worth'
-    | '/recurring'
-    | '/transactions'
-    | '/accounts/$accountId'
-    | '/settings/categories'
-    | '/settings/rules'
+    | '/app/accounts'
+    | '/app/budget'
+    | '/app/cash-flow'
+    | '/app/investments'
+    | '/app/net-worth'
+    | '/app/recurring'
+    | '/app/transactions'
+    | '/app/'
+    | '/app/accounts/$accountId'
+    | '/app/settings/categories'
+    | '/app/settings/rules'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/sign-in'
     | '/sign-up'
-    | '/accounts'
-    | '/budget'
-    | '/cash-flow'
-    | '/investments'
-    | '/net-worth'
-    | '/recurring'
-    | '/transactions'
-    | '/'
-    | '/accounts/$accountId'
-    | '/settings/categories'
-    | '/settings/rules'
+    | '/app/accounts'
+    | '/app/budget'
+    | '/app/cash-flow'
+    | '/app/investments'
+    | '/app/net-worth'
+    | '/app/recurring'
+    | '/app/transactions'
+    | '/app'
+    | '/app/accounts/$accountId'
+    | '/app/settings/categories'
+    | '/app/settings/rules'
   id:
     | '__root__'
-    | '/_app'
+    | '/'
+    | '/app'
     | '/sign-in'
     | '/sign-up'
-    | '/_app/accounts'
-    | '/_app/budget'
-    | '/_app/cash-flow'
-    | '/_app/investments'
-    | '/_app/net-worth'
-    | '/_app/recurring'
-    | '/_app/transactions'
-    | '/_app/'
-    | '/_app/accounts/$accountId'
-    | '/_app/settings/categories'
-    | '/_app/settings/rules'
+    | '/app/accounts'
+    | '/app/budget'
+    | '/app/cash-flow'
+    | '/app/investments'
+    | '/app/net-worth'
+    | '/app/recurring'
+    | '/app/transactions'
+    | '/app/'
+    | '/app/accounts/$accountId'
+    | '/app/settings/categories'
+    | '/app/settings/rules'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
@@ -198,10 +214,17 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_app': {
-      id: '/_app'
-      path: ''
+    '/': {
+      id: '/'
+      path: '/'
       fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
@@ -219,80 +242,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
+    '/app/': {
+      id: '/app/'
       path: '/'
-      fullPath: '/'
+      fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/accounts': {
-      id: '/_app/accounts'
+    '/app/accounts': {
+      id: '/app/accounts'
       path: '/accounts'
-      fullPath: '/accounts'
+      fullPath: '/app/accounts'
       preLoaderRoute: typeof AppAccountsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/budget': {
-      id: '/_app/budget'
+    '/app/budget': {
+      id: '/app/budget'
       path: '/budget'
-      fullPath: '/budget'
+      fullPath: '/app/budget'
       preLoaderRoute: typeof AppBudgetRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/cash-flow': {
-      id: '/_app/cash-flow'
+    '/app/cash-flow': {
+      id: '/app/cash-flow'
       path: '/cash-flow'
-      fullPath: '/cash-flow'
+      fullPath: '/app/cash-flow'
       preLoaderRoute: typeof AppCashFlowRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/investments': {
-      id: '/_app/investments'
+    '/app/investments': {
+      id: '/app/investments'
       path: '/investments'
-      fullPath: '/investments'
+      fullPath: '/app/investments'
       preLoaderRoute: typeof AppInvestmentsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/net-worth': {
-      id: '/_app/net-worth'
+    '/app/net-worth': {
+      id: '/app/net-worth'
       path: '/net-worth'
-      fullPath: '/net-worth'
+      fullPath: '/app/net-worth'
       preLoaderRoute: typeof AppNetWorthRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/recurring': {
-      id: '/_app/recurring'
+    '/app/recurring': {
+      id: '/app/recurring'
       path: '/recurring'
-      fullPath: '/recurring'
+      fullPath: '/app/recurring'
       preLoaderRoute: typeof AppRecurringRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/transactions': {
-      id: '/_app/transactions'
+    '/app/transactions': {
+      id: '/app/transactions'
       path: '/transactions'
-      fullPath: '/transactions'
+      fullPath: '/app/transactions'
       preLoaderRoute: typeof AppTransactionsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/accounts/$accountId': {
-      id: '/_app/accounts/$accountId'
+    '/app/accounts/$accountId': {
+      id: '/app/accounts/$accountId'
       path: '/$accountId'
-      fullPath: '/accounts/$accountId'
+      fullPath: '/app/accounts/$accountId'
       preLoaderRoute: typeof AppAccountsAccountIdRouteImport
       parentRoute: typeof AppAccountsRoute
     }
-    '/_app/settings/categories': {
-      id: '/_app/settings/categories'
+    '/app/settings/categories': {
+      id: '/app/settings/categories'
       path: '/settings/categories'
-      fullPath: '/settings/categories'
+      fullPath: '/app/settings/categories'
       preLoaderRoute: typeof AppSettingsCategoriesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/settings/rules': {
-      id: '/_app/settings/rules'
+    '/app/settings/rules': {
+      id: '/app/settings/rules'
       path: '/settings/rules'
-      fullPath: '/settings/rules'
+      fullPath: '/app/settings/rules'
       preLoaderRoute: typeof AppSettingsRulesRouteImport
       parentRoute: typeof AppRoute
     }
@@ -340,6 +363,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,

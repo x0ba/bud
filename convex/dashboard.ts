@@ -119,7 +119,7 @@ export const overview = authedQuery({
 
     const topCategories = [...byCat.entries()]
       .map(([id, amount]) => {
-        const cat = catMap.get(id as typeof categories[0]['_id'])
+        const cat = catMap.get(id as (typeof categories)[0]['_id'])
         return {
           name: cat?.name ?? 'Unknown',
           color: cat?.color ?? '#94a3b8',

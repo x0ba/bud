@@ -37,11 +37,7 @@ const accountDoc = v.object({
   isOverdue: v.optional(v.boolean()),
   institutionName: v.optional(v.string()),
   itemStatus: v.optional(
-    v.union(
-      v.literal('ok'),
-      v.literal('login_required'),
-      v.literal('error'),
-    ),
+    v.union(v.literal('ok'), v.literal('login_required'), v.literal('error')),
   ),
 })
 

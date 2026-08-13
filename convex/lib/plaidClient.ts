@@ -1,7 +1,8 @@
 import { Configuration, PlaidApi, PlaidEnvironments } from 'plaid'
 
 export function getPlaidClient() {
-  const env = (process.env.PLAID_ENV ?? 'sandbox') as keyof typeof PlaidEnvironments
+  const env = (process.env.PLAID_ENV ??
+    'sandbox') as keyof typeof PlaidEnvironments
   const clientId = process.env.PLAID_CLIENT_ID
   const secret = process.env.PLAID_SECRET
 

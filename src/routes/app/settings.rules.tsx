@@ -9,7 +9,7 @@ import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
 import { prewarmQueries } from '#/lib/prewarm'
 
-export const Route = createFileRoute('/_app/settings/rules')({
+export const Route = createFileRoute('/app/settings/rules')({
   loader: () => {
     prewarmQueries({ query: api.rules.list })
   },

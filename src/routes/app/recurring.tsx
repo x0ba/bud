@@ -3,7 +3,7 @@ import { EmptyState } from '#/components/dense'
 import { Page } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 
-export const Route = createFileRoute('/_app/recurring')({
+export const Route = createFileRoute('/app/recurring')({
   component: RecurringPage,
 })
 

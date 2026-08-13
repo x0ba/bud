@@ -12,7 +12,7 @@ Quiet ledger. Warm paper surfaces, stone ink, calm density. Numbers lead; chrome
 
 Borders-only. Two surfaces, one step apart: the page canvas (`--background`) and
 panels (`--card`, ~3% lighter). No shadows anywhere. Rows inside a panel stay
-hairline — card chrome belongs to the *area*, never the row. Sidebar shares the
+hairline — card chrome belongs to the _area_, never the row. Sidebar shares the
 canvas background — no tinted “sidebar world.”
 
 ## Layout
@@ -37,14 +37,14 @@ Dense rows: `py-2.5` (10px). Panel padding: **12px**. Gap between panels: **16px
 
 Type scale ratio ~1.25 from 13px body.
 
-| Role | Size | Weight | Color |
-|------|------|--------|-------|
-| Kicker | 11px | 600 · tracked | muted |
-| Body / row | 13px | 400–500 | sea-ink / muted |
-| Panel title | 13px | 600 | sea-ink |
-| Page title | 15px | 600 | sea-ink |
-| Stat | 22px | 600 · tabular | sea-ink |
-| Hero figure | 2.75rem | 700 · tabular · tight tracking | sea-ink |
+| Role        | Size    | Weight                         | Color           |
+| ----------- | ------- | ------------------------------ | --------------- |
+| Kicker      | 11px    | 600 · tracked                  | muted           |
+| Body / row  | 13px    | 400–500                        | sea-ink / muted |
+| Panel title | 13px    | 600                            | sea-ink         |
+| Page title  | 15px    | 600                            | sea-ink         |
+| Stat        | 22px    | 600 · tabular                  | sea-ink         |
+| Hero figure | 2.75rem | 700 · tabular · tight tracking | sea-ink         |
 
 In dense rows: **merchant/name + amount win**; date, account, category demote to muted.
 
@@ -123,16 +123,16 @@ For taxonomies rather than ledgers — many short names, no money.
 Spans are chosen so a row of panels fills the 12 columns and each area gets the
 width its rows actually need.
 
-| Route | Panels |
-|-------|--------|
-| Dashboard | Needs you (12) · Where it's going (5) · Recent (7) |
-| Transactions | Ledger (12), flush |
-| Budget | Flex pool (4) · Fixed (5) · Non-monthly (3) |
-| Cash flow | one panel **per budget type** (4 each) |
-| Net worth | Trend (12) · Assets (6) · Debts (6) |
-| Investments | Allocation (4) · Holdings (8) |
-| Accounts | Needs attention (12) · one panel per account type (6) · Hidden & closed (6, folded) · Connections (6) |
-| Categories | one panel per budget type (4 each) |
+| Route        | Panels                                                                                                |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| Dashboard    | Needs you (12) · Where it's going (5) · Recent (7)                                                    |
+| Transactions | Ledger (12), flush                                                                                    |
+| Budget       | Flex pool (4) · Fixed (5) · Non-monthly (3)                                                           |
+| Cash flow    | one panel **per budget type** (4 each)                                                                |
+| Net worth    | Trend (12) · Assets (6) · Debts (6)                                                                   |
+| Investments  | Allocation (4) · Holdings (8)                                                                         |
+| Accounts     | Needs attention (12) · one panel per account type (6) · Hidden & closed (6, folded) · Connections (6) |
+| Categories   | one panel per budget type (4 each)                                                                    |
 
 Cash flow's grouping used to be a subhead buried inside one list; it's the axis
 people compare across, so it became the panel.
@@ -183,7 +183,7 @@ Document scroll · sticky `h-dvh` sidebar · sticky header (`.app-shell-header`,
 - `overflow: hidden` to animate a fold → `clip`, which keeps sticky alive
 - Counts on section headers → the list is the answer
 - Equal metric-card grids → hero figure + quieter secondary
-- Card chrome on every list *row* → hairline rows inside one panel
+- Card chrome on every list _row_ → hairline rows inside one panel
 - Flat table type → merchant + amount hierarchy
 - Cool mint SaaS chrome → warm paper ledger
 - A field repeated on every row → that field becomes the section

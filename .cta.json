@@ -13,12 +13,5 @@
   "routerOnly": false,
   "version": 1,
   "framework": "react",
-  "chosenAddOns": [
-    "eslint",
-    "nitro",
-    "clerk",
-    "sentry",
-    "convex",
-    "shadcn"
-  ]
+  "chosenAddOns": ["eslint", "nitro", "clerk", "sentry", "convex", "shadcn"]
 }

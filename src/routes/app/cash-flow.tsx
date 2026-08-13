@@ -17,7 +17,7 @@ import { Input } from '#/components/ui/input'
 import { currentMonth, formatMonthLabel, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
-export const Route = createFileRoute('/_app/cash-flow')({
+export const Route = createFileRoute('/app/cash-flow')({
   loader: () => {
     const month = currentMonth()
     prewarmQueries(

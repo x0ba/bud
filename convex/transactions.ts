@@ -347,7 +347,7 @@ export const spendingByCategory = authedQuery({
             amount,
           }
         }
-        const cat = categoryMap.get(key as typeof categories[0]['_id'])
+        const cat = categoryMap.get(key as (typeof categories)[0]['_id'])
         return {
           categoryId: cat?._id ?? null,
           name: cat?.name ?? 'Unknown',

@@ -14,7 +14,7 @@ import { currentMonth, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
-export const Route = createFileRoute('/_app/budget')({
+export const Route = createFileRoute('/app/budget')({
   loader: () => {
     prewarmQueries({
       query: api.budgets.getMonth,

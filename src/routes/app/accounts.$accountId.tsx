@@ -15,7 +15,7 @@ import { Money } from '#/components/money'
 import { cardPaymentStatus, currentMonth, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
-export const Route = createFileRoute('/_app/accounts/$accountId')({
+export const Route = createFileRoute('/app/accounts/$accountId')({
   loader: ({ params }) => {
     const accountId = params.accountId as Id<'accounts'>
     const month = currentMonth()

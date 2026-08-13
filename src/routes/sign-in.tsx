@@ -23,7 +23,7 @@ function SignInPage() {
             Where does your money go?
           </p>
         </div>
-        <SignIn routing="hash" forceRedirectUrl="/" />
+        <SignIn routing="hash" forceRedirectUrl="/app" />
       </div>
     </div>
   )

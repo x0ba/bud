@@ -26,19 +26,19 @@ import { cn } from '#/lib/utils'
 const SIDEBAR_COLLAPSED_KEY = 'bud.sidebar-collapsed'
 
 const nav = [
-  { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/transactions', label: 'Transactions', icon: List },
-  { to: '/budget', label: 'Budget', icon: Wallet },
-  { to: '/cash-flow', label: 'Cash flow', icon: ArrowLeftRight },
-  { to: '/net-worth', label: 'Net worth', icon: LineChart },
-  { to: '/investments', label: 'Investments', icon: PieChart },
-  { to: '/accounts', label: 'Accounts', icon: Landmark },
-  { to: '/recurring', label: 'Recurring', icon: Repeat },
+  { to: '/app', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/app/transactions', label: 'Transactions', icon: List },
+  { to: '/app/budget', label: 'Budget', icon: Wallet },
+  { to: '/app/cash-flow', label: 'Cash flow', icon: ArrowLeftRight },
+  { to: '/app/net-worth', label: 'Net worth', icon: LineChart },
+  { to: '/app/investments', label: 'Investments', icon: PieChart },
+  { to: '/app/accounts', label: 'Accounts', icon: Landmark },
+  { to: '/app/recurring', label: 'Recurring', icon: Repeat },
 ] as const
 
 const settings = [
-  { to: '/settings/categories', label: 'Categories', icon: Tags },
-  { to: '/settings/rules', label: 'Rules', icon: Settings2 },
+  { to: '/app/settings/categories', label: 'Categories', icon: Tags },
+  { to: '/app/settings/rules', label: 'Rules', icon: Settings2 },
 ] as const
 
 function NavLink({
@@ -133,7 +133,9 @@ export function AppSidebar() {
       <div
         className={cn(
           'flex h-12 items-center',
-          collapsed ? 'justify-center px-1.5' : 'justify-between gap-2 px-3 pl-5',
+          collapsed
+            ? 'justify-center px-1.5'
+            : 'justify-between gap-2 px-3 pl-5',
         )}
       >
         {!collapsed ? (
@@ -170,8 +172,8 @@ export function AppSidebar() {
         <div className="flex flex-col gap-px">
           {nav.map((item) => {
             const active =
-              item.to === '/'
-                ? pathname === '/'
+              item.to === '/app'
+                ? pathname === '/app'
                 : pathname.startsWith(item.to)
             return (
               <NavLink
@@ -187,9 +189,7 @@ export function AppSidebar() {
         </div>
 
         <div className="flex flex-col gap-px">
-          {!collapsed ? (
-            <p className="kicker px-2.5 pb-1.5">Settings</p>
-          ) : null}
+          {!collapsed ? <p className="kicker px-2.5 pb-1.5">Settings</p> : null}
           {settings.map((item) => {
             const active = pathname.startsWith(item.to)
             return (

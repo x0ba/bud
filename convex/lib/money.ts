@@ -59,7 +59,7 @@ export function monthKey(date: Date | string = new Date()): string {
 export function monthBounds(month: string): { start: string; end: string } {
   const [y, m] = month.split('-').map(Number)
   const start = `${y}-${String(m).padStart(2, '0')}-01`
-  const lastDay = new Date(Date.UTC(y!, m!, 0)).getUTCDate()
+  const lastDay = new Date(Date.UTC(y, m, 0)).getUTCDate()
   const end = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
   return { start, end }
 }
@@ -76,7 +76,10 @@ export function dayOfMonthProgress(now = new Date()): {
   return { day, daysInMonth, pct: day / daysInMonth }
 }
 
-export function utilization(balance: number, limit?: number | null): number | null {
+export function utilization(
+  balance: number,
+  limit?: number | null,
+): number | null {
   if (limit == null || limit <= 0) return null
   return Math.min(1, Math.max(0, balance / limit))
 }
