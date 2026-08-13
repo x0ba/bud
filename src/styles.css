@@ -270,6 +270,48 @@ pre code {
   color: var(--palm);
 }
 
+/* Page body — 12-column field, masonry at xl.
+
+   A regular grid would still open a row for every line of cards, so a short
+   Fixed panel would leave a hole down to the next row. Native grid-lanes (or
+   the older masonry track) packs each card as high as its columns allow.
+   Chromium gets the same packing via a 1px-row polyfill on [data-masonry]. */
+.page-body {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 1rem;
+}
+
+@media (width >= 80rem) {
+  .page-body {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
+
+  .page-body[data-masonry='polyfill'] {
+    grid-auto-rows: 1px;
+    row-gap: 0;
+  }
+}
+
+@supports (grid-template-rows: masonry) and (not (display: grid-lanes)) {
+  @media (width >= 80rem) {
+    .page-body {
+      grid-template-rows: masonry;
+    }
+  }
+}
+
+@supports (display: grid-lanes) {
+  @media (width >= 80rem) {
+    .page-body {
+      display: grid-lanes;
+    }
+  }
+}
+
 /* Panels — a data area with its own walls.
 
    The page background stays the canvas and panels lift one step onto --card:

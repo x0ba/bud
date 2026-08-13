@@ -1,8 +1,105 @@
 import { ChevronRight } from 'lucide-react'
-import { useCallback, useEffect, useId, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react'
 import type { Tone } from '#/components/dense'
 import { toneClass } from '#/components/dense'
 import { cn } from '#/lib/utils'
+
+const XL = '(min-width: 80rem)'
+
+function nativeMasonrySupported() {
+  return (
+    CSS.supports('display', 'grid-lanes') ||
+    CSS.supports('grid-template-rows', 'masonry')
+  )
+}
+
+/**
+ * Packs PageBody as masonry at `xl`. Safari can do this natively (`grid-lanes`
+ * / `grid-template-rows: masonry`); everyone else gets a 1px-row polyfill so a
+ * short card doesn't hold a hole open for the rest of its grid row.
+ */
+function usePageMasonry() {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const root = ref.current
+    if (!root || nativeMasonrySupported()) return
+
+    const pack = () => {
+      if (!window.matchMedia(XL).matches) {
+        delete root.dataset.masonry
+        for (const child of root.children) {
+          if (child instanceof HTMLElement) child.style.gridRowEnd = ''
+        }
+        return
+      }
+
+      root.dataset.masonry = 'polyfill'
+      const styles = getComputedStyle(root)
+      const row = parseFloat(styles.gridAutoRows) || 1
+      const gap = parseFloat(styles.columnGap) || 16
+
+      for (const child of root.children) {
+        if (!(child instanceof HTMLElement)) continue
+        const span = Math.max(
+          1,
+          Math.ceil((child.getBoundingClientRect().height + gap) / row),
+        )
+        const value = `span ${span}`
+        if (child.style.gridRowEnd !== value) child.style.gridRowEnd = value
+      }
+    }
+
+    let frame = 0
+    const schedule = () => {
+      if (frame) return
+      frame = requestAnimationFrame(() => {
+        frame = 0
+        pack()
+      })
+    }
+
+    pack()
+
+    const ro = new ResizeObserver(schedule)
+    ro.observe(root)
+    const observeKids = () => {
+      for (const child of root.children) {
+        if (child instanceof HTMLElement) ro.observe(child)
+      }
+    }
+    observeKids()
+
+    const mo = new MutationObserver(() => {
+      observeKids()
+      schedule()
+    })
+    mo.observe(root, { childList: true })
+
+    const mq = window.matchMedia(XL)
+    mq.addEventListener('change', pack)
+
+    return () => {
+      if (frame) cancelAnimationFrame(frame)
+      ro.disconnect()
+      mo.disconnect()
+      mq.removeEventListener('change', pack)
+      delete root.dataset.masonry
+      for (const child of root.children) {
+        if (child instanceof HTMLElement) child.style.gridRowEnd = ''
+      }
+    }
+  }, [])
+
+  return ref
+}
 
 const PANEL_STATE_PREFIX = 'bud.panel.'
 
@@ -63,7 +160,10 @@ export function PageSummary({
   )
 }
 
-/** The 12-column field the panels sit in. Panels hug their own content. */
+/**
+ * The 12-column field the panels sit in. At `xl` it packs as masonry so a
+ * short card doesn't leave a hole under it for the rest of the row.
+ */
 export function PageBody({
   children,
   className,
@@ -71,13 +171,9 @@ export function PageBody({
   children: React.ReactNode
   className?: string
 }) {
+  const ref = usePageMasonry()
   return (
-    <div
-      className={cn(
-        'grid w-full min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-12',
-        className,
-      )}
-    >
+    <div ref={ref} className={cn('page-body', className)}>
       {children}
     </div>
   )
