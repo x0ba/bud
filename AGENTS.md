@@ -106,6 +106,9 @@ tanstackIntent:
 
 <!-- intent-skills:end -->
 
+## General instructions
+- DO NOT try to verify your changes yourself using browser use unless told to
+
 ## Cursor Cloud specific instructions
 
 Bud is a TanStack Start (Vite) frontend + Convex backend, with Clerk auth and Plaid (sandbox) for bank data. Standard scripts live in `package.json` (`dev`, `build`, `lint`, `generate-routes`); the README covers the product and required env vars. Notes below are the non-obvious bits for running it in a cloud VM.

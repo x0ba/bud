@@ -12,63 +12,124 @@ import { toneClass } from '#/components/dense'
 import { cn } from '#/lib/utils'
 
 const XL = '(min-width: 80rem)'
+const TRACKS = 12
 
-function nativeMasonrySupported() {
-  return (
-    CSS.supports('display', 'grid-lanes') ||
-    CSS.supports('grid-template-rows', 'masonry')
-  )
+type Pin = { start: number; span: number }
+
+function columnSpan(el: HTMLElement): number {
+  const fromData = Number.parseInt(el.dataset.span ?? '', 10)
+  if (fromData) return Math.min(TRACKS, Math.max(1, fromData))
+  const start = getComputedStyle(el).gridColumnStart
+  if (start.startsWith('span ')) {
+    return Math.min(
+      TRACKS,
+      Math.max(1, Number.parseInt(start.slice(5), 10) || TRACKS),
+    )
+  }
+  return TRACKS
+}
+
+function shortestStart(heights: Array<number>, span: number): number {
+  let best = 0
+  let bestY = Number.POSITIVE_INFINITY
+  for (let start = 0; start <= TRACKS - span; start++) {
+    let y = 0
+    for (let i = start; i < start + span; i++) {
+      y = Math.max(y, heights[i] ?? 0)
+    }
+    if (y < bestY) {
+      bestY = y
+      best = start
+    }
+  }
+  return best
+}
+
+function clearPlacement(el: HTMLElement) {
+  el.style.gridColumn = ''
+  el.style.gridRowStart = ''
+  el.style.gridRowEnd = ''
 }
 
 /**
- * Packs PageBody as masonry at `xl`. Safari can do this natively (`grid-lanes`
- * / `grid-template-rows: masonry`); everyone else gets a 1px-row polyfill so a
- * short card doesn't hold a hole open for the rest of its grid row.
+ * Packs PageBody at `xl` so a short card doesn't hold a hole open for the rest
+ * of its grid row. Each card is pinned to the column it first landed in, so
+ * collapsing only lifts the cards below it — native masonry would re-pack
+ * across columns on every height change.
  */
 function usePageMasonry() {
   const ref = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
     const root = ref.current
-    if (!root || nativeMasonrySupported()) return
+    if (!root) return
 
-    const pack = () => {
+    let pins = new WeakMap<HTMLElement, Pin>()
+
+    const pack = (reassign: boolean) => {
       if (!window.matchMedia(XL).matches) {
         delete root.dataset.masonry
+        pins = new WeakMap()
         for (const child of root.children) {
-          if (child instanceof HTMLElement) child.style.gridRowEnd = ''
+          if (child instanceof HTMLElement) clearPlacement(child)
         }
         return
       }
+
+      if (reassign) pins = new WeakMap()
 
       root.dataset.masonry = 'polyfill'
       const styles = getComputedStyle(root)
       const row = parseFloat(styles.gridAutoRows) || 1
       const gap = parseFloat(styles.columnGap) || 16
+      const heights = Array<number>(TRACKS).fill(0)
 
       for (const child of root.children) {
         if (!(child instanceof HTMLElement)) continue
-        const span = Math.max(
+
+        const span = Math.min(TRACKS, Math.max(1, columnSpan(child)))
+        const pinned = pins.get(child)
+        const start =
+          span >= TRACKS
+            ? 0
+            : pinned && pinned.span === span && pinned.start + span <= TRACKS
+              ? pinned.start
+              : shortestStart(heights, span)
+        pins.set(child, { start, span })
+
+        let y = 0
+        for (let i = start; i < start + span; i++) {
+          y = Math.max(y, heights[i] ?? 0)
+        }
+        const rowSpan = Math.max(
           1,
           Math.ceil((child.getBoundingClientRect().height + gap) / row),
         )
-        const value = `span ${span}`
-        if (child.style.gridRowEnd !== value) child.style.gridRowEnd = value
+        const column = `${start + 1} / ${start + span + 1}`
+        const rowStart = String(y + 1)
+        const rowEnd = `span ${rowSpan}`
+        if (child.style.gridColumn !== column) child.style.gridColumn = column
+        if (child.style.gridRowStart !== rowStart) {
+          child.style.gridRowStart = rowStart
+        }
+        if (child.style.gridRowEnd !== rowEnd) child.style.gridRowEnd = rowEnd
+
+        for (let i = start; i < start + span; i++) heights[i] = y + rowSpan
       }
     }
 
     let frame = 0
-    const schedule = () => {
+    const schedule = (reassign = false) => {
       if (frame) return
       frame = requestAnimationFrame(() => {
         frame = 0
-        pack()
+        pack(reassign)
       })
     }
 
-    pack()
+    pack(true)
 
-    const ro = new ResizeObserver(schedule)
+    const ro = new ResizeObserver(() => schedule(false))
     ro.observe(root)
     const observeKids = () => {
       for (const child of root.children) {
@@ -79,21 +140,22 @@ function usePageMasonry() {
 
     const mo = new MutationObserver(() => {
       observeKids()
-      schedule()
+      schedule(false)
     })
     mo.observe(root, { childList: true })
 
     const mq = window.matchMedia(XL)
-    mq.addEventListener('change', pack)
+    const onBreakpoint = () => pack(true)
+    mq.addEventListener('change', onBreakpoint)
 
     return () => {
       if (frame) cancelAnimationFrame(frame)
       ro.disconnect()
       mo.disconnect()
-      mq.removeEventListener('change', pack)
+      mq.removeEventListener('change', onBreakpoint)
       delete root.dataset.masonry
       for (const child of root.children) {
-        if (child instanceof HTMLElement) child.style.gridRowEnd = ''
+        if (child instanceof HTMLElement) clearPlacement(child)
       }
     }
   }, [])
@@ -161,8 +223,8 @@ export function PageSummary({
 }
 
 /**
- * The 12-column field the panels sit in. At `xl` it packs as masonry so a
- * short card doesn't leave a hole under it for the rest of the row.
+ * The 12-column field the panels sit in. At `xl` cards pack into the shortest
+ * column they fit, then stay there — collapsing only lifts the cards below.
  */
 export function PageBody({
   children,
@@ -281,6 +343,7 @@ export function Panel({
     <section
       className={cn('panel', SPAN_CLASS[span], className)}
       data-open={open || undefined}
+      data-span={span}
     >
       <div className="panel-head">
         {collapsible ? (
