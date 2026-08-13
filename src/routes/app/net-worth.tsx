@@ -300,7 +300,7 @@ function NetWorthPage() {
                     if (!svg) return
                     const rect = svg.getBoundingClientRect()
                     const first = chart.points[0]
-                    if (!first || rect.width <= 0) return
+                    if (rect.width <= 0) return
                     const svgX =
                       ((event.clientX - rect.left) / rect.width) * chart.w
                     const nearest = chart.points.reduce(

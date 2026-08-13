@@ -390,7 +390,11 @@
   position: absolute;
   inset: auto 0 0;
   height: 90px;
-  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--card) 78%, transparent));
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--card) 78%, transparent)
+  );
   pointer-events: none;
 }
 
@@ -872,7 +876,11 @@
   position: absolute;
   inset: auto 0 0;
   height: 56px;
-  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--card) 62%, transparent));
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--card) 62%, transparent)
+  );
   pointer-events: none;
 }
 

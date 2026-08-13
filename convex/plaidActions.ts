@@ -47,8 +47,8 @@ function serializeTxn(t: PlaidTransaction) {
     iso_currency_code: t.iso_currency_code ?? 'USD',
     personal_finance_category: t.personal_finance_category
       ? {
-          primary: t.personal_finance_category.primary ?? 'OTHER',
-          detailed: t.personal_finance_category.detailed ?? 'OTHER',
+          primary: t.personal_finance_category.primary,
+          detailed: t.personal_finance_category.detailed,
         }
       : null,
   }
@@ -264,7 +264,7 @@ export const syncItem = internalAction({
               lastStatementDate: c.last_statement_issue_date ?? undefined,
               nextPaymentDueDate: c.next_payment_due_date ?? undefined,
               minimumPayment: c.minimum_payment_amount ?? undefined,
-              aprs: (c.aprs ?? []).map((a) => ({
+              aprs: c.aprs.map((a) => ({
                 aprPercentage: a.apr_percentage,
                 aprType: a.apr_type,
               })),

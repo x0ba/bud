@@ -132,8 +132,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .auth-google {
-    transition: background-color 160ms var(--auth-ease), opacity 160ms
-      var(--auth-ease);
+    transition:
+      background-color 160ms var(--auth-ease),
+      opacity 160ms var(--auth-ease);
   }
 
   .auth-google:active:not(:disabled) {

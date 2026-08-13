@@ -29,7 +29,7 @@ async function writeSnapshot(
 
   for (const a of accounts) {
     if (a.isHidden || a.isClosed) continue
-    const bal = a.currentBalance ?? 0
+    const bal = a.currentBalance
     byAccount.push({ accountId: a._id, balance: bal })
     if (a.type === 'credit' || a.type === 'loan') {
       liabilities += Math.abs(bal)
@@ -115,7 +115,7 @@ export const summary = authedQuery({
 
     for (const a of accounts) {
       if (a.isHidden || a.isClosed) continue
-      const bal = a.currentBalance ?? 0
+      const bal = a.currentBalance
       accountRows.push({
         accountId: a._id,
         name: a.name,
