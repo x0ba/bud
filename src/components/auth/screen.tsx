@@ -26,33 +26,30 @@ export function AuthScreen({ action }: { action: 'sign-in' | 'sign-up' }) {
 
   return (
     <main className="auth">
-      <h1 className="auth-wordmark">Bud</h1>
+      <div className="auth-brand">
+        <h1 className="auth-wordmark">Bud</h1>
+        <svg className="auth-mark" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 21.5V11"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <path
+            className="auth-mark-leaf"
+            d="M12 12.5C12 7.9 8.9 4.6 4.2 4c-.4 4.8 2.6 8.5 7.8 8.5z"
+          />
+          <path
+            d="M12 15c0-4.1 2.8-7.1 7-7.6.4 4.3-2.4 7.6-7 7.6z"
+            fill="currentColor"
+            opacity="0.88"
+          />
+        </svg>
+      </div>
       <p className="sr-only">
         {action === 'sign-up' ? 'Create your Bud account' : 'Sign in to Bud'}
       </p>
-
-      <svg
-        className="auth-mark"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          d="M12 21.5V11"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.6"
-          strokeLinecap="round"
-        />
-        <path
-          className="auth-mark-leaf"
-          d="M12 12.5C12 7.9 8.9 4.6 4.2 4c-.4 4.8 2.6 8.5 7.8 8.5z"
-        />
-        <path
-          d="M12 15c0-4.1 2.8-7.1 7-7.6.4 4.3-2.4 7.6-7 7.6z"
-          fill="currentColor"
-          opacity="0.88"
-        />
-      </svg>
 
       <div className="auth-action">
         {error ? <p className="auth-error">{error}</p> : null}

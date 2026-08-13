@@ -19,30 +19,36 @@
   color: var(--auth-paper);
 }
 
-.auth-wordmark {
+.auth-brand {
   position: absolute;
-  top: -0.2em;
-  left: -0.06em;
-  margin: 0;
-  font-family: 'Fraunces', Georgia, serif;
-  font-size: max(8.5rem, 44vw);
-  font-weight: 700;
-  letter-spacing: -0.06em;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.08em;
+  padding-left: 0.02em;
+  font-size: max(8.5rem, calc(100vw / 2.58));
   line-height: 0.72;
   color: var(--auth-paper);
+  transform: translateY(-20%);
   pointer-events: none;
   user-select: none;
 }
 
+.auth-wordmark {
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 1em;
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: inherit;
+}
+
 .auth-mark {
-  position: absolute;
-  top: -28%;
-  right: -18%;
-  width: max(20rem, 40vw);
+  width: 0.68em;
   height: auto;
+  flex-shrink: 0;
   color: var(--auth-paper);
-  pointer-events: none;
-  user-select: none;
 }
 
 .auth-mark-leaf {
@@ -119,16 +125,6 @@
 }
 
 @media (width < 40rem) {
-  .auth-wordmark {
-    font-size: max(7rem, 48vw);
-  }
-
-  .auth-mark {
-    top: -24%;
-    right: -28%;
-    width: max(16rem, 62vw);
-  }
-
   .auth-action {
     padding: 0 1.25rem 2rem;
   }
