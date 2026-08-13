@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { CategoryDot, Kicker, Stat } from '#/components/dense'
+import { CategoryDot, Stat } from '#/components/dense'
 import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
@@ -15,6 +15,7 @@ import { Input } from '#/components/ui/input'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -22,9 +23,12 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet'
+import { Switch } from '#/components/ui/switch'
 import { expenseAmount } from '../../../convex/lib/money'
 import { currentMonth, formatDayLabel, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
@@ -137,9 +141,6 @@ function TransactionsPage() {
     ...(month ? { month } : {}),
     ...(accountId ? { accountId } : {}),
   })
-
-  const updateCategory = useMutation(api.transactions.updateCategory)
-  const updateMeta = useMutation(api.transactions.updateMeta)
 
   const selected = results.find((t) => t._id === selectedId) ?? null
 
@@ -314,112 +315,210 @@ function TransactionsPage() {
           if (!open) setSelectedId(null)
         }}
       >
-        <SheetContent className="sm:max-w-md">
+        <SheetContent className="p-0">
           {selected ? (
-            <>
-              <SheetHeader>
-                <SheetTitle>
-                  {selected.merchantName ?? selected.originalDescription}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="mt-6 space-y-6 px-1">
-                <div>
-                  <Kicker>Amount</Kicker>
-                  <p className="mt-1.5 text-[1.75rem] font-semibold tracking-tight">
-                    <Money amount={selected.amount} plaid />
-                  </p>
-                  <p className="mt-1 text-[13px] text-muted-foreground">
-                    {selected.date} · {selected.accountName}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Kicker>Category</Kicker>
-                  <Select
-                    value={selected.categoryId ?? undefined}
-                    onValueChange={(value) => {
-                      void (async () => {
-                        const merchant = selected.merchantName
-                        const createRule = merchant
-                          ? window.confirm(
-                              `Always categorize “${merchant}” as this category?`,
-                            )
-                          : false
-                        const applyRetroactively =
-                          createRule &&
-                          window.confirm(
-                            'Apply this rule to existing matching transactions?',
-                          )
-                        const res = await updateCategory({
-                          transactionId: selected._id,
-                          categoryId: value as Id<'categories'>,
-                          createRule,
-                          applyRetroactively,
-                        })
-                        toast.success(
-                          createRule
-                            ? `Updated ${res.updatedCount} transaction${res.updatedCount === 1 ? '' : 's'} + rule saved`
-                            : 'Category updated',
-                        )
-                      })()
-                    }}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choose category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(categories ?? []).map((c) => (
-                        <SelectItem key={c._id} value={c._id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      void updateMeta({
-                        transactionId: selected._id,
-                        isHidden: !selected.isHidden,
-                      }).then(() =>
-                        toast.success(
-                          selected.isHidden
-                            ? 'Unhidden'
-                            : 'Hidden from reports',
-                        ),
-                      )
-                    }
-                  >
-                    {selected.isHidden ? 'Unhide' : 'Hide'}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      void updateMeta({
-                        transactionId: selected._id,
-                        isTransfer: !selected.isTransfer,
-                      }).then(() =>
-                        toast.success(
-                          selected.isTransfer
-                            ? 'Marked as spending'
-                            : 'Marked as transfer',
-                        ),
-                      )
-                    }
-                  >
-                    {selected.isTransfer ? 'Not a transfer' : 'Mark transfer'}
-                  </Button>
-                </div>
-              </div>
-            </>
+            <TransactionSlip tx={selected} categories={categories} />
           ) : null}
         </SheetContent>
       </Sheet>
     </AppShell>
+  )
+}
+
+type LedgerTx = LedgerPage['page'][number]
+type CategoryList = NonNullable<(typeof api.categories.list)['_returnType']>
+
+function categoryFamilies(categories: CategoryList) {
+  const ids = new Set(categories.map((c) => c._id))
+  const childrenOf = new Map<string, CategoryList>()
+  const roots: CategoryList = []
+  for (const c of categories) {
+    if (c.parentId && ids.has(c.parentId)) {
+      const siblings = childrenOf.get(c.parentId)
+      if (siblings) siblings.push(c)
+      else childrenOf.set(c.parentId, [c])
+    } else {
+      roots.push(c)
+    }
+  }
+  return { roots, childrenOf }
+}
+
+function TransactionSlip({
+  tx,
+  categories,
+}: {
+  tx: LedgerTx
+  categories: CategoryList | undefined
+}) {
+  const updateCategory = useMutation(api.transactions.updateCategory)
+  const updateMeta = useMutation(api.transactions.updateMeta)
+
+  const merchant = tx.merchantName ?? tx.originalDescription
+  const postedAs =
+    tx.merchantName && tx.originalDescription !== tx.merchantName
+      ? tx.originalDescription
+      : null
+  const selectedCategory = categories?.find((c) => c._id === tx.categoryId)
+  const families = useMemo(
+    () => (categories ? categoryFamilies(categories) : null),
+    [categories],
+  )
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <SheetHeader className="gap-0 p-0">
+        <div className="flex flex-col gap-5 p-6 pr-14">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <SheetTitle className="min-w-0 truncate text-left text-[13px] font-semibold tracking-[0.08em] text-[var(--sea-ink)] uppercase">
+                {merchant}
+              </SheetTitle>
+              {tx.pending ? (
+                <Badge variant="secondary" className="text-[10px]">
+                  Pending
+                </Badge>
+              ) : null}
+              {tx.isTransfer ? (
+                <Badge variant="outline" className="text-[10px]">
+                  Transfer
+                </Badge>
+              ) : null}
+            </div>
+            {postedAs ? (
+              <p className="mt-1 truncate text-[12px] text-muted-foreground">
+                {postedAs}
+              </p>
+            ) : null}
+          </div>
+          <div>
+            <p className="hero-figure">
+              <Money amount={tx.amount} plaid />
+            </p>
+            <SheetDescription className="mt-2 text-[13px] text-muted-foreground">
+              {formatDayLabel(tx.date)} · {tx.accountName}
+            </SheetDescription>
+          </div>
+        </div>
+        <ul className="border-t border-border/70 px-6">
+          <li className="data-row">
+            <span className="shrink-0 text-muted-foreground">Category</span>
+            <Select
+              value={tx.categoryId ?? undefined}
+              onValueChange={(value) => {
+                void (async () => {
+                  const createRule = tx.merchantName
+                    ? window.confirm(
+                        `Always categorize “${tx.merchantName}” as this category?`,
+                      )
+                    : false
+                  const applyRetroactively =
+                    createRule &&
+                    window.confirm(
+                      'Apply this rule to existing matching transactions?',
+                    )
+                  const res = await updateCategory({
+                    transactionId: tx._id,
+                    categoryId: value as Id<'categories'>,
+                    createRule,
+                    applyRetroactively,
+                  })
+                  toast.success(
+                    createRule
+                      ? `Updated ${res.updatedCount} transaction${res.updatedCount === 1 ? '' : 's'} + rule saved`
+                      : 'Category updated',
+                  )
+                })()
+              }}
+            >
+              <SelectTrigger
+                size="sm"
+                className="h-8 min-w-0 max-w-[220px] justify-end border-0 bg-transparent px-0 shadow-none font-medium text-[13px] text-[var(--sea-ink)] hover:bg-transparent focus-visible:bg-transparent dark:bg-transparent"
+              >
+                <span className="flex min-w-0 items-center gap-1.5">
+                  {selectedCategory ? (
+                    <CategoryDot
+                      color={selectedCategory.color}
+                      className="size-1.5"
+                    />
+                  ) : null}
+                  <SelectValue placeholder="Choose" />
+                </span>
+              </SelectTrigger>
+              <SelectContent position="popper" align="end">
+                {families
+                  ? families.roots.map((parent) => {
+                      const children = families.childrenOf.get(parent._id) ?? []
+                      return (
+                        <SelectGroup key={parent._id}>
+                          <SelectItem value={parent._id}>
+                            <CategoryDot
+                              color={parent.color}
+                              className="size-1.5"
+                            />
+                            {parent.name}
+                          </SelectItem>
+                          {children.map((child) => (
+                            <SelectItem
+                              key={child._id}
+                              value={child._id}
+                              className="pl-6 text-muted-foreground"
+                            >
+                              {child.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )
+                    })
+                  : null}
+              </SelectContent>
+            </Select>
+          </li>
+        </ul>
+      </SheetHeader>
+
+      <div className="min-h-0 flex-1" />
+
+      <SheetFooter className="gap-0 border-t border-border/70 px-6 pt-2 pb-4">
+        <label className="data-row min-h-10 cursor-pointer">
+          <span className="text-[13px] font-medium text-[var(--sea-ink)]">
+            Hide from reports
+          </span>
+          <Switch
+            className="shadow-none"
+            checked={tx.isHidden}
+            onCheckedChange={(checked) =>
+              void updateMeta({
+                transactionId: tx._id,
+                isHidden: checked,
+              }).then(() =>
+                toast.success(
+                  checked ? 'Hidden from reports' : 'Shown in reports',
+                ),
+              )
+            }
+          />
+        </label>
+        <label className="data-row min-h-10 cursor-pointer border-t border-border/70">
+          <span className="text-[13px] font-medium text-[var(--sea-ink)]">
+            Treat as transfer
+          </span>
+          <Switch
+            className="shadow-none"
+            checked={tx.isTransfer}
+            onCheckedChange={(checked) =>
+              void updateMeta({
+                transactionId: tx._id,
+                isTransfer: checked,
+              }).then(() =>
+                toast.success(
+                  checked ? 'Marked as transfer' : 'Marked as spending',
+                ),
+              )
+            }
+          />
+        </label>
+      </SheetFooter>
+    </div>
   )
 }
