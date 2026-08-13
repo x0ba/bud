@@ -101,3 +101,29 @@ tanstackIntent:
     run: "pnpm dlx @tanstack/intent@latest load dotenv#dotenvx"
     for: "Use dotenvx to run commands with environment variables, manage multiple .env files, expand variables, and encrypt env files for safe commits and CI/CD."
 <!-- intent-skills:end -->
+
+## Cursor Cloud specific instructions
+
+Bud is a TanStack Start (Vite) frontend + Convex backend, with Clerk auth and Plaid (sandbox) for bank data. Standard scripts live in `package.json` (`dev`, `build`, `lint`, `generate-routes`); the README covers the product and required env vars. Notes below are the non-obvious bits for running it in a cloud VM.
+
+### Two long-running services (run both, keep them alive)
+- Backend: `CONVEX_AGENT_MODE=anonymous npx convex dev`. Anonymous mode provisions an isolated **local** Convex deployment (no login) and writes `CONVEX_DEPLOYMENT` / `VITE_CONVEX_URL` / `VITE_CONVEX_SITE_URL` into `.env.local`. On first run it prompts "Set up Convex AI files?" — answer **n**. `.env.local` is gitignored and is regenerated per VM, so this step must be redone each fresh environment.
+- Frontend: `pnpm dev` (Vite on port 3000). It reads `.env.local`, so start Convex first.
+
+### Clerk auth without real keys (keyless mode) — required to load any page
+The whole app is auth-gated; `ClerkProvider` needs a publishable key to render even `/sign-in`. With no `VITE_CLERK_PUBLISHABLE_KEY` set, `@clerk/tanstack-react-start` runs in **keyless mode**: it auto-provisions a throwaway dev Clerk instance and writes keys to `.clerk/.tmp/keyless.json` (gitignored). This regenerates per VM with a new instance slug/keys, so derive values at runtime — do not hardcode them. To get Convex auth working against the keyless instance:
+1. Decode the frontend/issuer domain from the publishable key: the base64 segment of `pk_test_...` decodes to `<slug>.clerk.accounts.dev$`.
+2. Point Convex at it (required or `convex dev` fails to push, since `auth.config.ts` reads `CLERK_JWT_ISSUER_DOMAIN`): `npx convex env set CLERK_JWT_ISSUER_DOMAIN https://<slug>.clerk.accounts.dev`.
+3. Create the `convex` JWT template (keyless instances have none, so Convex tokens fail without it) via the Clerk Backend API using the keyless `secretKey`:
+   `curl -X POST https://api.clerk.com/v1/jwt_templates -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" -d '{"name":"convex","claims":{"aud":"convex"},"lifetime":3600}'`
+
+### Creating a usable test login
+Browser **sign-up** is blocked by Clerk bot-protection (Cloudflare Turnstile) that an automated browser can't solve. Instead create a pre-verified user via the Clerk Backend API with the keyless `secretKey`, using a `+clerk_test` email so email/device verification accepts the fixed code **424242**:
+`curl -X POST https://api.clerk.com/v1/users -H "Authorization: Bearer sk_test_..." -H "Content-Type: application/json" -d '{"email_address":["you+clerk_test@example.com"],"password":"<15+ chars>","skip_password_checks":true}'`
+Then sign in through the UI (sign-in has no CAPTCHA); enter `424242` if prompted for a new-device code. On first authenticated load, `EnsureUser` calls the `users.ensureReady` Convex mutation which seeds the default category tree — a good end-to-end signal that Clerk→Convex auth works.
+
+### Plaid
+`/accounts` → "Connect account" needs Convex env vars `PLAID_CLIENT_ID` / `PLAID_SECRET` / `PLAID_ENV=sandbox` (set via `npx convex env set ...`). Without them the app runs and is fully navigable but you cannot link a bank or load transactions.
+
+### Other
+- `pnpm lint` currently reports ~24 pre-existing errors in committed code (`convex/` and `src/`); the lint tooling itself works. `unrs-resolver`'s build script is skipped by pnpm but lint still runs (it ships prebuilt binaries).
