@@ -1,0 +1,146 @@
+/* Auth doorway. Ink from the landing slabs, full-bleed. The wordmark and
+   mark are meant to overflow — they are the room, not a header. */
+
+.auth {
+  --auth-ink: #1c1917;
+  --auth-paper: #f5f2ea;
+  --auth-leaf: #5a9e94;
+  --auth-ease: cubic-bezier(0.23, 1, 0.32, 1);
+
+  position: relative;
+  min-height: 100dvh;
+  overflow: hidden;
+  background-color: var(--auth-ink);
+  background-image: radial-gradient(
+    rgba(247, 244, 238, 0.07) 0.7px,
+    transparent 0.8px
+  );
+  background-size: 20px 20px;
+  color: var(--auth-paper);
+}
+
+.auth-wordmark {
+  position: absolute;
+  top: -0.2em;
+  left: -0.06em;
+  margin: 0;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: max(8.5rem, 44vw);
+  font-weight: 700;
+  letter-spacing: -0.06em;
+  line-height: 0.72;
+  color: var(--auth-paper);
+  pointer-events: none;
+  user-select: none;
+}
+
+.auth-mark {
+  position: absolute;
+  top: -28%;
+  right: -18%;
+  width: max(20rem, 40vw);
+  height: auto;
+  color: var(--auth-paper);
+  pointer-events: none;
+  user-select: none;
+}
+
+.auth-mark-leaf {
+  fill: var(--auth-leaf);
+}
+
+.auth-action {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 1.5rem 2.75rem;
+}
+
+.auth-error {
+  max-width: 28rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #e8b4ae;
+  text-align: center;
+  text-wrap: pretty;
+}
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: min(100%, 24rem);
+  height: 4.75rem;
+  padding: 0 1.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #111;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+  transition:
+    transform 160ms var(--auth-ease),
+    background-color 160ms var(--auth-ease),
+    opacity 160ms var(--auth-ease);
+}
+
+.auth-google svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.auth-google:disabled {
+  cursor: wait;
+  opacity: 0.64;
+}
+
+.auth-google:focus-visible {
+  outline: 3px solid var(--auth-paper);
+  outline-offset: 3px;
+}
+
+.auth-google:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .auth-google:hover:not(:disabled) {
+    background: #f4f4f4;
+  }
+}
+
+@media (width < 40rem) {
+  .auth-wordmark {
+    font-size: max(7rem, 48vw);
+  }
+
+  .auth-mark {
+    top: -24%;
+    right: -28%;
+    width: max(16rem, 62vw);
+  }
+
+  .auth-action {
+    padding: 0 1.25rem 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-google {
+    transition: background-color 160ms var(--auth-ease), opacity 160ms
+      var(--auth-ease);
+  }
+
+  .auth-google:active:not(:disabled) {
+    transform: none;
+  }
+}

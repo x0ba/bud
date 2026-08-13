@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as SsoCallbackRouteImport } from './routes/sso-callback'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppAccountsRouteImport } from './routes/app/accounts'
 import { Route as AppBudgetRouteImport } from './routes/app/budget'
@@ -43,6 +44,11 @@ const SignInRoute = SignInRouteImport.update({
 const SignUpRoute = SignUpRouteImport.update({
   id: '/sign-up',
   path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SsoCallbackRoute = SsoCallbackRouteImport.update({
+  id: '/sso-callback',
+  path: '/sso-callback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -106,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/sso-callback': typeof SsoCallbackRoute
   '/app/accounts': typeof AppAccountsRouteWithChildren
   '/app/budget': typeof AppBudgetRoute
   '/app/cash-flow': typeof AppCashFlowRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/sso-callback': typeof SsoCallbackRoute
   '/app/accounts': typeof AppAccountsRouteWithChildren
   '/app/budget': typeof AppBudgetRoute
   '/app/cash-flow': typeof AppCashFlowRoute
@@ -140,6 +148,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/sso-callback': typeof SsoCallbackRoute
   '/app/accounts': typeof AppAccountsRouteWithChildren
   '/app/budget': typeof AppBudgetRoute
   '/app/cash-flow': typeof AppCashFlowRoute
@@ -159,6 +168,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/sign-up'
+    | '/sso-callback'
     | '/app/accounts'
     | '/app/budget'
     | '/app/cash-flow'
@@ -175,6 +185,7 @@ export interface FileRouteTypes {
     | '/'
     | '/sign-in'
     | '/sign-up'
+    | '/sso-callback'
     | '/app/accounts'
     | '/app/budget'
     | '/app/cash-flow'
@@ -192,6 +203,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/sign-in'
     | '/sign-up'
+    | '/sso-callback'
     | '/app/accounts'
     | '/app/budget'
     | '/app/cash-flow'
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  SsoCallbackRoute: typeof SsoCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -240,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-up'
       fullPath: '/sign-up'
       preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sso-callback': {
+      id: '/sso-callback'
+      path: '/sso-callback'
+      fullPath: '/sso-callback'
+      preLoaderRoute: typeof SsoCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -367,6 +387,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  SsoCallbackRoute: SsoCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

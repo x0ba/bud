@@ -1,30 +1,35 @@
-import { SignIn } from '@clerk/tanstack-react-start'
-import { createFileRoute } from '@tanstack/react-router'
+import { auth } from '@clerk/tanstack-react-start/server'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
+import * as Sentry from '@sentry/tanstackstart-react'
+
+import { AuthScreen } from '#/components/auth/screen'
+
+const hasSession = createServerFn({ method: 'GET' }).handler(async () =>
+  Sentry.startSpan({ name: 'Sign-in session check' }, async () => {
+    const session = await auth()
+    return { isAuthenticated: session.isAuthenticated }
+  }),
+)
 
 export const Route = createFileRoute('/sign-in')({
+  beforeLoad: async () => {
+    if (typeof window === 'undefined') {
+      const { isAuthenticated } = await hasSession()
+      if (isAuthenticated) throw redirect({ to: '/app' })
+      return
+    }
+
+    const clerk = (window as { Clerk?: { loaded: boolean; session: unknown } })
+      .Clerk
+    if (clerk?.loaded && clerk.session) throw redirect({ to: '/app' })
+  },
+  head: () => ({
+    meta: [{ title: 'Sign in — Bud' }],
+  }),
   component: SignInPage,
 })
 
 function SignInPage() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center p-6"
-      style={{
-        backgroundImage:
-          'radial-gradient(ellipse 80% 50% at 50% -10%, var(--hero-a), transparent), radial-gradient(ellipse 60% 40% at 80% 100%, var(--hero-b), transparent)',
-      }}
-    >
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <p className="display-title text-3xl tracking-tight text-[var(--sea-ink)]">
-            Bud
-          </p>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Where does your money go?
-          </p>
-        </div>
-        <SignIn routing="hash" forceRedirectUrl="/app" />
-      </div>
-    </div>
-  )
+  return <AuthScreen action="sign-in" />
 }
