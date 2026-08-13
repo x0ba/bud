@@ -1,10 +1,76 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
-import { internalMutation, internalQuery } from './_generated/server'
+import type { Id } from './_generated/dataModel'
+import {
+  internalMutation,
+  internalQuery,
+  type MutationCtx,
+} from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
 
 function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10)
+}
+
+/** One point per UTC day; later writes the same day replace the row. */
+async function writeSnapshot(
+  ctx: MutationCtx,
+  userId: Id<'users'>,
+): Promise<Id<'netWorthSnapshots'> | null> {
+  const accounts = await ctx.db
+    .query('accounts')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect()
+  const manuals = await ctx.db
+    .query('manualAssets')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect()
+
+  let assets = 0
+  let liabilities = 0
+  const byAccount: Array<{ accountId: Id<'accounts'>; balance: number }> = []
+
+  for (const a of accounts) {
+    if (a.isHidden || a.isClosed) continue
+    const bal = a.currentBalance ?? 0
+    byAccount.push({ accountId: a._id, balance: bal })
+    if (a.type === 'credit' || a.type === 'loan') {
+      liabilities += Math.abs(bal)
+    } else {
+      assets += bal
+    }
+  }
+  for (const m of manuals) {
+    if (m.type === 'debt') liabilities += Math.abs(m.value)
+    else assets += m.value
+  }
+
+  const date = todayKey()
+  const existing = await ctx.db
+    .query('netWorthSnapshots')
+    .withIndex('by_user_date', (q) => q.eq('userId', userId).eq('date', date))
+    .unique()
+
+  const hasHoldings = byAccount.length > 0 || manuals.length > 0
+  if (!hasHoldings && !existing) return null
+
+  const fields = {
+    netWorth: assets - liabilities,
+    assets,
+    liabilities,
+    byAccount,
+  }
+
+  if (existing) {
+    await ctx.db.patch(existing._id, fields)
+    return existing._id
+  }
+
+  return await ctx.db.insert('netWorthSnapshots', {
+    userId,
+    date,
+    ...fields,
+  })
 }
 
 export const summary = authedQuery({
@@ -157,13 +223,15 @@ export const addManualAsset = authedMutation({
   },
   returns: v.id('manualAssets'),
   handler: async (ctx, args) => {
-    return await ctx.db.insert('manualAssets', {
+    const id = await ctx.db.insert('manualAssets', {
       userId: ctx.user._id,
       name: args.name,
       type: args.type,
       value: args.value,
       valueUpdatedAt: Date.now(),
     })
+    await writeSnapshot(ctx, ctx.user._id)
+    return id
   },
 })
 
@@ -183,6 +251,7 @@ export const updateManualAsset = authedMutation({
         ? { value: args.value, valueUpdatedAt: Date.now() }
         : {}),
     })
+    await writeSnapshot(ctx, ctx.user._id)
     return null
   },
 })
@@ -194,71 +263,16 @@ export const removeManualAsset = authedMutation({
     const asset = await ctx.db.get(args.id)
     if (!asset || asset.userId !== ctx.user._id) throw new Error('Not found')
     await ctx.db.delete(args.id)
+    await writeSnapshot(ctx, ctx.user._id)
     return null
   },
 })
 
 export const snapshotNow = authedMutation({
   args: {},
-  returns: v.id('netWorthSnapshots'),
+  returns: v.union(v.id('netWorthSnapshots'), v.null()),
   handler: async (ctx) => {
-    const accounts = await ctx.db
-      .query('accounts')
-      .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
-      .collect()
-    const manuals = await ctx.db
-      .query('manualAssets')
-      .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
-      .collect()
-
-    let assets = 0
-    let liabilities = 0
-    const byAccount: Array<{
-      accountId: typeof accounts[0]['_id']
-      balance: number
-    }> = []
-
-    for (const a of accounts) {
-      if (a.isHidden || a.isClosed) continue
-      const bal = a.currentBalance ?? 0
-      byAccount.push({ accountId: a._id, balance: bal })
-      if (a.type === 'credit' || a.type === 'loan') {
-        liabilities += Math.abs(bal)
-      } else {
-        assets += bal
-      }
-    }
-    for (const m of manuals) {
-      if (m.type === 'debt') liabilities += Math.abs(m.value)
-      else assets += m.value
-    }
-
-    const date = todayKey()
-    const existing = await ctx.db
-      .query('netWorthSnapshots')
-      .withIndex('by_user_date', (q) =>
-        q.eq('userId', ctx.user._id).eq('date', date),
-      )
-      .unique()
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        netWorth: assets - liabilities,
-        assets,
-        liabilities,
-        byAccount,
-      })
-      return existing._id
-    }
-
-    return await ctx.db.insert('netWorthSnapshots', {
-      userId: ctx.user._id,
-      date,
-      netWorth: assets - liabilities,
-      assets,
-      liabilities,
-      byAccount,
-    })
+    return await writeSnapshot(ctx, ctx.user._id)
   },
 })
 
@@ -275,59 +289,7 @@ export const snapshotUser = internalMutation({
   args: { userId: v.id('users') },
   returns: v.null(),
   handler: async (ctx, args) => {
-    const accounts = await ctx.db
-      .query('accounts')
-      .withIndex('by_user', (q) => q.eq('userId', args.userId))
-      .collect()
-    const manuals = await ctx.db
-      .query('manualAssets')
-      .withIndex('by_user', (q) => q.eq('userId', args.userId))
-      .collect()
-
-    let assets = 0
-    let liabilities = 0
-    const byAccount = []
-
-    for (const a of accounts) {
-      if (a.isHidden || a.isClosed) continue
-      const bal = a.currentBalance ?? 0
-      byAccount.push({ accountId: a._id, balance: bal })
-      if (a.type === 'credit' || a.type === 'loan') {
-        liabilities += Math.abs(bal)
-      } else {
-        assets += bal
-      }
-    }
-    for (const m of manuals) {
-      if (m.type === 'debt') liabilities += Math.abs(m.value)
-      else assets += m.value
-    }
-
-    const date = todayKey()
-    const existing = await ctx.db
-      .query('netWorthSnapshots')
-      .withIndex('by_user_date', (q) =>
-        q.eq('userId', args.userId).eq('date', date),
-      )
-      .unique()
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        netWorth: assets - liabilities,
-        assets,
-        liabilities,
-        byAccount,
-      })
-    } else {
-      await ctx.db.insert('netWorthSnapshots', {
-        userId: args.userId,
-        date,
-        netWorth: assets - liabilities,
-        assets,
-        liabilities,
-        byAccount,
-      })
-    }
+    await writeSnapshot(ctx, args.userId)
     return null
   },
 })

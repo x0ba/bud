@@ -1,4 +1,5 @@
 import { v } from 'convex/values'
+import { internal } from './_generated/api'
 import { internalMutation, internalQuery } from './_generated/server'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
@@ -193,6 +194,9 @@ export const storeItemAndAccounts = internalMutation({
       }
     }
 
+    await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
+      userId: args.userId,
+    })
     return itemId
   },
 })
@@ -244,6 +248,9 @@ export const upsertAccounts = internalMutation({
         })
       }
     }
+    await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
+      userId: args.userId,
+    })
     return null
   },
 })

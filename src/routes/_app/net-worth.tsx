@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { Plus, X } from 'lucide-react'
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
@@ -64,6 +64,19 @@ function NetWorthPage() {
   const [type, setType] = useState<
     'property' | 'vehicle' | 'cash' | 'other' | 'debt'
   >('property')
+
+  const ensuredToday = useRef(false)
+  useEffect(() => {
+    if (!summary || history === undefined) return
+    const hasHoldings =
+      summary.accounts.length > 0 || summary.manualAssets.length > 0
+    if (!hasHoldings) return
+    const today = new Date().toISOString().slice(0, 10)
+    const last = history.at(-1)?.date
+    if (last === today || ensuredToday.current) return
+    ensuredToday.current = true
+    void snapshotNow({})
+  }, [summary, history, snapshotNow])
 
   /**
    * Drawn with `preserveAspectRatio="none"` so the line fills the full width at
@@ -193,22 +206,7 @@ function NetWorthPage() {
     holdings.debtAccounts.length + holdings.manualDebts.length > 0
 
   return (
-    <AppShell
-      title="Net worth"
-      actions={
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            void snapshotNow({})
-              .then(() => toast.success('Snapshot saved'))
-              .catch((e: Error) => toast.error(e.message))
-          }
-        >
-          Snapshot today
-        </Button>
-      }
-    >
+    <AppShell title="Net worth">
       <Page>
         <PageSummary>
           <HeroMetric
@@ -219,7 +217,9 @@ function NetWorthPage() {
                 ? chart.delta === 0
                   ? `Unchanged since ${formatDateShort(chart.first.date)}`
                   : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
-                : 'Take your first snapshot to start tracking change over time.'
+                : summary.accounts.length + summary.manualAssets.length > 0
+                  ? 'Balances are recorded each day automatically.'
+                  : 'Connect an account or add an asset to start the trend.'
             }
           />
           <div className="flex items-end gap-8">
@@ -323,18 +323,10 @@ function NetWorthPage() {
             ) : (
               <EmptyState
                 title="No history yet"
-                description="Snapshots record your balances over time. Take the first one to start the trend line."
-                action={
-                  <Button
-                    size="sm"
-                    onClick={() =>
-                      void snapshotNow({})
-                        .then(() => toast.success('Snapshot saved'))
-                        .catch((e: Error) => toast.error(e.message))
-                    }
-                  >
-                    Snapshot today
-                  </Button>
+                description={
+                  summary.accounts.length + summary.manualAssets.length > 0
+                    ? "Today's balances are being recorded. The line grows as days pass."
+                    : 'Connect an account or add an asset — a point is recorded each day from there.'
                 }
               />
             )}

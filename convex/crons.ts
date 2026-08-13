@@ -9,6 +9,7 @@ crons.daily(
   internal.plaidActions.syncAllItems,
 )
 
+// After the 10:00 Plaid sync so the daily point uses fresh balances.
 crons.daily(
   'net worth snapshot',
   { hourUTC: 11, minuteUTC: 0 },
