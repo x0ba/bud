@@ -1,22 +1,23 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    BUD — LANDING PAGE
-   Calm, product-forward, credible. The page is a cool canvas; each chapter sits
-   in a centered rounded slab — white, then ink, then white again — so the shift
-   in ground is a hard edge, not a fade. Every selector is prefixed .lp- so
-   nothing can reach into the app, which ships its own Tailwind layer.
+   Same paper as the app: warm canvas, cream slabs, lagoon accent. Each chapter
+   sits in a centered rounded slab — foam, then ink, then foam again — so the
+   shift in ground is a hard edge, not a fade. Every selector is prefixed .lp-
+   so nothing can reach into the app, which ships its own Tailwind layer.
+   Tokens below inherit the app's named palette from :root in styles.css.
    ──────────────────────────────────────────────────────────────────────────── */
 
 .lp {
-  --canvas: #eceef1;
-  --bg: #ffffff;
-  --wash: #f6f7f9;
-  --ink: #0d1117;
-  --ink-2: #3d4551;
-  --muted: #667085;
-  --line: rgba(13, 17, 23, 0.09);
-  --line-soft: rgba(13, 17, 23, 0.06);
-  --accent: #2f7d73;
-  --accent-soft: #eaf3f1;
+  --canvas: var(--bg-base);
+  --bg: var(--card);
+  --wash: var(--sand);
+  --ink: var(--sea-ink);
+  --ink-2: var(--sea-ink-soft);
+  --muted: var(--muted-foreground);
+  --line: rgba(28, 25, 23, 0.1);
+  --line-soft: rgba(28, 25, 23, 0.06);
+  --accent: var(--lagoon-deep);
+  --accent-soft: color-mix(in oklab, var(--lagoon) 18%, var(--foam));
   --e: cubic-bezier(0.22, 1, 0.36, 1);
   --frame: 1240px;
   --gutter: 12px;
@@ -50,30 +51,30 @@
 .lp-slab {
   position: relative;
   padding-inline: clamp(1.25rem, 4vw, 3.5rem);
-  border: 1px solid rgba(13, 17, 23, 0.06);
+  border: 1px solid var(--line-soft);
   border-radius: var(--slab-radius);
   background: var(--bg);
   overflow: hidden;
 }
 
 .lp-slab-ink {
-  --bg: #0a0b0d;
-  --ink: #f3f4f6;
-  --ink-2: #c8cdd5;
-  --muted: #9aa3af;
-  --line: rgba(255, 255, 255, 0.12);
-  --line-soft: rgba(255, 255, 255, 0.08);
-  --accent: #6bbbb2;
-  --accent-soft: rgba(47, 125, 115, 0.22);
+  --bg: #1c1917;
+  --ink: #f7f4ee;
+  --ink-2: #ebe6dc;
+  --muted: #a8a29e;
+  --line: rgba(247, 244, 238, 0.12);
+  --line-soft: rgba(247, 244, 238, 0.08);
+  --accent: #5a9e94;
+  --accent-soft: rgba(90, 158, 148, 0.22);
   border-color: transparent;
   background-color: var(--bg);
   background-image: radial-gradient(
-    rgba(255, 255, 255, 0.07) 0.7px,
+    rgba(247, 244, 238, 0.07) 0.7px,
     transparent 0.8px
   );
   background-size: 20px 20px;
   color: var(--ink);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(247, 244, 238, 0.06);
 }
 
 @media (width < 40rem) {
@@ -115,12 +116,12 @@
 }
 
 .lp-nav[data-state='pinned'] .lp-nav-inner {
-  border-color: rgba(13, 17, 23, 0.12);
-  background: rgba(255, 255, 255, 0.88);
+  border-color: var(--line);
+  background: var(--surface-strong);
   backdrop-filter: blur(16px) saturate(1.6);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.9) inset,
-    0 14px 34px rgba(13, 17, 23, 0.12);
+    0 1px 0 var(--inset-glint) inset,
+    0 14px 34px rgba(28, 25, 23, 0.12);
 }
 
 .lp-mark {
@@ -152,10 +153,10 @@
   gap: 8px;
   height: 42px;
   padding: 0 20px;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--primary);
   border-radius: 999px;
-  background: var(--ink);
-  color: #fff;
+  background: var(--primary);
+  color: var(--primary-foreground);
   font-size: 14.5px;
   font-weight: 500;
   letter-spacing: -0.005em;
@@ -166,8 +167,8 @@
 }
 
 .lp-btn:hover {
-  background: #23292f;
-  border-color: #23292f;
+  background: var(--ink);
+  border-color: var(--ink);
 }
 
 .lp-btn:active {
@@ -176,13 +177,13 @@
 
 .lp-btn-outline {
   border-color: var(--line);
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--surface);
   color: var(--ink);
 }
 
 .lp-btn-outline:hover {
-  border-color: rgba(13, 17, 23, 0.2);
-  background: #fff;
+  border-color: var(--chip-line);
+  background: var(--link-bg-hover);
 }
 
 .lp-btn-sm {
@@ -236,7 +237,7 @@
   font-size: 11px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(102, 112, 133, 0.8);
+  color: color-mix(in oklab, var(--muted) 80%, transparent);
 }
 
 .lp-logos-marquee {
@@ -320,20 +321,20 @@
   background:
     radial-gradient(
       ellipse 62% 82% at 4% 6%,
-      rgba(255, 196, 148, 0.98),
+      color-mix(in oklab, var(--lagoon) 78%, white),
       transparent 62%
     ),
     radial-gradient(
       ellipse 70% 92% at 96% 14%,
-      rgba(186, 176, 255, 0.95),
+      color-mix(in oklab, var(--chart-3) 62%, white),
       transparent 64%
     ),
     radial-gradient(
       ellipse 84% 74% at 52% 112%,
-      rgba(150, 224, 200, 0.98),
+      color-mix(in oklab, var(--palm) 70%, white),
       transparent 62%
     ),
-    linear-gradient(160deg, #f6ece1, #e9e6f6);
+    linear-gradient(160deg, var(--foam), var(--sand));
   overflow: hidden;
 }
 
@@ -348,19 +349,23 @@
   position: absolute;
   inset: auto 0 0;
   height: 90px;
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.75));
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--card) 78%, transparent));
   pointer-events: none;
 }
 
 .lp-app {
+  --accent: var(--lagoon-deep);
+  --accent-soft: color-mix(in oklab, var(--lagoon) 18%, var(--foam));
+  --line: rgba(28, 25, 23, 0.1);
+  --line-soft: rgba(28, 25, 23, 0.06);
   display: grid;
   grid-template-columns: 148px minmax(0, 1fr);
-  border: 1px solid rgba(13, 17, 23, 0.08);
+  border: 1px solid var(--border);
   border-radius: 12px 12px 0 0;
-  background: #fbf9f5;
+  background: var(--background);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 30px 60px rgba(13, 17, 23, 0.13);
+    0 1px 0 var(--inset-glint) inset,
+    0 30px 60px rgba(28, 25, 23, 0.13);
   overflow: hidden;
   font-size: 12px;
   text-align: left;
@@ -390,7 +395,7 @@
 .lp-app-side {
   padding: 14px 10px;
   border-right: 1px solid var(--line-soft);
-  background: #f7f4ee;
+  background: var(--foam);
 }
 
 .lp-app-brand {
@@ -399,7 +404,7 @@
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 .lp-app-nav {
@@ -414,14 +419,14 @@
   gap: 8px;
   padding: 6px 8px;
   border-radius: 6px;
-  color: #6b645c;
+  color: var(--muted-foreground);
   font-size: 11.5px;
   font-weight: 500;
 }
 
 .lp-app-nav span[data-active='true'] {
   background: rgba(28, 25, 23, 0.07);
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 .lp-app-nav i {
@@ -451,7 +456,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-app-figure {
@@ -461,13 +466,13 @@
   line-height: 1;
   letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 .lp-app-delta {
   margin-top: 6px;
   font-size: 11px;
-  color: #4a6b52;
+  color: var(--palm);
 }
 
 .lp-spark {
@@ -504,9 +509,9 @@
 }
 
 .lp-app-panel {
-  border: 1px solid rgba(28, 25, 23, 0.1);
+  border: 1px solid var(--border);
   border-radius: 9px;
-  background: #fffdf9;
+  background: var(--card);
   overflow: hidden;
 }
 
@@ -519,13 +524,13 @@
   border-bottom: 1px solid rgba(28, 25, 23, 0.07);
   font-size: 11.5px;
   font-weight: 600;
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 .lp-app-panel-head em {
   font-style: normal;
   font-weight: 500;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-app-panel-body {
@@ -537,14 +542,14 @@
   align-items: baseline;
   justify-content: space-between;
   font-size: 11px;
-  color: #6b645c;
+  color: var(--muted-foreground);
 }
 
 .lp-pace b {
   font-size: 17px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: #1c1917;
+  color: var(--sea-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -578,11 +583,11 @@
   height: 66px;
   border-radius: 999px;
   background: conic-gradient(
-    #3d7a72 0 34%,
-    #4a6b52 34% 58%,
-    #c27803 58% 76%,
-    #b45309 76% 89%,
-    rgba(28, 25, 23, 0.14) 89% 100%
+    var(--chart-1) 0 34%,
+    var(--chart-2) 34% 58%,
+    var(--chart-3) 58% 76%,
+    var(--chart-5) 76% 89%,
+    color-mix(in oklab, var(--sea-ink) 14%, transparent) 89% 100%
   );
   mask: radial-gradient(circle, transparent 56%, #000 57%);
 }
@@ -601,12 +606,12 @@
   justify-content: space-between;
   gap: 8px;
   font-size: 11px;
-  color: #57534e;
+  color: var(--sea-ink-soft);
 }
 
 .lp-legend b {
   font-weight: 500;
-  color: #1c1917;
+  color: var(--sea-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -648,12 +653,12 @@
   border-radius: 999px;
   background: rgba(28, 25, 23, 0.06);
   font-size: 10px;
-  color: #6b645c;
+  color: var(--muted-foreground);
 }
 
 .lp-txn-amt {
   font-variant-numeric: tabular-nums;
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 /* A few degrees of tilt reads as a product shot rather than a screenshot pasted
@@ -821,7 +826,7 @@
   position: absolute;
   inset: auto 0 0;
   height: 56px;
-  background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.6));
+  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--card) 62%, transparent));
   pointer-events: none;
 }
 
@@ -829,95 +834,99 @@
   background:
     radial-gradient(
       ellipse 88% 96% at 4% 0%,
-      rgba(118, 220, 186, 0.98),
+      color-mix(in oklab, var(--lagoon) 82%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 82% 94% at 100% 100%,
-      rgba(178, 166, 255, 0.85),
+      color-mix(in oklab, var(--palm) 55%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 70% 78% at 62% 34%,
-      rgba(255, 224, 172, 0.5),
+      color-mix(in oklab, var(--sand) 80%, white),
       transparent 70%
     ),
-    linear-gradient(150deg, #cdeee0, #ded9f5);
+    linear-gradient(150deg, #d4ebe6, var(--sand));
 }
 
 .lp-feature-visual[data-tone='lavender'] {
   background:
     radial-gradient(
       ellipse 86% 96% at 98% 0%,
-      rgba(168, 152, 255, 0.98),
+      color-mix(in oklab, var(--lagoon-deep) 70%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 84% 92% at 0% 100%,
-      rgba(142, 194, 248, 0.88),
+      color-mix(in oklab, var(--lagoon) 62%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 66% 74% at 40% 46%,
-      rgba(255, 196, 214, 0.42),
+      color-mix(in oklab, var(--foam) 70%, white),
       transparent 70%
     ),
-    linear-gradient(160deg, #ddd6f7, #d9e7f7);
+    linear-gradient(160deg, #d5e6e2, var(--sand));
 }
 
 .lp-feature-visual[data-tone='peach'] {
   background:
     radial-gradient(
       ellipse 88% 96% at 2% 0%,
-      rgba(255, 184, 124, 0.98),
+      color-mix(in oklab, var(--chart-3) 72%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 82% 92% at 100% 100%,
-      rgba(255, 154, 162, 0.82),
+      color-mix(in oklab, var(--chart-5) 48%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 66% 76% at 58% 40%,
-      rgba(255, 228, 168, 0.55),
+      color-mix(in oklab, var(--sand) 85%, white),
       transparent 70%
     ),
-    linear-gradient(150deg, #fbdfc6, #f7d9dd);
+    linear-gradient(150deg, #f3e4cc, var(--sand));
 }
 
 .lp-feature-visual[data-tone='sky'] {
   background:
     radial-gradient(
       ellipse 88% 96% at 100% 0%,
-      rgba(134, 190, 250, 0.98),
+      color-mix(in oklab, var(--lagoon) 68%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 82% 92% at 0% 100%,
-      rgba(126, 220, 190, 0.85),
+      color-mix(in oklab, var(--palm) 58%, white),
       transparent 66%
     ),
     radial-gradient(
       ellipse 64% 74% at 46% 44%,
-      rgba(186, 176, 255, 0.45),
+      color-mix(in oklab, var(--chart-3) 28%, white),
       transparent 70%
     ),
-    linear-gradient(160deg, #d5e6f9, #d9efe6);
+    linear-gradient(160deg, #d8e8e2, var(--sand));
 }
 
 /* Screen replicas inside the frames ── */
 .lp-m {
+  --accent: var(--lagoon-deep);
+  --accent-soft: color-mix(in oklab, var(--lagoon) 18%, var(--foam));
+  --line: rgba(28, 25, 23, 0.1);
+  --line-soft: rgba(28, 25, 23, 0.06);
   position: relative;
-  border: 1px solid rgba(13, 17, 23, 0.08);
+  border: 1px solid var(--border);
   border-radius: 11px 11px 0 0;
-  background: #fffdf9;
+  background: var(--card);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 22px 44px rgba(13, 17, 23, 0.14);
+    0 1px 0 var(--inset-glint) inset,
+    0 22px 44px rgba(28, 25, 23, 0.14);
   overflow: hidden;
   font-size: 12px;
   text-align: left;
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 .lp-m-head {
@@ -934,7 +943,7 @@
 .lp-m-head em {
   font-style: normal;
   font-weight: 500;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-body {
@@ -956,12 +965,12 @@
   font-size: 9.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-group b {
   font-weight: 500;
-  color: #57534e;
+  color: var(--sea-ink-soft);
   font-variant-numeric: tabular-nums;
 }
 
@@ -984,8 +993,8 @@
   width: 18px;
   height: 18px;
   border-radius: 5px;
-  background: rgba(47, 125, 115, 0.14);
-  color: #2f7d73;
+  background: color-mix(in oklab, var(--lagoon) 14%, transparent);
+  color: var(--lagoon-deep);
   font-size: 9.5px;
   font-style: normal;
   font-weight: 600;
@@ -1001,14 +1010,14 @@
 
 .lp-m-name em {
   font-style: normal;
-  color: #a8a29e;
+  color: var(--muted-foreground);
 }
 
 .lp-m-note,
 .lp-m-next {
   flex: 0 0 auto;
   font-size: 10px;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-amt {
@@ -1018,11 +1027,11 @@
 }
 
 .lp-m-amt[data-up='true'] {
-  color: #4a6b52;
+  color: var(--palm);
 }
 
 .lp-m-amt[data-up='false'] {
-  color: #b45309;
+  color: var(--chart-5);
 }
 
 .lp-m-figure {
@@ -1037,7 +1046,7 @@
 .lp-m-delta {
   margin: 6px 0 0;
   font-size: 11px;
-  color: #4a6b52;
+  color: var(--palm);
 }
 
 .lp-m-chart {
@@ -1070,7 +1079,7 @@
 
 .lp-m-splits span {
   font-size: 10px;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-splits b {
@@ -1089,7 +1098,7 @@
 .lp-m-rec em {
   font-style: normal;
   font-size: 10px;
-  color: #a8a29e;
+  color: var(--muted-foreground);
 }
 
 .lp-m-flag {
@@ -1098,9 +1107,9 @@
   gap: 3px;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(194, 120, 3, 0.12);
+  background: color-mix(in oklab, var(--chart-3) 12%, transparent);
   font-size: 9.5px;
-  color: #b45309;
+  color: var(--chart-5);
 }
 
 .lp-m-chip {
@@ -1111,26 +1120,26 @@
   border-radius: 999px;
   background: rgba(28, 25, 23, 0.06);
   font-size: 10px;
-  color: #6b645c;
+  color: var(--muted-foreground);
 }
 
 .lp-m-chip[data-changed='true'] {
   background: var(--accent-soft);
   color: var(--accent);
-  box-shadow: 0 0 0 1px rgba(47, 125, 115, 0.24);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--lagoon-deep) 24%, transparent);
 }
 
 .lp-m-cat[data-editing='true'] {
-  background: rgba(47, 125, 115, 0.05);
+  background: color-mix(in oklab, var(--lagoon) 5%, transparent);
 }
 
 .lp-m-learn {
   margin: 10px 12px 14px;
   padding: 11px 12px;
-  border: 1px solid rgba(47, 125, 115, 0.22);
+  border: 1px solid color-mix(in oklab, var(--lagoon-deep) 22%, transparent);
   border-radius: 9px;
-  background: #fff;
-  box-shadow: 0 6px 18px rgba(13, 17, 23, 0.06);
+  background: var(--card);
+  box-shadow: 0 6px 18px rgba(28, 25, 23, 0.06);
 }
 
 .lp-m-learn p {
@@ -1147,7 +1156,7 @@
 
 .lp-m-learn-row em {
   font-style: normal;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-ghost,
@@ -1160,12 +1169,12 @@
 
 .lp-m-ghost {
   border: 1px solid rgba(28, 25, 23, 0.14);
-  color: #57534e;
+  color: var(--sea-ink-soft);
 }
 
 .lp-m-solid {
   background: var(--accent);
-  color: #fff;
+  color: var(--primary-foreground);
 }
 
 /* Budget replica ── the flex pool is the focal point of the screen, so it gets
@@ -1176,13 +1185,13 @@
   font-size: 9.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-pool {
   padding: 11px 12px 12px;
   border-block: 1px solid rgba(28, 25, 23, 0.07);
-  background: rgba(47, 125, 115, 0.04);
+  background: color-mix(in oklab, var(--lagoon) 6%, transparent);
 }
 
 .lp-m-pool-head {
@@ -1201,7 +1210,7 @@
   font-size: 10px;
   font-style: normal;
   font-weight: 400;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 /* Where the month actually is, against how much of the pool is gone. */
@@ -1210,7 +1219,7 @@
   inset-block: 0;
   width: 2px;
   border-radius: 999px;
-  background: rgba(13, 17, 23, 0.55);
+  background: rgba(28, 25, 23, 0.55);
 }
 
 .lp-m-pace-note {
@@ -1219,7 +1228,7 @@
   gap: 8px;
   margin-top: 7px;
   font-size: 10px;
-  color: #8b8379;
+  color: var(--muted-foreground);
 }
 
 .lp-m-fix .lp-m-name em {
@@ -1239,7 +1248,7 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: rgba(47, 125, 115, 0.65);
+  background: color-mix(in oklab, var(--lagoon-deep) 65%, transparent);
 }
 
 /* Reads as the field it is on the real screen: a number you typed once. */
@@ -1248,11 +1257,11 @@
   padding: 3px 9px;
   border: 1px solid rgba(28, 25, 23, 0.16);
   border-radius: 7px;
-  background: #fff;
+  background: var(--card);
   font-size: 11px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-  color: #1c1917;
+  color: var(--sea-ink);
 }
 
 /* Budget section ── the positions Bud takes on budgeting, beside the screen
@@ -1393,11 +1402,11 @@
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #9aa3af;
+  color: var(--muted);
 }
 
 .lp-foot-col a {
-  color: #4b5563;
+  color: var(--ink-2);
   font-size: 15px;
   font-weight: 400;
   letter-spacing: -0.01em;
@@ -1437,7 +1446,7 @@
   bottom: -28%;
   width: clamp(260px, 42vw, 540px);
   height: auto;
-  color: rgba(13, 17, 23, 0.11);
+  color: rgba(28, 25, 23, 0.11);
   pointer-events: none;
 }
 

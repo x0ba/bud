@@ -14,10 +14,10 @@ const appNav = [
 ]
 
 const mix = [
-  { name: 'Fixed', amount: '$3,980', color: '#3d7a72' },
-  { name: 'Groceries', amount: '$612', color: '#4a6b52' },
-  { name: 'Restaurants', amount: '$438', color: '#c27803' },
-  { name: 'Travel', amount: '$305', color: '#b45309' },
+  { name: 'Fixed', amount: '$3,980', color: 'var(--chart-1)' },
+  { name: 'Groceries', amount: '$612', color: 'var(--chart-2)' },
+  { name: 'Restaurants', amount: '$438', color: 'var(--chart-3)' },
+  { name: 'Travel', amount: '$305', color: 'var(--chart-5)' },
 ]
 
 const txns = [
@@ -316,8 +316,8 @@ export function NetWorthMock() {
         <svg className="lp-m-chart" viewBox="0 0 320 92" aria-hidden="true">
           <defs>
             <linearGradient id="lp-nw-fill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2f7d73" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="#2f7d73" stopOpacity="0" />
+              <stop offset="0%" stopColor="var(--lagoon-deep)" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="var(--lagoon-deep)" stopOpacity="0" />
             </linearGradient>
           </defs>
           <path
