@@ -190,7 +190,9 @@ export function Page({
   className?: string
 }) {
   return (
-    <div className={cn('flex w-full min-w-0 flex-col gap-3 md:gap-4', className)}>
+    <div
+      className={cn('flex w-full min-w-0 flex-col gap-3 md:gap-4', className)}
+    >
       {children}
     </div>
   )

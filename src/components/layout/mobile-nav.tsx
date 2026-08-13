@@ -89,7 +89,12 @@ function Tab({
   }
 
   return (
-    <button type="button" className="mobile-tab" data-active={active || undefined} {...rest}>
+    <button
+      type="button"
+      className="mobile-tab"
+      data-active={active || undefined}
+      {...rest}
+    >
       {body}
     </button>
   )

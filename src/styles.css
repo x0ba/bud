@@ -270,7 +270,9 @@ pre code {
   padding-top: 0.75rem;
   /* Clears the tab bar plus the home indicator, so the last row of the ledger
      is readable rather than parked under the chrome. */
-  padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + 1.5rem);
+  padding-bottom: calc(
+    var(--tabbar-height) + env(safe-area-inset-bottom) + 1.5rem
+  );
 }
 
 @media (width >= 48rem) {
