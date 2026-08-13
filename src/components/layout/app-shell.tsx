@@ -1,19 +1,20 @@
-import { Children, useEffect, useRef, useState } from 'react'
-import { useRouterState } from '@tanstack/react-router'
+import {
+  Children,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
+import { createPortal } from 'react-dom'
 import HeaderUser from '#/integrations/clerk/header-user'
 import { cn } from '#/lib/utils'
 import { AppSidebar } from './app-sidebar'
 
-/** First real content in the tab — covers EnsureUser blank → page ready. */
-let sessionEnterPending = true
+/** Where AppShell portals each page's title and actions. */
+const HeaderSlotContext = createContext<HTMLElement | null>(null)
 
-/**
- * Paths that should still fade on the next content paint.
- * Kept briefly so React Strict Mode remounts still animate in dev.
- */
-const enterPendingByPath = new Set<string>()
-
-function useEnterActive(shouldEnter: boolean, pathname: string) {
+function useEnterActive(shouldEnter: boolean) {
   const [active, setActive] = useState(false)
 
   useEffect(() => {
@@ -23,25 +24,67 @@ function useEnterActive(shouldEnter: boolean, pathname: string) {
     }
     let cancelled = false
     let raf2 = 0
+    // From-state must paint first; a busy commit could otherwise finish the
+    // enter transition before the first frame.
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => {
         if (!cancelled) setActive(true)
       })
     })
-    const id = window.setTimeout(() => {
-      enterPendingByPath.delete(pathname)
-    }, 350)
     return () => {
       cancelled = true
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(raf2)
-      window.clearTimeout(id)
     }
-  }, [shouldEnter, pathname])
+  }, [shouldEnter])
 
   return active
 }
 
+/**
+ * Persistent chrome, mounted once per session by the `_app` layout. The
+ * sidebar and the Clerk user button live here so navigation only swaps page
+ * content — when every page owned its own copy of the shell, each sidebar
+ * click remounted all of it (sidebar links, tooltips, Clerk button), which
+ * made navigation feel sluggish.
+ */
+export function AppFrame({ children }: { children: React.ReactNode }) {
+  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null)
+  const enterActive = useEnterActive(true)
+
+  return (
+    <div
+      className={cn(
+        'flex min-h-dvh bg-background text-foreground',
+        'content-enter',
+        enterActive && 'content-enter-active',
+      )}
+    >
+      <AppSidebar />
+      <div className="min-w-0 flex-1">
+        <header className="app-shell-header gap-2.5">
+          <div
+            ref={setHeaderSlot}
+            className="flex min-w-0 flex-1 items-center justify-between gap-2.5"
+          />
+          <HeaderUser />
+        </header>
+        <main className="px-8 pt-4 pb-10">
+          <HeaderSlotContext.Provider value={headerSlot}>
+            {children}
+          </HeaderSlotContext.Provider>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Per-page wrapper. Renders only the page's header content (into the
+ * persistent AppFrame header) and its main content, so it stays cheap to
+ * mount on navigation. Content that first paints empty (waiting on data)
+ * fades in when it arrives; content available immediately paints instantly.
+ */
 export function AppShell({
   children,
   title,
@@ -51,79 +94,50 @@ export function AppShell({
   title?: string
   actions?: React.ReactNode
 }) {
-  const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const headerSlot = useContext(HeaderSlotContext)
   const sawEmpty = useRef(false)
-  const shellFadeRef = useRef<boolean | null>(null)
   const contentFadeRef = useRef<boolean | null>(null)
   const hasContent = Children.toArray(children).length > 0
 
-  if (shellFadeRef.current === null) {
-    shellFadeRef.current = sessionEnterPending
-    if (sessionEnterPending) {
-      sessionEnterPending = false
-      enterPendingByPath.add(pathname)
-    }
-  }
-
   if (!hasContent) {
     sawEmpty.current = true
-    enterPendingByPath.add(pathname)
   }
-
   if (contentFadeRef.current === null && hasContent) {
-    // Session shell fade already covers first paint with content. Otherwise
-    // fade main only after an empty wait (sidebar stays put on route changes).
-    const shellCoversThisPaint =
-      shellFadeRef.current === true && !sawEmpty.current
-    contentFadeRef.current = shellCoversThisPaint
-      ? false
-      : sawEmpty.current || enterPendingByPath.has(pathname)
-    if (contentFadeRef.current) {
-      enterPendingByPath.add(pathname)
-    }
+    contentFadeRef.current = sawEmpty.current
   }
 
-  const shellFade = shellFadeRef.current === true
   const contentFade = contentFadeRef.current === true
-  const shellEnterActive = useEnterActive(shellFade, pathname)
-  const contentEnterActive = useEnterActive(contentFade, pathname)
+  const contentEnterActive = useEnterActive(contentFade)
 
   return (
-    <div
-      className={cn(
-        'flex min-h-dvh bg-background text-foreground',
-        shellFade && 'content-enter',
-        shellFade && shellEnterActive && 'content-enter-active',
-      )}
-    >
-      <AppSidebar />
-      <div className="min-w-0 flex-1">
-        <header className="app-shell-header">
-          <div className="min-w-0">
-            {title ? (
-              <h1 className="truncate text-[15px] font-semibold tracking-tight text-[var(--sea-ink)]">
-                {title}
-              </h1>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2.5">
-            {actions}
-            <HeaderUser />
-          </div>
-        </header>
-        <main className="px-8 pt-4 pb-10">
-          {hasContent ? (
-            <div
-              className={cn(
-                contentFade && 'content-enter',
-                contentFade && contentEnterActive && 'content-enter-active',
-              )}
-            >
-              {children}
-            </div>
-          ) : null}
-        </main>
-      </div>
-    </div>
+    <>
+      {headerSlot
+        ? createPortal(
+            <>
+              <div className="min-w-0">
+                {title ? (
+                  <h1 className="truncate text-[15px] font-semibold tracking-tight text-[var(--sea-ink)]">
+                    {title}
+                  </h1>
+                ) : null}
+              </div>
+              {actions ? (
+                <div className="flex items-center gap-2.5">{actions}</div>
+              ) : null}
+            </>,
+            headerSlot,
+          )
+        : null}
+      {hasContent ? (
+        <div
+          className={cn(
+            contentFade && 'content-enter',
+            contentFade && contentEnterActive && 'content-enter-active',
+          )}
+        >
+          {children}
+        </div>
+      ) : null}
+    </>
   )
 }

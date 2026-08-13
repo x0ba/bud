@@ -14,7 +14,7 @@ import {
   Tags,
   Wallet,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from '#/components/ui/button'
 import {
   Tooltip,
@@ -57,6 +57,7 @@ function NavLink({
   const link = (
     <Link
       to={to}
+      preload="render"
       aria-label={collapsed ? label : undefined}
       className={cn(
         'flex items-center gap-2.5 rounded-md text-[13px] font-medium no-underline transition-[color,background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]',
@@ -95,15 +96,18 @@ function NavLink({
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
-  const [collapsed, setCollapsed] = useState(false)
-
-  useEffect(() => {
+  // Only rendered client-side (behind EnsureUser), so reading storage in the
+  // initializer is safe and avoids a expanded→collapsed flash on mount.
+  const [collapsed, setCollapsed] = useState(() => {
     try {
-      setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1')
+      return (
+        typeof window !== 'undefined' &&
+        localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'
+      )
     } catch {
-      // ignore storage access errors
+      return false
     }
-  }, [])
+  })
 
   function toggleCollapsed() {
     setCollapsed((prev) => {
