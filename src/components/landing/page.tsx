@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 
+import { SproutMark } from '#/components/sprout'
 import {
   AccountsMock,
   BudgetMock,
@@ -324,23 +325,7 @@ function LogoSet({ duplicate = false }: { duplicate?: boolean }) {
 function Mark() {
   return (
     <span className="lp-mark">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M12 21.5V11"
-          stroke="#1c1917"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M12 12.5C12 7.9 8.9 4.6 4.2 4c-.4 4.8 2.6 8.5 7.8 8.5z"
-          fill="#3d7a72"
-        />
-        <path
-          d="M12 15c0-4.1 2.8-7.1 7-7.6.4 4.3-2.4 7.6-7 7.6z"
-          fill="#1c1917"
-          opacity="0.82"
-        />
-      </svg>
+      <SproutMark />
       Bud
     </span>
   )

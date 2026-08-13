@@ -21,6 +21,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '#/components/ui/tooltip'
+import { SproutMark } from '#/components/sprout'
 import { cn } from '#/lib/utils'
 
 const SIDEBAR_COLLAPSED_KEY = 'bud.sidebar-collapsed'
@@ -139,7 +140,8 @@ export function AppSidebar() {
         )}
       >
         {!collapsed ? (
-          <span className="display-title text-[1.3rem] leading-none tracking-tight text-[var(--sea-ink)]">
+          <span className="display-title flex items-center gap-[9px] text-[19px] font-semibold leading-none tracking-tight text-[var(--sea-ink)]">
+            <SproutMark className="size-[22px] shrink-0" />
             Bud
           </span>
         ) : null}

@@ -58,7 +58,7 @@ Warm paper tokens in `src/styles.css`:
 - Inflows: `--palm`
 - Warning: amber-700; overspend: destructive
 
-Fraunces only for brand wordmark / empty-state titles. Manrope for UI.
+Instrument Sans for brand wordmark and empty-state titles. Inter for UI. Fraunces only on the auth screen.
 
 ## Component patterns
 
@@ -95,7 +95,7 @@ Fraunces only for brand wordmark / empty-state titles. Manrope for UI.
 - `RowGroupHeader` — quiet subhead inside a long list
 - `RowTitle` / `RowMeta` — primary/secondary row lines
 - `ShareBar` — hairline magnitude bar
-- `EmptyState` — dashed border, Fraunces title (borderless inside a panel)
+- `EmptyState` — dashed border, Instrument Sans title (borderless inside a panel)
 - `CategoryDot` — 8px color swatch
 
 ### Taxonomy list (`settings/categories`)
