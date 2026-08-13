@@ -174,10 +174,7 @@ function TransactionsPage() {
       <Page>
         <PageSummary>
           <div className="flex gap-10">
-            <Stat
-              label="Out"
-              value={formatUsdPlain(summary?.out ?? 0)}
-            />
+            <Stat label="Out" value={formatUsdPlain(summary?.out ?? 0)} />
             {summary && summary.incoming > 0 ? (
               <Stat label="In" value={formatUsdPlain(summary.incoming)} />
             ) : null}
@@ -249,7 +246,7 @@ function TransactionsPage() {
                         key={tx._id}
                         className={cn(
                           'cursor-pointer',
-                          selectedId === tx._id && 'bg-muted/50',
+                          selectedId === tx._id && 'bg-muted',
                         )}
                         onClick={() => setSelectedId(tx._id)}
                       >

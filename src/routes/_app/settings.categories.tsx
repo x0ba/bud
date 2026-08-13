@@ -189,80 +189,80 @@ function CategoriesPage() {
         ) : null}
 
         <PageBody>
-        {model.sections.map((section) => {
-          const rootOpen =
-            composer?.kind === 'root' && composer.type === section.type
-          return (
-            <Panel
-              key={section.type}
-              id={`categories-${section.type}`}
-              span={4}
-              title={section.title}
-              description={section.description}
-              flush
-              action={
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  aria-expanded={rootOpen}
-                  onClick={() =>
-                    setComposer(
-                      rootOpen ? null : { kind: 'root', type: section.type },
+          {model.sections.map((section) => {
+            const rootOpen =
+              composer?.kind === 'root' && composer.type === section.type
+            return (
+              <Panel
+                key={section.type}
+                id={`categories-${section.type}`}
+                span={4}
+                title={section.title}
+                description={section.description}
+                flush
+                action={
+                  <Button
+                    variant="ghost"
+                    size="xs"
+                    aria-expanded={rootOpen}
+                    onClick={() =>
+                      setComposer(
+                        rootOpen ? null : { kind: 'root', type: section.type },
+                      )
+                    }
+                  >
+                    <Plus />
+                    Add
+                  </Button>
+                }
+              >
+                <DataList>
+                  {rootOpen ? (
+                    <li className="py-2">
+                      <InlineComposer
+                        placeholder={`New ${section.title.toLowerCase()} category`}
+                        onSubmit={submit}
+                        onCancel={() => setComposer(null)}
+                      />
+                    </li>
+                  ) : null}
+
+                  {section.groups.map((group) => {
+                    const childOpen =
+                      composer?.kind === 'child' &&
+                      composer.parentId === group.parent._id
+                    return (
+                      <CategoryGroup
+                        key={group.parent._id}
+                        group={group}
+                        childOpen={childOpen}
+                        onAddChild={() =>
+                          setComposer(
+                            childOpen
+                              ? null
+                              : {
+                                  kind: 'child',
+                                  parentId: group.parent._id,
+                                  type: group.parent.budgetType,
+                                  color: group.parent.color,
+                                },
+                          )
+                        }
+                        onCancelChild={() => setComposer(null)}
+                        onSubmitChild={submit}
+                      />
                     )
-                  }
-                >
-                  <Plus />
-                  Add
-                </Button>
-              }
-            >
-              <DataList>
-                {rootOpen ? (
-                  <li className="py-2">
-                    <InlineComposer
-                      placeholder={`New ${section.title.toLowerCase()} category`}
-                      onSubmit={submit}
-                      onCancel={() => setComposer(null)}
-                    />
-                  </li>
-                ) : null}
+                  })}
 
-                {section.groups.map((group) => {
-                  const childOpen =
-                    composer?.kind === 'child' &&
-                    composer.parentId === group.parent._id
-                  return (
-                    <CategoryGroup
-                      key={group.parent._id}
-                      group={group}
-                      childOpen={childOpen}
-                      onAddChild={() =>
-                        setComposer(
-                          childOpen
-                            ? null
-                            : {
-                                kind: 'child',
-                                parentId: group.parent._id,
-                                type: group.parent.budgetType,
-                                color: group.parent.color,
-                              },
-                        )
-                      }
-                      onCancelChild={() => setComposer(null)}
-                      onSubmitChild={submit}
-                    />
-                  )
-                })}
-
-                {section.groups.length === 0 && !rootOpen ? (
-                  <li className="py-3 text-[13px] text-muted-foreground">
-                    Nothing here yet — use Add above.
-                  </li>
-                ) : null}
-              </DataList>
-            </Panel>
-          )
-        })}
+                  {section.groups.length === 0 && !rootOpen ? (
+                    <li className="py-3 text-[13px] text-muted-foreground">
+                      Nothing here yet — use Add above.
+                    </li>
+                  ) : null}
+                </DataList>
+              </Panel>
+            )
+          })}
         </PageBody>
 
         {categories.length > 0 && model.sections.length === 0 ? (

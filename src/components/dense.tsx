@@ -46,7 +46,10 @@ export function HeroMetric({
   return (
     <div className={cn('space-y-1', className)}>
       <Kicker>{label}</Kicker>
-      <p className="hero-figure" data-tone={tone === 'default' ? undefined : tone}>
+      <p
+        className="hero-figure"
+        data-tone={tone === 'default' ? undefined : tone}
+      >
         {value}
       </p>
       {meta ? (
@@ -120,7 +123,6 @@ export function RowGroupHeader({
   )
 }
 
-
 /** Primary line in a dense row (merchant, account name). */
 export function RowTitle({
   children,
@@ -130,7 +132,12 @@ export function RowTitle({
   className?: string
 }) {
   return (
-    <p className={cn('truncate text-[13px] font-medium text-[var(--sea-ink)]', className)}>
+    <p
+      className={cn(
+        'truncate text-[13px] font-medium text-[var(--sea-ink)]',
+        className,
+      )}
+    >
       {children}
     </p>
   )
@@ -200,7 +207,10 @@ export function ShareBar({
   const pct = total > 0 ? Math.min(1, Math.abs(value) / total) : 0
   return (
     <span
-      className={cn('block h-1 overflow-hidden rounded-full bg-muted', className)}
+      className={cn(
+        'block h-1 overflow-hidden rounded-full bg-muted',
+        className,
+      )}
       aria-hidden
     >
       <span

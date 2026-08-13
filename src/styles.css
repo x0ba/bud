@@ -285,6 +285,10 @@ pre code {
   border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
   border-radius: 10px;
   background: var(--card);
+  /* `clip` rather than `hidden`: full-bleed row tints and hover fills have to
+     stop at the rounded corners, but clip establishes no scrollport, so the
+     ledger's sticky header still sticks to the viewport. */
+  overflow: clip;
 }
 
 .panel-head {
@@ -595,8 +599,10 @@ pre code {
 }
 
 @media (hover: hover) and (pointer: fine) {
+  /* Rows sit on --card now, which is lighter than the canvas they used to sit
+     on, so the hover fill has to carry more of the tint to stay visible. */
   .ledger-table tbody tr:hover {
-    background: color-mix(in oklab, var(--muted) 45%, transparent);
+    background: color-mix(in oklab, var(--muted) 70%, transparent);
   }
 }
 
@@ -641,7 +647,11 @@ pre code {
 }
 
 .feature-card {
-  background: linear-gradient(165deg, color-mix(in oklab, var(--surface-strong) 93%, white 7%), var(--surface));
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--surface-strong) 93%, white 7%),
+    var(--surface)
+  );
   box-shadow:
     0 1px 0 var(--inset-glint) inset,
     0 18px 34px rgba(28, 25, 23, 0.06),

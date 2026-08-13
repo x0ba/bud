@@ -116,7 +116,12 @@ function DashboardPage() {
     if (rest <= 0.5) return data.topCategories
     return [
       ...data.topCategories,
-      { name: 'Everything else', color: OTHER_COLOR, amount: rest, muted: true },
+      {
+        name: 'Everything else',
+        color: OTHER_COLOR,
+        amount: rest,
+        muted: true,
+      },
     ]
   }, [data])
 
@@ -344,7 +349,9 @@ function DashboardPage() {
                 <Fragment key={day.date}>
                   <RowGroupHeader
                     label={formatDayLabel(day.date)}
-                    value={day.spent > 0 ? formatUsdPlain(day.spent) : undefined}
+                    value={
+                      day.spent > 0 ? formatUsdPlain(day.spent) : undefined
+                    }
                   />
                   {day.rows.map((tx) => (
                     <li key={tx._id} className="data-row">
