@@ -9,13 +9,12 @@ import {
   DataList,
   EmptyState,
   HeroMetric,
-  PageFrame,
   RowMeta,
   RowTitle,
-  Section,
   ShareBar,
   Stat,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import { Button } from '#/components/ui/button'
@@ -82,7 +81,7 @@ function AccountsPage() {
       actions={<PlaidLinkButton label="Add institution" size="sm" />}
     >
       {view ? (
-        <PageFrame>
+        <Page>
           {view.items.length === 0 ? (
             <EmptyState
               title="Connect your banks"
@@ -92,7 +91,7 @@ function AccountsPage() {
           ) : null}
 
           {view.hero ? (
-            <section className="grid gap-8 md:grid-cols-[1fr_auto] md:items-start">
+            <PageSummary>
               <HeroMetric
                 label={view.hero.label}
                 value={formatUsdPlain(view.hero.value)}
@@ -109,182 +108,200 @@ function AccountsPage() {
                   ))}
                 </div>
               ) : null}
-            </section>
+            </PageSummary>
           ) : null}
 
-          {view.alerts.length > 0 ? (
-            <Section title="Needs attention">
-              <ul className="flex flex-col gap-2">
-                {view.alerts.map((alert) => (
-                  <li
-                    key={alert.id}
-                    className="attention-band"
-                    data-severity={alert.severity}
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] font-medium text-[var(--sea-ink)]">
-                        {alert.title}
-                      </p>
-                      <p className="truncate text-[12px] text-muted-foreground">
-                        {alert.detail}
+          <PageBody>
+            {view.alerts.length > 0 ? (
+              <Panel
+                id="accounts-alerts"
+                title="Needs attention"
+                hint={`${view.alerts.length} ${view.alerts.length === 1 ? 'item' : 'items'}`}
+                flush
+              >
+                <ul className="flex flex-col">
+                  {view.alerts.map((alert) => (
+                    <li
+                      key={alert.id}
+                      className="attention-band"
+                      data-severity={alert.severity}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-[var(--sea-ink)]">
+                          {alert.title}
+                        </p>
+                        <p className="truncate text-[12px] text-muted-foreground">
+                          {alert.detail}
+                        </p>
+                      </div>
+                      {alert.itemId ? (
+                        <PlaidLinkButton
+                          label="Re-authenticate"
+                          itemId={alert.itemId}
+                          variant="outline"
+                          size="sm"
+                        />
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              </Panel>
+            ) : null}
+
+            {view.groups.map((group) => {
+              const utilization =
+                group.type === 'credit' && group.limit > 0
+                  ? group.total / group.limit
+                  : null
+              return (
+                <Panel
+                  key={group.type}
+                  id={`accounts-${group.type}`}
+                  span={6}
+                  title={group.title}
+                  value={formatUsdPlain(group.total)}
+                  hint={
+                    group.limit > 0
+                      ? `of ${formatUsdPlain(group.limit)} limit`
+                      : undefined
+                  }
+                  tone={group.debt ? 'muted' : 'default'}
+                  flush
+                >
+                  {utilization != null ? (
+                    <div className="space-y-1.5 px-3 pt-2.5">
+                      <ShareBar
+                        value={group.total}
+                        total={group.limit}
+                        color={
+                          utilization > HIGH_UTILIZATION
+                            ? 'var(--chart-3)'
+                            : 'var(--lagoon-deep)'
+                        }
+                        className="h-1.5"
+                      />
+                      <p className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                        {Math.round(utilization * 100)}% of your available
+                        credit is in use
                       </p>
                     </div>
-                    {alert.itemId ? (
-                      <PlaidLinkButton
-                        label="Re-authenticate"
-                        itemId={alert.itemId}
-                        variant="outline"
-                        size="sm"
+                  ) : null}
+                  <DataList>
+                    {group.rows.map((account) => (
+                      <AccountRow
+                        key={account._id}
+                        account={account}
+                        max={group.max}
+                        debt={group.debt}
                       />
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </Section>
-          ) : null}
+                    ))}
+                  </DataList>
+                </Panel>
+              )
+            })}
 
-          {view.groups.map((group) => {
-            const utilization =
-              group.type === 'credit' && group.limit > 0
-                ? group.total / group.limit
-                : null
-            return (
-              <Section
-                key={group.type}
-                title={group.title}
-                value={formatUsdPlain(group.total)}
-                hint={
-                  group.limit > 0
-                    ? `of ${formatUsdPlain(group.limit)} limit`
-                    : undefined
-                }
-                tone={group.debt ? 'muted' : 'default'}
-                sticky
+            {view.archived.length > 0 ? (
+              <Panel
+                id="accounts-archived"
+                span={6}
+                title="Hidden & closed"
+                hint={`${view.archived.length} ${view.archived.length === 1 ? 'account' : 'accounts'}`}
+                defaultCollapsed
+                flush
               >
-                {utilization != null ? (
-                  <div className="space-y-1.5 pb-1">
-                    <ShareBar
-                      value={group.total}
-                      total={group.limit}
-                      color={
-                        utilization > HIGH_UTILIZATION
-                          ? 'var(--chart-3)'
-                          : 'var(--lagoon-deep)'
-                      }
-                      className="h-1.5"
-                    />
-                    <p className="text-[11px] font-medium tabular-nums text-muted-foreground">
-                      {Math.round(utilization * 100)}% of your available credit
-                      is in use
-                    </p>
-                  </div>
-                ) : null}
                 <DataList>
-                  {group.rows.map((account) => (
+                  {view.archived.map((account) => (
                     <AccountRow
                       key={account._id}
                       account={account}
-                      max={group.max}
-                      debt={group.debt}
+                      max={0}
+                      debt
+                      quiet
                     />
                   ))}
                 </DataList>
-              </Section>
-            )
-          })}
+              </Panel>
+            ) : null}
 
-          {view.archived.length > 0 ? (
-            <Section
-              title="Hidden & closed"
-              hint={`${view.archived.length} ${view.archived.length === 1 ? 'account' : 'accounts'}`}
-            >
-              <DataList>
-                {view.archived.map((account) => (
-                  <AccountRow
-                    key={account._id}
-                    account={account}
-                    max={0}
-                    debt
-                    quiet
-                  />
-                ))}
-              </DataList>
-            </Section>
-          ) : null}
-
-          {view.items.length > 0 ? (
-            <Section
-              title="Connections"
-              description="Institutions linked through Plaid. Balances update when these sync."
-              action={
-                view.items.length > 1 ? (
-                  <Button
-                    variant="ghost"
-                    size="xs"
-                    onClick={() => view.items.forEach((i) => sync(i._id))}
-                  >
-                    Sync all
-                  </Button>
-                ) : undefined
-              }
-            >
-              <DataList>
-                {view.items.map((item) => {
-                  const healthy = item.status === 'ok'
-                  const ago = formatSyncedAgo(item.lastSyncedAt)
-                  return (
-                    <li key={item._id} className="data-row">
-                      <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                        <span
-                          className={cn(
-                            'size-1.5 shrink-0 rounded-full',
-                            healthy
-                              ? 'bg-[var(--lagoon-deep)]'
-                              : 'bg-destructive',
-                          )}
-                          aria-hidden
-                        />
-                        <div className="min-w-0">
-                          <RowTitle>{item.institutionName}</RowTitle>
-                          <RowMeta
-                            className={healthy ? undefined : 'text-destructive'}
-                          >
-                            {healthy
-                              ? [
-                                  `${item.accountCount} ${item.accountCount === 1 ? 'account' : 'accounts'}`,
-                                  ago ? `synced ${ago}` : null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(' · ')
-                              : (item.errorMessage ??
-                                'Needs re-authentication to keep syncing')}
-                          </RowMeta>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1.5">
-                        {healthy ? null : (
-                          <PlaidLinkButton
-                            label="Re-authenticate"
-                            itemId={item._id}
-                            variant="outline"
-                            size="sm"
+            {view.items.length > 0 ? (
+              <Panel
+                id="accounts-connections"
+                span={6}
+                title="Connections"
+                description="Institutions linked through Plaid. Balances update when these sync."
+                action={
+                  view.items.length > 1 ? (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => view.items.forEach((i) => sync(i._id))}
+                    >
+                      Sync all
+                    </Button>
+                  ) : undefined
+                }
+                flush
+              >
+                <DataList>
+                  {view.items.map((item) => {
+                    const healthy = item.status === 'ok'
+                    const ago = formatSyncedAgo(item.lastSyncedAt)
+                    return (
+                      <li key={item._id} className="data-row">
+                        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                          <span
+                            className={cn(
+                              'size-1.5 shrink-0 rounded-full',
+                              healthy
+                                ? 'bg-[var(--lagoon-deep)]'
+                                : 'bg-destructive',
+                            )}
+                            aria-hidden
                           />
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => sync(item._id)}
-                        >
-                          Sync
-                        </Button>
-                      </div>
-                    </li>
-                  )
-                })}
-              </DataList>
-            </Section>
-          ) : null}
-        </PageFrame>
+                          <div className="min-w-0">
+                            <RowTitle>{item.institutionName}</RowTitle>
+                            <RowMeta
+                              className={
+                                healthy ? undefined : 'text-destructive'
+                              }
+                            >
+                              {healthy
+                                ? [
+                                    `${item.accountCount} ${item.accountCount === 1 ? 'account' : 'accounts'}`,
+                                    ago ? `synced ${ago}` : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(' · ')
+                                : (item.errorMessage ??
+                                  'Needs re-authentication to keep syncing')}
+                            </RowMeta>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          {healthy ? null : (
+                            <PlaidLinkButton
+                              label="Re-authenticate"
+                              itemId={item._id}
+                              variant="outline"
+                              size="sm"
+                            />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => sync(item._id)}
+                          >
+                            Sync
+                          </Button>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </DataList>
+              </Panel>
+            ) : null}
+          </PageBody>
+        </Page>
       ) : null}
     </AppShell>
   )
@@ -331,7 +348,7 @@ function AccountRow({
       <Link
         to="/accounts/$accountId"
         params={{ accountId: account._id }}
-        className="data-row no-underline transition-[background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/35 active:scale-[0.995]"
+        className="data-row no-underline transition-[background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/70 active:scale-[0.995]"
       >
         <span className="min-w-0 flex-1">
           <RowTitle className={quiet ? 'text-muted-foreground' : undefined}>

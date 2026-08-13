@@ -5,7 +5,8 @@ import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import { CategoryDot, Kicker, PageFrame, Stat } from '#/components/dense'
+import { CategoryDot, Kicker, Stat } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { Badge } from '#/components/ui/badge'
@@ -162,149 +163,150 @@ function TransactionsPage() {
 
   return (
     <AppShell title="Transactions">
-      <PageFrame width="xl" className="gap-5">
-        {summary ? (
-          <section className="flex flex-wrap items-end justify-between gap-x-10 gap-y-5">
-            <div className="flex gap-10">
-              <Stat label="Out" value={formatUsdPlain(summary.out)} />
-              {summary.incoming > 0 ? (
-                <Stat label="In" value={formatUsdPlain(summary.incoming)} />
-              ) : null}
-            </div>
-            {listReady ? (
-              <p className="text-[12px] tabular-nums text-muted-foreground">
-                {results.length} shown
-                {status === 'CanLoadMore' ? ' · more available' : ''}
-              </p>
+      <Page>
+        <PageSummary>
+          <div className="flex gap-10">
+            <Stat label="Out" value={formatUsdPlain(summary?.out ?? 0)} />
+            {summary && summary.incoming > 0 ? (
+              <Stat label="In" value={formatUsdPlain(summary.incoming)} />
             ) : null}
-          </section>
-        ) : null}
-
-        <div className="toolbar">
-          <Input
-            placeholder="Search merchants…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="max-w-xs"
-          />
-          <Input
-            type="month"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-            className="w-[160px]"
-          />
-          <Select
-            value={accountId ?? 'all'}
-            onValueChange={(v) =>
-              setAccountId(v === 'all' ? undefined : (v as Id<'accounts'>))
-            }
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="All accounts" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All accounts</SelectItem>
-              {(accounts ?? []).map((a) => (
-                <SelectItem key={a._id} value={a._id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          </div>
+          <div className="toolbar">
+            <Input
+              placeholder="Search merchants…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-[220px]"
+            />
+            <Input
+              type="month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="w-[160px]"
+            />
+            <Select
+              value={accountId ?? 'all'}
+              onValueChange={(v) =>
+                setAccountId(v === 'all' ? undefined : (v as Id<'accounts'>))
+              }
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="All accounts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All accounts</SelectItem>
+                {(accounts ?? []).map((a) => (
+                  <SelectItem key={a._id} value={a._id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </PageSummary>
 
         {listReady ? (
-          <>
-            <table className="ledger-table">
-              <thead>
-                <tr>
-                  <th>Merchant</th>
-                  <th className="w-[170px]">Category</th>
-                  <th className="w-[150px]">Account</th>
-                  <th className="w-[120px] text-right">Amount</th>
-                </tr>
-              </thead>
-              {groups.map((group) => (
-                <tbody key={group.date}>
-                  <tr className="ledger-group">
-                    <td colSpan={3}>{formatDayLabel(group.date)}</td>
-                    <td className="text-right">
-                      {group.spent > 0 ? formatUsdPlain(group.spent) : null}
-                    </td>
+          <PageBody>
+            <Panel
+              id="transactions-ledger"
+              title="Ledger"
+              hint={`${results.length} shown${status === 'CanLoadMore' ? ' · more available' : ''}`}
+              flush
+            >
+              <table className="ledger-table">
+                <thead>
+                  <tr>
+                    <th className="w-[42%]">Merchant</th>
+                    <th className="w-[24%]">Category</th>
+                    <th className="w-[20%]">Account</th>
+                    <th className="w-[14%] text-right">Amount</th>
                   </tr>
-                  {group.rows.map((tx) => (
-                    <tr
-                      key={tx._id}
-                      className={cn(
-                        'cursor-pointer',
-                        selectedId === tx._id && 'bg-muted/50',
-                      )}
-                      onClick={() => setSelectedId(tx._id)}
-                    >
-                      <td>
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="truncate font-medium text-[var(--sea-ink)]">
-                            {tx.merchantName ?? tx.originalDescription}
-                          </span>
-                          {tx.pending ? (
-                            <Badge variant="secondary" className="text-[10px]">
-                              Pending
-                            </Badge>
-                          ) : null}
-                          {tx.isTransfer ? (
-                            <Badge variant="outline" className="text-[10px]">
-                              Transfer
-                            </Badge>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td>
-                        <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                          {tx.categoryColor ? (
-                            <CategoryDot
-                              color={tx.categoryColor}
-                              className="size-1.5"
-                            />
-                          ) : null}
-                          <span className="truncate">
-                            {tx.categoryName ?? '—'}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="truncate text-muted-foreground">
-                        {tx.accountName}
-                      </td>
+                </thead>
+                {groups.map((group) => (
+                  <tbody key={group.date}>
+                    <tr className="ledger-group">
+                      <td colSpan={3}>{formatDayLabel(group.date)}</td>
                       <td className="text-right">
-                        <Money amount={tx.amount} plaid />
+                        {group.spent > 0 ? formatUsdPlain(group.spent) : null}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              ))}
-              {groups.length === 0 ? (
-                <tbody>
-                  <tr>
-                    <td
-                      colSpan={4}
-                      className="px-3 py-12 text-center text-muted-foreground"
-                    >
-                      No transactions match these filters.
-                    </td>
-                  </tr>
-                </tbody>
-              ) : null}
-            </table>
+                    {group.rows.map((tx) => (
+                      <tr
+                        key={tx._id}
+                        className={cn(
+                          'cursor-pointer',
+                          selectedId === tx._id && 'bg-muted',
+                        )}
+                        onClick={() => setSelectedId(tx._id)}
+                      >
+                        <td>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="truncate font-medium text-[var(--sea-ink)]">
+                              {tx.merchantName ?? tx.originalDescription}
+                            </span>
+                            {tx.pending ? (
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px]"
+                              >
+                                Pending
+                              </Badge>
+                            ) : null}
+                            {tx.isTransfer ? (
+                              <Badge variant="outline" className="text-[10px]">
+                                Transfer
+                              </Badge>
+                            ) : null}
+                          </div>
+                        </td>
+                        <td>
+                          <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                            {tx.categoryColor ? (
+                              <CategoryDot
+                                color={tx.categoryColor}
+                                className="size-1.5"
+                              />
+                            ) : null}
+                            <span className="truncate">
+                              {tx.categoryName ?? '—'}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="truncate text-muted-foreground">
+                          {tx.accountName}
+                        </td>
+                        <td className="text-right">
+                          <Money amount={tx.amount} plaid />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                ))}
+                {groups.length === 0 ? (
+                  <tbody>
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-3 py-12 text-center text-muted-foreground"
+                      >
+                        No transactions match these filters.
+                      </td>
+                    </tr>
+                  </tbody>
+                ) : null}
+              </table>
 
-            {status === 'CanLoadMore' ? (
-              <div>
-                <Button variant="outline" size="sm" onClick={loadMore}>
-                  Load more
-                </Button>
-              </div>
-            ) : null}
-          </>
+              {status === 'CanLoadMore' ? (
+                <div className="px-3 py-3">
+                  <Button variant="outline" size="sm" onClick={loadMore}>
+                    Load more
+                  </Button>
+                </div>
+              ) : null}
+            </Panel>
+          </PageBody>
         ) : null}
-      </PageFrame>
+      </Page>
 
       <Sheet
         open={!!selected}

@@ -10,12 +10,28 @@ Quiet ledger. Warm paper surfaces, stone ink, calm density. Numbers lead; chrome
 
 ## Depth
 
-Borders-only / hairline separation. No card chrome for lists. Sidebar shares canvas background — no tinted “sidebar world.”
+Borders-only. Two surfaces, one step apart: the page canvas (`--background`) and
+panels (`--card`, ~3% lighter). No shadows anywhere. Rows inside a panel stay
+hairline — card chrome belongs to the *area*, never the row. Sidebar shares the
+canvas background — no tinted “sidebar world.”
+
+## Layout
+
+Every route runs **full width** — no `mx-auto`, no page max-width. Panels compose
+on a **12-column grid** at `xl` and stack to one column below it.
+
+Page shape: `Page` → `PageSummary` (hero + counterweights, closed with a
+hairline) → optional toolbar → `PageBody` (the panel grid).
+
+Panels hug their content (`items-start`) rather than stretching to a shared row
+height — a three-row card next to a twenty-row card should not be twenty rows of
+empty space.
 
 ## Spacing
 
 Base unit: **4px**. Common values: 8 / 12 / 16 / 24 / 32.  
-Dense rows: `py-2.5` (10px). Section rhythm: `gap-8`. Page padding: `px-8`.
+Dense rows: `py-2.5` (10px). Panel padding: **12px**. Gap between panels: **16px**
+— the walls separate now, so the 32–40px section gap is gone. Page padding: `px-8`.
 
 ## Hierarchy
 
@@ -25,7 +41,7 @@ Type scale ratio ~1.25 from 13px body.
 |------|------|--------|-------|
 | Kicker | 11px | 600 · tracked | muted |
 | Body / row | 13px | 400–500 | sea-ink / muted |
-| Section title | 13px | 600 | sea-ink |
+| Panel title | 13px | 600 | sea-ink |
 | Page title | 15px | 600 | sea-ink |
 | Stat | 22px | 600 · tabular | sea-ink |
 | Hero figure | 2.75rem | 700 · tabular · tight tracking | sea-ink |
@@ -46,16 +62,40 @@ Fraunces only for brand wordmark / empty-state titles. Manrope for UI.
 
 ## Component patterns
 
+### Page & panel primitives (`src/components/panel.tsx`)
+
+- `Page` — full-width column, `gap-4`
+- `PageSummary` — hero left, counterweights right, hairline underneath. The hero
+  never goes inside a panel: as a peer of the data cards it stops leading.
+- `PageBody` — the 12-column panel grid
+- `Panel` — a data area with its own walls
+
+`Panel` props: `id` (persistence key), `title`, `description`, `value`, `hint`,
+`tone`, `action`, `span` (3–8 or 12), `collapsible`, `defaultCollapsed`, `flush`.
+
+- **Collapsible by default.** Folded, a panel is a 40px row of title + figure, so
+  a page squeezes down to an index of answers. The choice persists per panel in
+  `localStorage` (`bud.panel.<id>`).
+- **Chevron left, inside the trigger button**; `value` / `hint` / `action` live
+  outside it on the right, so the trailing figure lines up with the amount column
+  below. Header hit area is the full 40px row.
+- **`flush`** for hairline lists and the ledger: content runs to the walls, the
+  header's rule becomes the list's top rule, rows take 12px inline padding. A row
+  that is itself a link takes the padding instead of its `li`, so the hover fill
+  still reaches the walls.
+- Folding animates `grid-template-rows: 0fr → 1fr`; `overflow: clip` (never
+  `hidden`) so the ledger's sticky header survives.
+
 ### Dense primitives (`src/components/dense.tsx`)
 
 - `Kicker` — uppercase meta label
 - `HeroMetric` — kicker + hero figure + meta
-- `Stat` — secondary metric
-- `SectionHeader` — 13px title + optional description/action
-- `DataList` / `DataRow` — hairline list
+- `Stat` / `MiniStat` — secondary metrics
+- `DataList` — hairline list
+- `RowGroupHeader` — quiet subhead inside a long list
 - `RowTitle` / `RowMeta` — primary/secondary row lines
-- `PageFrame` — max-width + `gap-8` column
-- `EmptyState` — dashed border, Fraunces title
+- `ShareBar` — hairline magnitude bar
+- `EmptyState` — dashed border, Fraunces title (borderless inside a panel)
 - `CategoryDot` — 8px color swatch
 
 ### Taxonomy list (`settings/categories`)
@@ -78,8 +118,28 @@ For taxonomies rather than ledgers — many short names, no money.
 - Page width `sm`. No section counts — the list is the answer.
 - Filter input `w-[220px]` with an inset `size-3.5` search glyph at `left-2.5`.
 
+### Page composition per route
+
+Spans are chosen so a row of panels fills the 12 columns and each area gets the
+width its rows actually need.
+
+| Route | Panels |
+|-------|--------|
+| Dashboard | Needs you (12) · Where it's going (5) · Recent (7) |
+| Transactions | Ledger (12), flush |
+| Budget | Flex pool (4) · Fixed (5) · Non-monthly (3) |
+| Cash flow | one panel **per budget type** (4 each) |
+| Net worth | Trend (12) · Assets (6) · Debts (6) |
+| Investments | Allocation (4) · Holdings (8) |
+| Accounts | Needs attention (12) · one panel per account type (6) · Hidden & closed (6, folded) · Connections (6) |
+| Categories | one panel per budget type (4 each) |
+
+Cash flow's grouping used to be a subhead buried inside one list; it's the axis
+people compare across, so it became the panel.
+
 ### CSS helpers (`src/styles.css`)
 
+- `.panel`, `.panel-head`, `.panel-trigger`, `.panel-content-flush`
 - `.kicker`, `.hero-figure`, `.data-list`, `.data-row`
 - `.ledger-table` — transactions table
 - `.toolbar` — filter/action row
@@ -94,6 +154,14 @@ Inputs/selects: inset `bg-muted/40`, no hard shadow; focus lifts to `bg-backgrou
 
 `h-1.5` track · lagoon fill · amber when ahead of pace · destructive when over · 1px today tick.
 
+### Ledger table
+
+Four columns: merchant / category / account / amount (42 / 24 / 20 / 14). The
+amount is already a comparable tabular figure — a magnitude bar next to it
+looked like unlabeled progress and collapsed to a sliver against any large
+inflow. ShareBar stays on accounts, cash flow, and net worth, where the
+denominator is a real total (limit, category spend, holdings).
+
 ### Nav
 
 212px sidebar · collapses to 56px icon rail · active = muted fill (not lagoon tint) · 13px medium labels · Settings kicker group · collapse toggle in brand row (ghost icon-xs) · tooltips on icons when collapsed · preference in `localStorage` (`bud.sidebar-collapsed`).
@@ -104,8 +172,18 @@ Document scroll · sticky `h-dvh` sidebar · sticky header (`.app-shell-header`,
 
 ## Rejected defaults
 
+- Centered max-width columns, four different widths → full width, one grid
+- 40px of air as the only thing separating sections → panels with walls
+- Cards nested inside cards (attention bands inside a panel) → the band gives up
+  its box and keeps only its severity rule
+- One flexible column swallowing all the new width → percentage columns
+- Magnitude bars in the ledger (looked like unlabeled progress; the amount
+  already compares) → bars only where the denominator is a real total
+- Equal-height cards in a row → panels hug their content
+- `overflow: hidden` to animate a fold → `clip`, which keeps sticky alive
+- Counts on section headers → the list is the answer
 - Equal metric-card grids → hero figure + quieter secondary
-- Heavy bordered cards for every list → hairline rows
+- Card chrome on every list *row* → hairline rows inside one panel
 - Flat table type → merchant + amount hierarchy
 - Cool mint SaaS chrome → warm paper ledger
 - A field repeated on every row → that field becomes the section

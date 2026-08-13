@@ -1,18 +1,16 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import { Fragment, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import {
   CategoryDot,
   DataList,
   EmptyState,
   HeroMetric,
-  PageFrame,
-  RowGroupHeader,
-  Section,
   ShareBar,
   Stat,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { FlowBar } from '#/components/flow-bar'
 import { AppShell } from '#/components/layout/app-shell'
 import { Input } from '#/components/ui/input'
@@ -111,51 +109,60 @@ function CashFlowPage() {
         />
       }
     >
-      <PageFrame>
-        <section className="flex flex-col gap-6">
-          <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-start">
-            <HeroMetric
-              label={`${kept < 0 ? 'Overspent' : 'Kept'} in ${formatMonthLabel(month)}`}
-              value={formatUsdPlain(Math.abs(kept))}
-              tone={kept < 0 ? 'over' : 'default'}
-              meta={
-                income > 0
-                  ? kept < 0
-                    ? `Spent ${formatUsdPlain(spent)} against ${formatUsdPlain(income)} of income`
-                    : `${keptRate}% of ${formatUsdPlain(income)} income kept`
-                  : 'No income recorded this month.'
-              }
-            />
-            <div className="flex gap-8">
-              <Stat
-                label="Money in"
-                value={formatUsdPlain(income)}
-                tone={income > 0 ? 'positive' : 'muted'}
-              />
-              <Stat label="Money out" value={formatUsdPlain(spent)} />
+      <Page>
+        <PageSummary className="flex-col items-stretch sm:flex-row sm:items-end">
+          <HeroMetric
+            label={`${kept < 0 ? 'Overspent' : 'Kept'} in ${formatMonthLabel(month)}`}
+            value={formatUsdPlain(Math.abs(kept))}
+            tone={kept < 0 ? 'over' : 'default'}
+            meta={
+              income > 0
+                ? kept < 0
+                  ? `Spent ${formatUsdPlain(spent)} against ${formatUsdPlain(income)} of income`
+                  : `${keptRate}% of ${formatUsdPlain(income)} income kept`
+                : 'No income recorded this month.'
+            }
+          />
+          <div className="flex min-w-0 flex-1 items-end justify-end gap-8">
+            <div className="hidden min-w-0 max-w-[420px] flex-1 lg:block">
+              <FlowBar income={income} spent={spent} />
             </div>
+            <Stat
+              label="Money in"
+              value={formatUsdPlain(income)}
+              tone={income > 0 ? 'positive' : 'muted'}
+            />
+            <Stat label="Money out" value={formatUsdPlain(spent)} />
           </div>
-          <FlowBar income={income} spent={spent} />
-        </section>
+        </PageSummary>
 
-        <Section
-          title="Where it went"
-          description="Grouped by budget type."
-          value={formatUsdPlain(spent)}
-          sticky
-        >
+        <div className="lg:hidden">
+          <FlowBar income={income} spent={spent} />
+        </div>
+
+        {/* One panel per budget type: the grouping was a subhead buried in a
+            single list, and it's the axis people actually compare across. */}
+        <PageBody>
           {breakdown.groups.length > 0 ? (
-            <DataList>
-              {breakdown.groups.map((group) => (
-                <Fragment key={group.key}>
-                  <RowGroupHeader
-                    label={group.label}
-                    value={formatUsdPlain(group.total)}
-                  />
+            breakdown.groups.map((group) => (
+              <Panel
+                key={group.key}
+                id={`cash-flow-${group.key}`}
+                span={4}
+                title={group.label}
+                value={formatUsdPlain(group.total)}
+                hint={
+                  spent > 0
+                    ? `${Math.round((group.total / spent) * 100)}%`
+                    : undefined
+                }
+                flush
+              >
+                <DataList>
                   {group.rows.map((row) => (
                     <li
                       key={`${group.key}-${row.name}`}
-                      className="grid grid-cols-[1fr_auto] items-center gap-4 py-2.5 text-[13px] sm:grid-cols-[1fr_56px_auto]"
+                      className="grid grid-cols-[1fr_56px_auto] items-center gap-4 py-2.5 text-[13px]"
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <CategoryDot color={row.color} />
@@ -167,28 +174,33 @@ function CashFlowPage() {
                         value={row.amount}
                         total={breakdown.max}
                         color={row.color}
-                        className="hidden sm:block"
                       />
                       <span className="amount-cell text-[var(--sea-ink)]">
                         {formatUsdPlain(row.amount)}
                       </span>
                     </li>
                   ))}
-                </Fragment>
-              ))}
-            </DataList>
+                </DataList>
+              </Panel>
+            ))
           ) : (
-            <EmptyState
-              title="Nothing spent yet"
-              description={`No spending recorded for ${formatMonthLabel(month)}. Connect an account or pick another month.`}
-            />
+            <Panel
+              id="cash-flow-empty"
+              title="Where it went"
+              collapsible={false}
+            >
+              <EmptyState
+                title="Nothing spent yet"
+                description={`No spending recorded for ${formatMonthLabel(month)}. Connect an account or pick another month.`}
+              />
+            </Panel>
           )}
-        </Section>
+        </PageBody>
 
         <p className="text-[12px] text-muted-foreground text-pretty">
           Transfers between your own accounts are excluded from money out.
         </p>
-      </PageFrame>
+      </Page>
     </AppShell>
   )
 }

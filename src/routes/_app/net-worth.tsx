@@ -10,12 +10,11 @@ import {
   EmptyState,
   HeroMetric,
   Kicker,
-  PageFrame,
   RowGroupHeader,
-  Section,
   ShareBar,
   Stat,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -210,294 +209,297 @@ function NetWorthPage() {
         </Button>
       }
     >
-      <PageFrame width="lg">
-        <section className="flex flex-col gap-6">
-          <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-start">
-            <HeroMetric
-              label="Net worth"
-              value={formatUsdPlain(summary.netWorth)}
-              meta={
-                chart
-                  ? chart.delta === 0
-                    ? `Unchanged since ${formatDateShort(chart.first.date)}`
-                    : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
-                  : 'Take your first snapshot to start tracking change over time.'
-              }
+      <Page>
+        <PageSummary>
+          <HeroMetric
+            label="Net worth"
+            value={formatUsdPlain(summary.netWorth)}
+            meta={
+              chart
+                ? chart.delta === 0
+                  ? `Unchanged since ${formatDateShort(chart.first.date)}`
+                  : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
+                : 'Take your first snapshot to start tracking change over time.'
+            }
+          />
+          <div className="flex items-end gap-8">
+            {debtShare != null ? (
+              <div className="hidden w-[220px] space-y-2 sm:block">
+                <ShareBar
+                  value={summary.liabilities}
+                  total={summary.assets}
+                  color="color-mix(in oklab, var(--sea-ink) 34%, transparent)"
+                  className="h-2"
+                />
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Debts are {debtShare}% of what you own
+                </p>
+              </div>
+            ) : null}
+            <Stat
+              label="Assets"
+              value={formatUsdPlain(summary.assets)}
+              tone="positive"
             />
-            <div className="flex gap-8">
-              <Stat
-                label="Assets"
-                value={formatUsdPlain(summary.assets)}
-                tone="positive"
-              />
-              <Stat
-                label="Debts"
-                value={formatUsdPlain(summary.liabilities)}
-                tone={summary.liabilities > 0 ? 'default' : 'muted'}
-              />
-            </div>
+            <Stat
+              label="Debts"
+              value={formatUsdPlain(summary.liabilities)}
+              tone={summary.liabilities > 0 ? 'default' : 'muted'}
+            />
           </div>
-          {debtShare != null ? (
-            <div className="space-y-2">
-              <ShareBar
-                value={summary.liabilities}
-                total={summary.assets}
-                color="color-mix(in oklab, var(--sea-ink) 34%, transparent)"
-                className="h-2"
+        </PageSummary>
+
+        <PageBody>
+          <Panel
+            id="net-worth-trend"
+            title="Trend"
+            value={
+              chart
+                ? `${chart.delta >= 0 ? '↑' : '↓'} ${formatUsdPlain(Math.abs(chart.delta))}`
+                : undefined
+            }
+            tone={chart && chart.delta < 0 ? 'over' : 'positive'}
+            action={
+              <div className="flex gap-0.5">
+                {RANGES.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setRange(r)}
+                    className="range-pill"
+                    data-active={range === r}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+            }
+          >
+            {chart ? (
+              <div className="space-y-2 pt-1">
+                <div className="relative border-b border-border/70">
+                  <svg
+                    viewBox={`0 0 ${chart.w} ${chart.h}`}
+                    preserveAspectRatio="none"
+                    className="h-40 w-full"
+                    aria-hidden
+                  >
+                    <defs>
+                      <linearGradient id="nw-area" x1="0" y1="0" x2="0" y2="1">
+                        <stop
+                          offset="0%"
+                          stopColor="var(--lagoon)"
+                          stopOpacity="0.26"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="var(--lagoon)"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                    </defs>
+                    <path d={chart.area} fill="url(#nw-area)" />
+                    <path
+                      d={chart.line}
+                      fill="none"
+                      stroke="var(--lagoon-deep)"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+                  <span
+                    className="absolute right-0 size-2 -translate-y-1/2 translate-x-1/2 rounded-full bg-[var(--lagoon-deep)] ring-2 ring-background"
+                    style={{ top: `${chart.endTopPct}%` }}
+                    aria-hidden
+                  />
+                </div>
+                <div className="flex items-baseline justify-between text-[11px] tabular-nums text-muted-foreground">
+                  <span>{formatDateShort(chart.first.date)}</span>
+                  <span>{formatDateShort(chart.last.date)}</span>
+                </div>
+              </div>
+            ) : (
+              <EmptyState
+                title="No history yet"
+                description="Snapshots record your balances over time. Take the first one to start the trend line."
+                action={
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      void snapshotNow({})
+                        .then(() => toast.success('Snapshot saved'))
+                        .catch((e: Error) => toast.error(e.message))
+                    }
+                  >
+                    Snapshot today
+                  </Button>
+                }
               />
-              <p className="text-[11px] font-medium text-muted-foreground">
-                Debts are {debtShare}% of what you own
-              </p>
-            </div>
-          ) : null}
-        </section>
+            )}
+          </Panel>
 
-        <Section
-          title="Trend"
-          value={
-            chart
-              ? `${chart.delta >= 0 ? '↑' : '↓'} ${formatUsdPlain(Math.abs(chart.delta))}`
-              : undefined
-          }
-          tone={chart && chart.delta < 0 ? 'over' : 'positive'}
-          action={
-            <div className="flex gap-0.5">
-              {RANGES.map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRange(r)}
-                  className="range-pill"
-                  data-active={range === r}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          }
-        >
-          {chart ? (
-            <div className="space-y-2">
-              <div className="relative border-b border-border/70">
-                <svg
-                  viewBox={`0 0 ${chart.w} ${chart.h}`}
-                  preserveAspectRatio="none"
-                  className="h-40 w-full"
-                  aria-hidden
-                >
-                  <defs>
-                    <linearGradient id="nw-area" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="0%"
-                        stopColor="var(--lagoon)"
-                        stopOpacity="0.26"
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="var(--lagoon)"
-                        stopOpacity="0"
-                      />
-                    </linearGradient>
-                  </defs>
-                  <path d={chart.area} fill="url(#nw-area)" />
-                  <path
-                    d={chart.line}
-                    fill="none"
-                    stroke="var(--lagoon-deep)"
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    vectorEffect="non-scaling-stroke"
-                  />
-                </svg>
-                <span
-                  className="absolute right-0 size-2 -translate-y-1/2 translate-x-1/2 rounded-full bg-[var(--lagoon-deep)] ring-2 ring-background"
-                  style={{ top: `${chart.endTopPct}%` }}
-                  aria-hidden
-                />
-              </div>
-              <div className="flex items-baseline justify-between text-[11px] tabular-nums text-muted-foreground">
-                <span>{formatDateShort(chart.first.date)}</span>
-                <span>{formatDateShort(chart.last.date)}</span>
-              </div>
-            </div>
-          ) : (
-            <EmptyState
-              title="No history yet"
-              description="Snapshots record your balances over time. Take the first one to start the trend line."
-              action={
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    void snapshotNow({})
-                      .then(() => toast.success('Snapshot saved'))
-                      .catch((e: Error) => toast.error(e.message))
-                  }
-                >
-                  Snapshot today
-                </Button>
-              }
-            />
-          )}
-        </Section>
-
-        <Section
-          title="Assets"
-          description="Accounts and anything you've valued by hand."
-          value={formatUsdPlain(summary.assets)}
-          sticky
-          action={
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={() => setAdding((v) => !v)}
-              aria-expanded={adding}
-            >
-              <Plus />
-              Add
-            </Button>
-          }
-        >
-          <DataList>
-            {holdings.assetAccounts.length > 0 ? (
-              <Fragment>
-                {holdings.manualAssets.length > 0 ? (
-                  <RowGroupHeader label="Accounts" />
-                ) : null}
-                {holdings.assetAccounts.map((row) => (
-                  <HoldingRow
-                    key={row.id}
-                    holding={row}
-                    max={largestAsset}
-                    reserveAction={holdings.manualAssets.length > 0}
-                  />
-                ))}
-              </Fragment>
-            ) : null}
-            {holdings.manualAssets.length > 0 ? (
-              <Fragment>
-                {holdings.assetAccounts.length > 0 ? (
-                  <RowGroupHeader label="Manual" />
-                ) : null}
-                {holdings.manualAssets.map((row) => (
-                  <HoldingRow
-                    key={row.id}
-                    holding={row}
-                    max={largestAsset}
-                    reserveAction
-                  />
-                ))}
-              </Fragment>
-            ) : null}
-            {holdings.assetAccounts.length + holdings.manualAssets.length ===
-            0 ? (
-              <li className="py-3 text-[13px] text-muted-foreground">
-                Nothing here yet — connect an account, or add a home or car by
-                hand.
-              </li>
-            ) : null}
-          </DataList>
-
-          {adding ? (
-            <div className="rise-in flex flex-wrap items-end gap-2 rounded-lg border border-border/70 bg-muted/25 p-3">
-              <div>
-                <Kicker>Name</Kicker>
-                <Input
-                  placeholder="Home"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="mt-1.5 w-[150px]"
-                  aria-label="Asset name"
-                />
-              </div>
-              <div>
-                <Kicker>Type</Kicker>
-                <Select
-                  value={type}
-                  onValueChange={(v) => setType(v as typeof type)}
-                >
-                  <SelectTrigger className="mt-1.5 w-[124px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="property">Property</SelectItem>
-                    <SelectItem value="vehicle">Vehicle</SelectItem>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                    <SelectItem value="debt">Debt</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Kicker>Value</Kicker>
-                <Input
-                  placeholder="0"
-                  inputMode="decimal"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  className="mt-1.5 w-[124px] text-right tabular-nums"
-                  aria-label="Asset value"
-                />
-              </div>
-              <Button size="sm" onClick={submitAsset}>
-                Add
-              </Button>
+          <Panel
+            id="net-worth-assets"
+            span={6}
+            title="Assets"
+            description="Accounts and anything you've valued by hand."
+            value={formatUsdPlain(summary.assets)}
+            action={
               <Button
                 variant="ghost"
-                size="sm"
-                onClick={() => setAdding(false)}
+                size="xs"
+                onClick={() => setAdding((v) => !v)}
+                aria-expanded={adding}
               >
-                Cancel
+                <Plus />
+                Add
               </Button>
-            </div>
-          ) : null}
-        </Section>
-
-        {hasDebts ? (
-          <Section
-            title="Debts"
-            description="Balances that subtract from what you own."
-            value={formatUsdPlain(summary.liabilities)}
-            tone="muted"
-            sticky
+            }
           >
-            <DataList>
-              {holdings.debtAccounts.length > 0 ? (
+            <DataList className="mt-1">
+              {holdings.assetAccounts.length > 0 ? (
                 <Fragment>
-                  {holdings.manualDebts.length > 0 ? (
+                  {holdings.manualAssets.length > 0 ? (
                     <RowGroupHeader label="Accounts" />
                   ) : null}
-                  {holdings.debtAccounts.map((row) => (
+                  {holdings.assetAccounts.map((row) => (
                     <HoldingRow
                       key={row.id}
                       holding={row}
-                      max={largestDebt}
-                      reserveAction={holdings.manualDebts.length > 0}
-                      debt
+                      max={largestAsset}
+                      reserveAction={holdings.manualAssets.length > 0}
                     />
                   ))}
                 </Fragment>
               ) : null}
-              {holdings.manualDebts.length > 0 ? (
+              {holdings.manualAssets.length > 0 ? (
                 <Fragment>
-                  {holdings.debtAccounts.length > 0 ? (
+                  {holdings.assetAccounts.length > 0 ? (
                     <RowGroupHeader label="Manual" />
                   ) : null}
-                  {holdings.manualDebts.map((row) => (
+                  {holdings.manualAssets.map((row) => (
                     <HoldingRow
                       key={row.id}
                       holding={row}
-                      max={largestDebt}
+                      max={largestAsset}
                       reserveAction
-                      debt
                     />
                   ))}
                 </Fragment>
               ) : null}
+              {holdings.assetAccounts.length + holdings.manualAssets.length ===
+              0 ? (
+                <li className="py-3 text-[13px] text-muted-foreground">
+                  Nothing here yet — connect an account, or add a home or car by
+                  hand.
+                </li>
+              ) : null}
             </DataList>
-          </Section>
-        ) : null}
-      </PageFrame>
+
+            {adding ? (
+              <div className="rise-in flex flex-wrap items-end gap-2 rounded-lg border border-border/70 bg-muted/25 p-3">
+                <div>
+                  <Kicker>Name</Kicker>
+                  <Input
+                    placeholder="Home"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="mt-1.5 w-[150px]"
+                    aria-label="Asset name"
+                  />
+                </div>
+                <div>
+                  <Kicker>Type</Kicker>
+                  <Select
+                    value={type}
+                    onValueChange={(v) => setType(v as typeof type)}
+                  >
+                    <SelectTrigger className="mt-1.5 w-[124px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="property">Property</SelectItem>
+                      <SelectItem value="vehicle">Vehicle</SelectItem>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="debt">Debt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Kicker>Value</Kicker>
+                  <Input
+                    placeholder="0"
+                    inputMode="decimal"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className="mt-1.5 w-[124px] text-right tabular-nums"
+                    aria-label="Asset value"
+                  />
+                </div>
+                <Button size="sm" onClick={submitAsset}>
+                  Add
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAdding(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : null}
+          </Panel>
+
+          {hasDebts ? (
+            <Panel
+              id="net-worth-debts"
+              span={6}
+              title="Debts"
+              description="Balances that subtract from what you own."
+              value={formatUsdPlain(summary.liabilities)}
+              tone="muted"
+            >
+              <DataList className="mt-1">
+                {holdings.debtAccounts.length > 0 ? (
+                  <Fragment>
+                    {holdings.manualDebts.length > 0 ? (
+                      <RowGroupHeader label="Accounts" />
+                    ) : null}
+                    {holdings.debtAccounts.map((row) => (
+                      <HoldingRow
+                        key={row.id}
+                        holding={row}
+                        max={largestDebt}
+                        reserveAction={holdings.manualDebts.length > 0}
+                        debt
+                      />
+                    ))}
+                  </Fragment>
+                ) : null}
+                {holdings.manualDebts.length > 0 ? (
+                  <Fragment>
+                    {holdings.debtAccounts.length > 0 ? (
+                      <RowGroupHeader label="Manual" />
+                    ) : null}
+                    {holdings.manualDebts.map((row) => (
+                      <HoldingRow
+                        key={row.id}
+                        holding={row}
+                        max={largestDebt}
+                        reserveAction
+                        debt
+                      />
+                    ))}
+                  </Fragment>
+                ) : null}
+              </DataList>
+            </Panel>
+          ) : null}
+        </PageBody>
+      </Page>
     </AppShell>
   )
 }

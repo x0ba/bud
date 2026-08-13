@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { EmptyState, PageFrame } from '#/components/dense'
+import { EmptyState } from '#/components/dense'
+import { Page } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 
 export const Route = createFileRoute('/_app/recurring')({
@@ -9,12 +10,12 @@ export const Route = createFileRoute('/_app/recurring')({
 function RecurringPage() {
   return (
     <AppShell title="Recurring">
-      <PageFrame width="sm">
+      <Page>
         <EmptyState
           title="Subscriptions & bills"
           description="Recurring stream detection lands next — once you have a few months of transactions, Bud will surface subscriptions, cadence, and price changes here."
         />
-      </PageFrame>
+      </Page>
     </AppShell>
   )
 }

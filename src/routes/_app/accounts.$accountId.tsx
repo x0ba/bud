@@ -5,12 +5,11 @@ import type { Id } from '../../../convex/_generated/dataModel'
 import {
   DataList,
   HeroMetric,
-  Kicker,
-  PageFrame,
+  MiniStat,
   RowMeta,
   RowTitle,
-  SectionHeader,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { currentMonth, daysUntil, formatUsdPlain } from '#/lib/money'
@@ -65,98 +64,96 @@ function AccountDetailPage() {
 
   return (
     <AppShell title={account.name}>
-      <PageFrame>
-        <HeroMetric
-          label={account.institutionName ?? 'Balance'}
-          value={formatUsdPlain(account.currentBalance)}
-          meta={account.mask ? `···${account.mask}` : undefined}
-        />
+      <Page>
+        <PageSummary>
+          <HeroMetric
+            label={account.institutionName ?? 'Balance'}
+            value={formatUsdPlain(account.currentBalance)}
+            meta={account.mask ? `···${account.mask}` : undefined}
+          />
+          <MiniStat
+            label="Spend this month"
+            value={formatUsdPlain(spending ?? 0)}
+          />
+        </PageSummary>
 
-        {isCard ? (
-          <section className="grid gap-5 sm:grid-cols-3">
-            <Metric
-              label="Statement balance"
-              value={
-                account.lastStatementBalance != null
-                  ? formatUsdPlain(account.lastStatementBalance)
-                  : '—'
-              }
-            />
-            <Metric
-              label="Due"
-              value={
-                account.nextPaymentDueDate
-                  ? days != null
-                    ? `${days}d · ${account.nextPaymentDueDate}`
-                    : account.nextPaymentDueDate
-                  : '—'
-              }
-            />
-            <Metric
-              label="Utilization"
-              value={util != null ? `${Math.round(util * 100)}%` : '—'}
-            />
-            <Metric
-              label="Minimum"
-              value={
-                account.minimumPayment != null
-                  ? formatUsdPlain(account.minimumPayment)
-                  : '—'
-              }
-            />
-            <Metric
-              label="APR"
-              value={
-                account.aprs?.[0]
-                  ? `${account.aprs[0].aprPercentage}%`
-                  : '—'
-              }
-            />
-            <Metric
-              label="Spend this month"
-              value={formatUsdPlain(spending ?? 0)}
-            />
-          </section>
-        ) : (
-          <section>
-            <Metric
-              label="Spend this month"
-              value={formatUsdPlain(spending ?? 0)}
-            />
-          </section>
-        )}
+        <PageBody>
+          {isCard ? (
+            <Panel id="account-card-details" span={4} title="Card details">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-5 pt-2">
+                <MiniStat
+                  label="Statement balance"
+                  value={
+                    account.lastStatementBalance != null
+                      ? formatUsdPlain(account.lastStatementBalance)
+                      : '—'
+                  }
+                />
+                <MiniStat
+                  label="Due"
+                  value={
+                    account.nextPaymentDueDate
+                      ? days != null
+                        ? `${days}d · ${account.nextPaymentDueDate}`
+                        : account.nextPaymentDueDate
+                      : '—'
+                  }
+                />
+                <MiniStat
+                  label="Utilization"
+                  value={util != null ? `${Math.round(util * 100)}%` : '—'}
+                />
+                <MiniStat
+                  label="Minimum"
+                  value={
+                    account.minimumPayment != null
+                      ? formatUsdPlain(account.minimumPayment)
+                      : '—'
+                  }
+                />
+                <MiniStat
+                  label="APR"
+                  value={
+                    account.aprs?.[0]
+                      ? `${account.aprs[0].aprPercentage}%`
+                      : '—'
+                  }
+                />
+              </div>
+            </Panel>
+          ) : null}
 
-        <section>
-          <SectionHeader title="Transactions" />
-          <DataList>
-            {(results ?? []).map((tx) => (
-              <li key={tx._id} className="data-row">
-                <div className="min-w-0">
-                  <RowTitle>
-                    {tx.merchantName ?? tx.originalDescription}
-                  </RowTitle>
-                  <RowMeta>
-                    {tx.date}
-                    {tx.categoryName ? ` · ${tx.categoryName}` : ''}
-                  </RowMeta>
-                </div>
-                <Money amount={tx.amount} plaid />
-              </li>
-            ))}
-          </DataList>
-        </section>
-      </PageFrame>
+          <Panel
+            id="account-transactions"
+            span={isCard ? 8 : 12}
+            title="Transactions"
+            hint={`${results.length} shown`}
+            flush
+          >
+            <DataList>
+              {results.map((tx) => (
+                <li key={tx._id} className="data-row">
+                  <div className="min-w-0">
+                    <RowTitle>
+                      {tx.merchantName ?? tx.originalDescription}
+                    </RowTitle>
+                    <RowMeta>
+                      {tx.date}
+                      {tx.categoryName ? ` · ${tx.categoryName}` : ''}
+                    </RowMeta>
+                  </div>
+                  <Money amount={tx.amount} plaid />
+                </li>
+              ))}
+              {results.length === 0 ? (
+                <li className="py-6 text-[13px] text-muted-foreground">
+                  No transactions on this account yet.
+                </li>
+              ) : null}
+            </DataList>
+          </Panel>
+        </PageBody>
+      </Page>
     </AppShell>
-  )
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-1">
-      <Kicker>{label}</Kicker>
-      <p className="text-[15px] font-semibold tracking-tight tabular-nums text-[var(--sea-ink)]">
-        {value}
-      </p>
-    </div>
   )
 }
