@@ -270,7 +270,10 @@ export function Landing() {
                 Sign in
               </Link>
             )}
-            <Link to={cta.primaryTo} className="lp-btn lp-btn-outline lp-btn-sm">
+            <Link
+              to={cta.primaryTo}
+              className="lp-btn lp-btn-outline lp-btn-sm"
+            >
               {cta.primaryLabel}
             </Link>
           </div>

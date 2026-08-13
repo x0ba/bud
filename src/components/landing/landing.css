@@ -267,6 +267,27 @@
   list-style: none;
 }
 
+/* Three logos across a phone doesn't read as "12,000+ institutions". */
+@media (width < 48rem) {
+  .lp-logos {
+    padding-block: 34px 4px;
+  }
+
+  .lp-logos-set {
+    gap: 2rem;
+    padding-inline: 1rem;
+  }
+
+  .lp-logo img {
+    height: 18px;
+    max-width: 110px;
+  }
+
+  .lp-logo[data-shape='mark'] img {
+    height: 23px;
+  }
+}
+
 .lp-logo {
   display: flex;
   align-items: center;
@@ -349,7 +370,11 @@
   position: absolute;
   inset: auto 0 0;
   height: 90px;
-  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--card) 78%, transparent));
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--card) 78%, transparent)
+  );
   pointer-events: none;
 }
 
@@ -741,6 +766,7 @@
 /* Feature cards ── copy on top, a framed replica of the screen underneath. */
 .lp-features {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 44px 24px;
 }
 
@@ -750,8 +776,32 @@
   }
 }
 
+/* After the base padding so it wins. Desktop's 88/96px chapter breaks read as
+   dead screens on a phone, where the same pause costs three thumb-flicks. */
+@media (width < 48rem) {
+  .lp-hero {
+    padding-block: 104px 24px;
+  }
+
+  .lp-section {
+    padding-block: 64px 72px;
+  }
+
+  .lp-head {
+    margin-bottom: 36px;
+  }
+
+  .lp-features {
+    gap: 36px;
+  }
+}
+
 .lp-feature {
   display: flex;
+  /* The replica inside is deliberately wider than its frame. Without this the
+     card would take that intrinsic width as its own and push the copy out past
+     the slab, where `overflow: hidden` quietly ate the last word of a line. */
+  min-width: 0;
   flex-direction: column;
   opacity: 0;
   transform: translateY(14px);
@@ -826,8 +876,42 @@
   position: absolute;
   inset: auto 0 0;
   height: 56px;
-  background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--card) 62%, transparent));
+  background: linear-gradient(
+    180deg,
+    transparent,
+    color-mix(in oklab, var(--card) 62%, transparent)
+  );
   pointer-events: none;
+}
+
+/* A phone has about 290px inside the frame. Rather than squeeze the desktop
+   replica into it — which turned merchant names into two-letter stubs — the
+   replicas shed their middle column and show the shape the app actually takes
+   on a phone: the name leads, the amount closes. */
+@media (width < 48rem) {
+  .lp-feature-visual {
+    padding: 20px 20px 0;
+  }
+
+  .lp-m-next,
+  .lp-m-note,
+  .lp-m-mini {
+    display: none;
+  }
+
+  .lp-m-rec .lp-m-name {
+    flex-wrap: wrap;
+    gap: 2px 7px;
+  }
+
+  .lp-m-learn-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .lp-m-learn-row em {
+    flex-basis: 100%;
+  }
 }
 
 .lp-feature-visual[data-tone='mint'] {
@@ -1268,6 +1352,7 @@
    where they play out. */
 .lp-budget {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 36px;
 }
 
@@ -1293,6 +1378,7 @@
 
 .lp-positions {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 30px;
 }
 

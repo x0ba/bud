@@ -32,6 +32,7 @@ import { Switch } from '#/components/ui/switch'
 import { expenseAmount } from '../../../convex/lib/money'
 import { currentMonth, formatDayLabel, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
+import { PHONE, useMediaQuery } from '#/lib/use-media-query'
 import { cn } from '#/lib/utils'
 
 const PAGE_SIZE = 40
@@ -127,6 +128,7 @@ function TransactionsPage() {
   const [month, setMonth] = useState(currentMonth())
   const [accountId, setAccountId] = useState<Id<'accounts'> | undefined>()
   const [selectedId, setSelectedId] = useState<Id<'transactions'> | null>(null)
+  const phone = useMediaQuery(PHONE)
 
   const accounts = useQuery(api.accounts.list)
   const categories = useQuery(api.categories.list)
@@ -166,24 +168,26 @@ function TransactionsPage() {
     <AppShell title="Transactions">
       <Page>
         <PageSummary>
-          <div className="flex gap-10">
+          <div className="flex gap-8 sm:gap-10">
             <Stat label="Out" value={formatUsdPlain(summary?.out ?? 0)} />
             {summary && summary.incoming > 0 ? (
               <Stat label="In" value={formatUsdPlain(summary.incoming)} />
             ) : null}
           </div>
+          {/* Search takes the whole first line on a phone; month and account
+              split the next one, so three filters cost two rows, not three. */}
           <div className="toolbar">
             <Input
               placeholder="Search merchants…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-[220px]"
+              className="w-full sm:w-[220px]"
             />
             <Input
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="w-[160px]"
+              className="min-w-0 flex-1 sm:w-[160px] sm:flex-none"
             />
             <Select
               value={accountId ?? 'all'}
@@ -191,7 +195,7 @@ function TransactionsPage() {
                 setAccountId(v === 'all' ? undefined : (v as Id<'accounts'>))
               }
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="min-w-0 flex-1 sm:w-[200px] sm:flex-none">
                 <SelectValue placeholder="All accounts" />
               </SelectTrigger>
               <SelectContent>
@@ -315,7 +319,9 @@ function TransactionsPage() {
           if (!open) setSelectedId(null)
         }}
       >
-        <SheetContent className="p-0">
+        {/* The slip comes from the side of a desk and from the bottom of a
+            phone — where the thumb is, and where a sheet is expected to be. */}
+        <SheetContent side={phone ? 'bottom' : 'right'} className="p-0">
           {selected ? (
             <TransactionSlip tx={selected} categories={categories} />
           ) : null}
@@ -368,7 +374,7 @@ function TransactionSlip({
   return (
     <div className="flex h-full min-h-0 flex-col">
       <SheetHeader className="gap-0 p-0">
-        <div className="flex flex-col gap-5 p-6 pr-14">
+        <div className="flex flex-col gap-4 p-4 pt-2 sm:gap-5 sm:p-6 sm:pr-14">
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
               <SheetTitle className="min-w-0 truncate text-left text-[13px] font-semibold tracking-[0.08em] text-[var(--sea-ink)] uppercase">
@@ -400,7 +406,7 @@ function TransactionSlip({
             </SheetDescription>
           </div>
         </div>
-        <ul className="border-t border-border/70 px-6">
+        <ul className="border-t border-border/70 px-4 sm:px-6">
           <li className="data-row">
             <span className="shrink-0 text-muted-foreground">Category</span>
             <Select
@@ -479,7 +485,7 @@ function TransactionSlip({
 
       <div className="min-h-0 flex-1" />
 
-      <SheetFooter className="gap-0 border-t border-border/70 px-6 pt-2 pb-4">
+      <SheetFooter className="gap-0 border-t border-border/70 px-4 pt-2 pb-4 sm:px-6">
         <label className="data-row min-h-10 cursor-pointer">
           <span className="text-[13px] font-medium text-[var(--sea-ink)]">
             Hide from reports

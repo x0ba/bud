@@ -22,7 +22,8 @@ export function AuthScreen({ action }: { action: 'sign-in' | 'sign-up' }) {
     }
   }
 
-  const label = action === 'sign-up' ? 'Sign up with Google' : 'Sign in with Google'
+  const label =
+    action === 'sign-up' ? 'Sign up with Google' : 'Sign in with Google'
 
   return (
     <main className="auth">

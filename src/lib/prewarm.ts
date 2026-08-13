@@ -4,9 +4,9 @@ import { convex } from '#/integrations/convex/client'
 /** Keep prewarmed subscriptions alive long enough to cover hover → click. */
 const EXTEND_MS = 30_000
 
-type PrewarmEntry<Query extends FunctionReference<'query'>> = {
-  query: Query
-  args?: Query['_args']
+type PrewarmEntry<T extends FunctionReference<'query'>> = {
+  query: T
+  args?: T['_args']
 }
 
 /** Start Convex subscriptions for a route's queries (runs on Link hover preload). */

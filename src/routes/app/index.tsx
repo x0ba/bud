@@ -298,9 +298,9 @@ function DashboardPage() {
             }
           >
             {spendMix.length > 0 ? (
-              <div className="grid gap-5 pt-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center">
+              <div className="grid justify-items-center gap-5 pt-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center sm:justify-items-stretch">
                 <CategoryDonut segments={spendMix} />
-                <DataList>
+                <DataList className="w-full">
                   {spendMix.map((row) => (
                     <li key={row.name} className="data-row">
                       <span className="flex min-w-0 items-center gap-2">

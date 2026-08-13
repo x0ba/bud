@@ -107,6 +107,7 @@ tanstackIntent:
 <!-- intent-skills:end -->
 
 ## General instructions
+
 - DO NOT try to verify your changes yourself using browser use unless told to
 
 ## Cursor Cloud specific instructions

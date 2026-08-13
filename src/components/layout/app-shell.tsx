@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom'
 import HeaderUser from '#/integrations/clerk/header-user'
 import { cn } from '#/lib/utils'
 import { AppSidebar } from './app-sidebar'
+import { MobileNav } from './mobile-nav'
 
 /** Where AppShell portals each page's title and actions. */
 const HeaderSlotContext = createContext<HTMLElement | null>(null)
@@ -69,12 +70,13 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           />
           <HeaderUser />
         </header>
-        <main className="px-8 pt-4 pb-10">
+        <main className="app-shell-main">
           <HeaderSlotContext.Provider value={headerSlot}>
             {children}
           </HeaderSlotContext.Provider>
         </main>
       </div>
+      <MobileNav />
     </div>
   )
 }
@@ -122,7 +124,9 @@ export function AppShell({
                 ) : null}
               </div>
               {actions ? (
-                <div className="flex items-center gap-2.5">{actions}</div>
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+                  {actions}
+                </div>
               ) : null}
             </>,
             headerSlot,

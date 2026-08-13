@@ -4,6 +4,64 @@ import { Dialog as SheetPrimitive } from 'radix-ui'
 
 import { cn } from '#/lib/utils.ts'
 
+/** Past this much travel the sheet goes rather than springs back. */
+const DISMISS_PX = 88
+
+/**
+ * Drag-to-dismiss for the bottom sheet. Radix already owns focus, escape, and
+ * the overlay click; this only adds the gesture the grab handle promises —
+ * showing a handle you can't pull is worse than showing no handle at all.
+ *
+ * The handlers live on the handle, not the sheet. A downward drag that starts
+ * on a switch or a select is operating that control, not dismissing.
+ *
+ * `touch-action: none` keeps the browser from stealing the pointer for pan,
+ * which would cancel the gesture before it reaches DISMISS_PX. Pulling up
+ * meets resistance and never travels far, so the sheet stays anchored.
+ */
+function useDragDismiss(enabled: boolean) {
+  const sheetRef = React.useRef<HTMLDivElement>(null)
+  const closeRef = React.useRef<HTMLButtonElement>(null)
+  const start = React.useRef<number | null>(null)
+  const offset = React.useRef(0)
+
+  const move = (y: number) => {
+    const el = sheetRef.current
+    if (!el) return
+    offset.current = y > 0 ? y : y / 4
+    el.style.transition = 'none'
+    el.style.transform = `translate3d(0, ${offset.current}px, 0)`
+  }
+
+  const release = () => {
+    const el = sheetRef.current
+    if (!el) return
+    start.current = null
+    if (offset.current > DISMISS_PX) closeRef.current?.click()
+    el.style.transition = 'transform 260ms cubic-bezier(0.32, 0.72, 0, 1)'
+    el.style.transform = ''
+    offset.current = 0
+  }
+
+  const handleProps = enabled
+    ? {
+        onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
+          if (event.pointerType === 'mouse') return
+          start.current = event.clientY
+          event.currentTarget.setPointerCapture(event.pointerId)
+        },
+        onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
+          if (start.current === null) return
+          move(event.clientY - start.current)
+        },
+        onPointerUp: release,
+        onPointerCancel: release,
+      }
+    : {}
+
+  return { closeRef, sheetRef, handleProps }
+}
+
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
@@ -52,6 +110,8 @@ function SheetContent({
   side?: 'top' | 'right' | 'bottom' | 'left'
   showCloseButton?: boolean
 }) {
+  const { closeRef, sheetRef, handleProps } = useDragDismiss(side === 'bottom')
+
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -65,14 +125,41 @@ function SheetContent({
             'inset-y-0 left-0 h-full w-[min(100%,22.5rem)] border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
           side === 'top' &&
             'inset-x-0 top-0 h-auto border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top',
+          // Rises from the thumb, stops short of the status bar, and rounds its
+          // top corners so it reads as a sheet over the page rather than a new
+          // screen. The grab handle says which edge it came from.
           side === 'bottom' &&
-            'inset-x-0 bottom-0 h-auto border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+            'inset-x-0 bottom-0 max-h-[88dvh] rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
           className,
         )}
         {...props}
+        ref={sheetRef}
       >
-        {children}
-        {showCloseButton && (
+        {side === 'bottom' ? (
+          <>
+            <div
+              className="flex min-h-11 shrink-0 touch-none items-center justify-center"
+              {...handleProps}
+            >
+              <span
+                className="h-1 w-9 rounded-full bg-[color-mix(in_oklab,var(--sea-ink)_18%,transparent)]"
+                aria-hidden
+              />
+            </div>
+            <SheetPrimitive.Close ref={closeRef} className="sr-only">
+              Close
+            </SheetPrimitive.Close>
+            <div
+              data-sheet-scroll
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain"
+            >
+              {children}
+            </div>
+          </>
+        ) : (
+          children
+        )}
+        {showCloseButton && side !== 'bottom' && (
           <SheetPrimitive.Close className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color,transform] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden">
             <XIcon className="size-4" />
             <span className="sr-only">Close</span>

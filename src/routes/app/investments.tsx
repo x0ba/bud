@@ -126,7 +126,7 @@ function InvestmentsPage() {
                     title="Allocation"
                     value={formatUsdPlain(data.totalValue)}
                   >
-                    <div className="grid gap-5 pt-1 sm:grid-cols-[140px_minmax(0,1fr)] sm:items-center xl:grid-cols-1 xl:justify-items-center">
+                    <div className="grid justify-items-center gap-5 pt-1 sm:grid-cols-[140px_minmax(0,1fr)] sm:items-center sm:justify-items-stretch xl:grid-cols-1 xl:justify-items-center">
                       <CategoryDonut
                         segments={data.byType.map((t) => ({
                           name: t.type,

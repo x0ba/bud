@@ -37,9 +37,9 @@ function RulesPage() {
                 {rules.map((r) => (
                   <li
                     key={r._id}
-                    className="flex items-start justify-between gap-3 py-3 text-[13px]"
+                    className="flex flex-col items-start gap-2 py-3 text-[13px] sm:flex-row sm:justify-between sm:gap-3"
                   >
-                    <div className="min-w-0 space-y-1.5">
+                    <div className="min-w-0 max-w-full space-y-1.5">
                       <p className="font-medium text-[var(--sea-ink)] text-pretty">
                         {r.matcher.merchantName
                           ? `Merchant is “${r.matcher.merchantName}”`

@@ -110,7 +110,7 @@ function CashFlowPage() {
       }
     >
       <Page>
-        <PageSummary className="flex-col items-stretch sm:flex-row sm:items-end">
+        <PageSummary>
           <HeroMetric
             label={`${kept < 0 ? 'Overspent' : 'Kept'} in ${formatMonthLabel(month)}`}
             value={formatUsdPlain(Math.abs(kept))}
@@ -123,7 +123,7 @@ function CashFlowPage() {
                 : 'No income recorded this month.'
             }
           />
-          <div className="flex min-w-0 flex-1 items-end justify-end gap-8">
+          <div className="flex min-w-0 flex-1 flex-wrap items-end gap-8 sm:justify-end">
             <div className="hidden min-w-0 max-w-[420px] flex-1 lg:block">
               <FlowBar income={income} spent={spent} />
             </div>
@@ -162,7 +162,7 @@ function CashFlowPage() {
                   {group.rows.map((row) => (
                     <li
                       key={`${group.key}-${row.name}`}
-                      className="grid grid-cols-[1fr_56px_auto] items-center gap-4 py-2.5 text-[13px]"
+                      className="grid grid-cols-[minmax(0,1fr)_44px_auto] items-center gap-3 py-2.5 text-[13px] sm:grid-cols-[minmax(0,1fr)_56px_auto] sm:gap-4"
                     >
                       <span className="flex min-w-0 items-center gap-2">
                         <CategoryDot color={row.color} />

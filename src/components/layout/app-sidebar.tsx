@@ -13,7 +13,8 @@ import {
   Tags,
   Wallet,
 } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
+import type { ReactNode } from 'react'
 import { Button } from '#/components/ui/button'
 import {
   Tooltip,
@@ -87,7 +88,6 @@ function NavLink({
         'transition-transform duration-[150ms]',
         EASE,
         'active:scale-[0.98]',
-        active ? 'text-[var(--sea-ink)]' : 'text-[var(--sea-ink-soft)]',
       )}
     >
       <span className={ICON_RAIL}>
@@ -101,9 +101,12 @@ function NavLink({
       <span
         aria-hidden={collapsed || undefined}
         className={cn(
-          'shrink-0 pr-3 whitespace-nowrap transition-opacity duration-[200ms] motion-reduce:transition-none',
+          'shrink-0 pr-3 whitespace-nowrap transition-[opacity,color] duration-[200ms] motion-reduce:transition-none',
           EASE,
           collapsed ? 'opacity-0' : 'opacity-100',
+          active
+            ? 'text-[var(--sea-ink)]'
+            : 'text-[var(--sea-ink-soft)] group-hover:text-[var(--sea-ink)]',
         )}
       >
         {label}
@@ -154,7 +157,9 @@ export function AppSidebar() {
     <aside
       data-collapsed={collapsed || undefined}
       className={cn(
-        'sticky top-0 flex h-dvh min-w-0 shrink-0 flex-col overflow-x-hidden overflow-y-auto bg-background',
+        // Phones navigate from the bottom bar instead — a 212px rail would eat
+        // half of a 390px viewport.
+        'sticky top-0 hidden h-dvh min-w-0 shrink-0 flex-col overflow-x-hidden overflow-y-auto bg-background md:flex',
         'transition-[width] duration-[200ms] motion-reduce:transition-none',
         EASE,
         collapsed ? 'w-14' : 'w-[212px]',
@@ -245,7 +250,9 @@ export function AppSidebar() {
             className={cn(
               'kicker shrink-0 pr-3 pl-14 whitespace-nowrap transition-opacity duration-[200ms] motion-reduce:transition-none',
               EASE,
-              collapsed ? 'h-0 overflow-hidden pb-0 opacity-0' : 'pb-1.5 opacity-100',
+              collapsed
+                ? 'h-0 overflow-hidden pb-0 opacity-0'
+                : 'pb-1.5 opacity-100',
             )}
           >
             Settings
