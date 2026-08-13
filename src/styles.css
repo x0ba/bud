@@ -74,6 +74,8 @@
   /* Layout frame — one gutter for the header, the page, and the panel gaps. */
   --page-gutter: 0.75rem;
   --tabbar-height: 3.5rem;
+  /* 3rem of chrome plus the notch, so border-box height doesn't eat the row. */
+  --app-header-height: calc(3rem + env(safe-area-inset-top, 0px));
 }
 
 @media (width >= 48rem) {
@@ -265,14 +267,14 @@ pre code {
   top: 0;
   z-index: 20;
   display: flex;
-  height: 3rem;
+  height: var(--app-header-height);
   align-items: center;
   justify-content: space-between;
   /* One number frames the page on a phone: the header, the page padding, and
      the gap between panels are all 12px, so the content sits in a single
      consistent margin instead of three competing ones. */
   padding-inline: var(--page-gutter);
-  padding-top: env(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, 0px);
   background: var(--background);
 }
 
@@ -745,7 +747,7 @@ pre code {
 
 .ledger-table th {
   position: sticky;
-  top: 3rem;
+  top: var(--app-header-height);
   z-index: 10;
   padding: 0.5rem 0.75rem;
   font-size: 11px;
@@ -821,7 +823,15 @@ pre code {
   }
 
   .ledger-table thead {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 
   .ledger-table tbody tr {

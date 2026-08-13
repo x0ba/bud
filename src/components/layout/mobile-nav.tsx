@@ -58,11 +58,13 @@ function Tab({
   label,
   icon: Icon,
   active,
+  exact,
   ...rest
 }: {
   label: string
   icon: LucideIcon
   active: boolean
+  exact?: boolean
 } & ({ to: string } | { onClick: () => void; 'aria-expanded': boolean })) {
   const body = (
     <>
@@ -79,6 +81,7 @@ function Tab({
     return (
       <Link
         to={rest.to}
+        activeOptions={{ exact: exact === true }}
         className="mobile-tab"
         data-active={active || undefined}
         aria-current={active ? 'page' : undefined}
@@ -128,6 +131,7 @@ export function MobileNav() {
             to={tab.to}
             label={tab.label}
             icon={tab.icon}
+            exact={'exact' in tab && tab.exact}
             active={isActive(pathname, tab.to, 'exact' in tab && tab.exact)}
           />
         ))}

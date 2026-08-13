@@ -84,26 +84,6 @@
   }
 }
 
-/* Desktop's 88/96px chapter breaks read as dead screens on a phone, where the
-   same pause costs three thumb-flicks. */
-@media (width < 48rem) {
-  .lp-hero {
-    padding-block: 104px 24px;
-  }
-
-  .lp-section {
-    padding-block: 64px 72px;
-  }
-
-  .lp-head {
-    margin-bottom: 36px;
-  }
-
-  .lp-features {
-    gap: 36px;
-  }
-}
-
 /* Nav ── floats over the page with no chrome of its own, gets out of the way on
    the way down, and returns as a pill on the way back up. */
 .lp-nav {
@@ -793,6 +773,26 @@
 @media (width >= 60rem) {
   .lp-features {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* After the base padding so it wins. Desktop's 88/96px chapter breaks read as
+   dead screens on a phone, where the same pause costs three thumb-flicks. */
+@media (width < 48rem) {
+  .lp-hero {
+    padding-block: 104px 24px;
+  }
+
+  .lp-section {
+    padding-block: 64px 72px;
+  }
+
+  .lp-head {
+    margin-bottom: 36px;
+  }
+
+  .lp-features {
+    gap: 36px;
   }
 }
 

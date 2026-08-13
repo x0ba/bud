@@ -12,19 +12,21 @@ const DISMISS_PX = 88
  * the overlay click; this only adds the gesture the grab handle promises —
  * showing a handle you can't pull is worse than showing no handle at all.
  *
- * Pulling up meets resistance and never travels far, so the sheet always feels
- * anchored to the bottom edge.
+ * The handlers live on the handle, not the sheet. A downward drag that starts
+ * on a switch or a select is operating that control, not dismissing.
+ *
+ * `touch-action: none` keeps the browser from stealing the pointer for pan,
+ * which would cancel the gesture before it reaches DISMISS_PX. Pulling up
+ * meets resistance and never travels far, so the sheet stays anchored.
  */
 function useDragDismiss(enabled: boolean) {
-  const ref = React.useRef<HTMLDivElement>(null)
+  const sheetRef = React.useRef<HTMLDivElement>(null)
   const closeRef = React.useRef<HTMLButtonElement>(null)
   const start = React.useRef<number | null>(null)
   const offset = React.useRef(0)
 
-  if (!enabled) return { closeRef, handlers: {} }
-
   const move = (y: number) => {
-    const el = ref.current
+    const el = sheetRef.current
     if (!el) return
     offset.current = y > 0 ? y : y / 4
     el.style.transition = 'none'
@@ -32,7 +34,7 @@ function useDragDismiss(enabled: boolean) {
   }
 
   const release = () => {
-    const el = ref.current
+    const el = sheetRef.current
     if (!el) return
     start.current = null
     if (offset.current > DISMISS_PX) closeRef.current?.click()
@@ -41,27 +43,23 @@ function useDragDismiss(enabled: boolean) {
     offset.current = 0
   }
 
-  return {
-    closeRef,
-    handlers: {
-      ref,
-      onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
-        if (event.pointerType === 'mouse') return
-        // A list that's been scrolled should scroll back up, not drag the sheet.
-        const scroller = (event.target as HTMLElement).closest(
-          '[data-sheet-scroll]',
-        )
-        if (scroller && scroller.scrollTop > 0) return
-        start.current = event.clientY
-      },
-      onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
-        if (start.current === null) return
-        move(event.clientY - start.current)
-      },
-      onPointerUp: release,
-      onPointerCancel: release,
-    },
-  }
+  const handleProps = enabled
+    ? {
+        onPointerDown: (event: React.PointerEvent<HTMLDivElement>) => {
+          if (event.pointerType === 'mouse') return
+          start.current = event.clientY
+          event.currentTarget.setPointerCapture(event.pointerId)
+        },
+        onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => {
+          if (start.current === null) return
+          move(event.clientY - start.current)
+        },
+        onPointerUp: release,
+        onPointerCancel: release,
+      }
+    : {}
+
+  return { closeRef, sheetRef, handleProps }
 }
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
@@ -112,14 +110,13 @@ function SheetContent({
   side?: 'top' | 'right' | 'bottom' | 'left'
   showCloseButton?: boolean
 }) {
-  const { closeRef, handlers } = useDragDismiss(side === 'bottom')
+  const { closeRef, sheetRef, handleProps } = useDragDismiss(side === 'bottom')
 
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
-        {...handlers}
         className={cn(
           'fixed z-50 flex flex-col gap-0 overflow-hidden bg-card text-card-foreground shadow-none transition ease-[cubic-bezier(0.32,0.72,0,1)] data-[state=closed]:animate-out data-[state=closed]:duration-200 data-[state=open]:animate-in data-[state=open]:duration-[280ms]',
           side === 'right' &&
@@ -136,19 +133,32 @@ function SheetContent({
           className,
         )}
         {...props}
+        ref={sheetRef}
       >
         {side === 'bottom' ? (
           <>
-            <span
-              className="mx-auto mt-2.5 mb-1 h-1 w-9 shrink-0 rounded-full bg-[color-mix(in_oklab,var(--sea-ink)_18%,transparent)]"
-              aria-hidden
-            />
+            <div
+              className="flex min-h-11 shrink-0 touch-none items-center justify-center"
+              {...handleProps}
+            >
+              <span
+                className="h-1 w-9 rounded-full bg-[color-mix(in_oklab,var(--sea-ink)_18%,transparent)]"
+                aria-hidden
+              />
+            </div>
             <SheetPrimitive.Close ref={closeRef} className="sr-only">
               Close
             </SheetPrimitive.Close>
+            <div
+              data-sheet-scroll
+              className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain"
+            >
+              {children}
+            </div>
           </>
-        ) : null}
-        {children}
+        ) : (
+          children
+        )}
         {showCloseButton && side !== 'bottom' && (
           <SheetPrimitive.Close className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color,transform] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted hover:text-foreground active:scale-[0.97] focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-hidden">
             <XIcon className="size-4" />
