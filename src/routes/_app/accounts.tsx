@@ -9,13 +9,12 @@ import {
   DataList,
   EmptyState,
   HeroMetric,
-  PageFrame,
   RowMeta,
   RowTitle,
-  Section,
   ShareBar,
   Stat,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import { Button } from '#/components/ui/button'
@@ -82,7 +81,7 @@ function AccountsPage() {
       actions={<PlaidLinkButton label="Add institution" size="sm" />}
     >
       {view ? (
-        <PageFrame>
+        <Page>
           {view.items.length === 0 ? (
             <EmptyState
               title="Connect your banks"
@@ -92,7 +91,7 @@ function AccountsPage() {
           ) : null}
 
           {view.hero ? (
-            <section className="grid gap-8 md:grid-cols-[1fr_auto] md:items-start">
+            <PageSummary>
               <HeroMetric
                 label={view.hero.label}
                 value={formatUsdPlain(view.hero.value)}
@@ -109,12 +108,17 @@ function AccountsPage() {
                   ))}
                 </div>
               ) : null}
-            </section>
+            </PageSummary>
           ) : null}
 
+          <PageBody>
           {view.alerts.length > 0 ? (
-            <Section title="Needs attention">
-              <ul className="flex flex-col gap-2">
+            <Panel
+              id="accounts-alerts"
+              title="Needs attention"
+              hint={`${view.alerts.length} ${view.alerts.length === 1 ? 'item' : 'items'}`}
+            >
+              <ul className="flex flex-col gap-2 pt-1">
                 {view.alerts.map((alert) => (
                   <li
                     key={alert.id}
@@ -140,7 +144,7 @@ function AccountsPage() {
                   </li>
                 ))}
               </ul>
-            </Section>
+            </Panel>
           ) : null}
 
           {view.groups.map((group) => {
@@ -149,8 +153,10 @@ function AccountsPage() {
                 ? group.total / group.limit
                 : null
             return (
-              <Section
+              <Panel
                 key={group.type}
+                id={`accounts-${group.type}`}
+                span={6}
                 title={group.title}
                 value={formatUsdPlain(group.total)}
                 hint={
@@ -159,10 +165,10 @@ function AccountsPage() {
                     : undefined
                 }
                 tone={group.debt ? 'muted' : 'default'}
-                sticky
+                flush
               >
                 {utilization != null ? (
-                  <div className="space-y-1.5 pb-1">
+                  <div className="space-y-1.5 px-3 pt-2.5">
                     <ShareBar
                       value={group.total}
                       total={group.limit}
@@ -189,14 +195,18 @@ function AccountsPage() {
                     />
                   ))}
                 </DataList>
-              </Section>
+              </Panel>
             )
           })}
 
           {view.archived.length > 0 ? (
-            <Section
+            <Panel
+              id="accounts-archived"
+              span={6}
               title="Hidden & closed"
               hint={`${view.archived.length} ${view.archived.length === 1 ? 'account' : 'accounts'}`}
+              defaultCollapsed
+              flush
             >
               <DataList>
                 {view.archived.map((account) => (
@@ -209,11 +219,13 @@ function AccountsPage() {
                   />
                 ))}
               </DataList>
-            </Section>
+            </Panel>
           ) : null}
 
           {view.items.length > 0 ? (
-            <Section
+            <Panel
+              id="accounts-connections"
+              span={6}
               title="Connections"
               description="Institutions linked through Plaid. Balances update when these sync."
               action={
@@ -227,6 +239,7 @@ function AccountsPage() {
                   </Button>
                 ) : undefined
               }
+              flush
             >
               <DataList>
                 {view.items.map((item) => {
@@ -282,9 +295,10 @@ function AccountsPage() {
                   )
                 })}
               </DataList>
-            </Section>
+            </Panel>
           ) : null}
-        </PageFrame>
+          </PageBody>
+        </Page>
       ) : null}
     </AppShell>
   )

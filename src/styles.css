@@ -270,33 +270,158 @@ pre code {
   color: var(--palm);
 }
 
-/* Section landmark — a full tier above row text so the eye can skip between
-   sections without reading them. */
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.012em;
+/* Panels — a data area with its own walls.
+
+   The page background stays the canvas and panels lift one step onto --card:
+   ~3% of lightness, a shift you feel rather than see. That plus a hairline is
+   the whole depth strategy — no shadows, same borders-only commitment the rows
+   already make. Sections used to be separated by 40px of air alone, which read
+   as one undifferentiated column at full width; the walls do that work now, so
+   the gap between panels drops to 16px. */
+.panel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.panel-head {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+/* Spans the header so the hit area is the full 40px row, not the glyph. */
+.panel-trigger {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 6px;
+  text-align: left;
   color: var(--sea-ink);
 }
 
-.section-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
+.panel-trigger:not([data-static]) {
+  cursor: pointer;
 }
 
-/* Sticky sections keep the current group labelled while scanning long lists.
-   Opaque background so rows clip at the edge — same decision as the app header,
-   no frost, no fade. */
-.section-header[data-sticky] {
-  position: sticky;
-  top: 3rem;
-  z-index: 10;
-  padding-block: 0.5rem;
-  margin-block: -0.5rem 0;
-  background: var(--background);
+.panel-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.panel-chevron {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition:
+    transform var(--duration-ui) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.panel[data-open] .panel-chevron {
+  transform: rotate(90deg);
+}
+
+.panel-trigger:hover .panel-chevron {
+  color: var(--sea-ink);
+}
+
+.panel-title {
+  display: block;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.008em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-description {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  color: var(--muted-foreground);
+  text-wrap: pretty;
+}
+
+.panel-trailing {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* 0fr → 1fr animates the fold without measuring the content. */
+.panel-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-ui) var(--ease-out);
+}
+
+.panel-body[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.panel-body-inner {
+  min-height: 0;
+  overflow: clip;
+}
+
+/* Sticky ledger headers need a scrollport they can escape, so the clip lifts
+   once the fold has finished. */
+.panel-body[data-settled] .panel-body-inner {
+  overflow: visible;
+}
+
+.panel-content {
+  padding: 0 0.75rem 0.75rem;
+}
+
+/* Lists and tables run to the walls: the header's hairline becomes the list's
+   top rule, and the panel border closes the bottom. */
+.panel-content-flush {
+  padding: 0;
+  border-top: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+}
+
+.panel-content-flush .data-list {
+  border-block: 0;
+}
+
+.panel-content-flush .data-list > li {
+  padding-inline: 0.75rem;
+}
+
+/* When the row itself is the link, it takes the padding instead of the list
+   item so its hover highlight still reaches the panel walls. */
+.panel-content-flush .data-list > li:has(> .data-row) {
+  padding-inline: 0;
+}
+
+.panel-content-flush .data-list > li > .data-row {
+  padding-inline: 0.75rem;
+}
+
+.panel-content-flush > .ledger-table {
+  border-bottom: 0;
+}
+
+/* Inside a panel the walls are already the frame. */
+.panel .empty-state {
+  border: 0;
+  padding-block: 2.25rem;
 }
 
 .section-link {
@@ -328,17 +453,10 @@ pre code {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-foreground);
-  background: var(--background);
 }
 
 .data-list > li.row-group-header {
   border-bottom: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
-}
-
-/* First group sits flush under the section header — its own top hairline
-   would double the list's. */
-.data-list > li.row-group-header:first-child {
-  padding-top: 0;
 }
 
 .data-list > li {
@@ -423,7 +541,7 @@ pre code {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted-foreground);
-  background: var(--background);
+  background: var(--card);
   border-bottom: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
 }
 
@@ -617,6 +735,11 @@ pre code {
 
   .rise-in {
     animation: none;
+  }
+
+  .panel-body,
+  .panel-chevron {
+    transition: none;
   }
 
   .rise-in,

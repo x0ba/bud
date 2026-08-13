@@ -2,7 +2,8 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useMutation, useQuery } from 'convex/react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
-import { DataList, PageFrame } from '#/components/dense'
+import { DataList } from '#/components/dense'
+import { Page, PageBody, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Badge } from '#/components/ui/badge'
 import { Button } from '#/components/ui/button'
@@ -23,11 +24,15 @@ function RulesPage() {
   return (
     <AppShell title="Rules">
       {rules ? (
-        <PageFrame width="sm">
-          <p className="text-[13px] text-muted-foreground text-pretty">
-            Rules are created when you recategorize a transaction and choose
-            “Always categorize…”. Most-specific match wins.
-          </p>
+        <Page>
+          <PageBody>
+          <Panel
+            id="settings-rules"
+            title="Rules"
+            description="Created when you recategorize a transaction and choose “Always categorize…”. Most-specific match wins."
+            hint={`${rules.length} ${rules.length === 1 ? 'rule' : 'rules'}`}
+            flush
+          >
           <DataList>
             {rules.map((r) => (
               <li
@@ -87,7 +92,9 @@ function RulesPage() {
               </li>
             ) : null}
           </DataList>
-        </PageFrame>
+          </Panel>
+          </PageBody>
+        </Page>
       ) : null}
     </AppShell>
   )

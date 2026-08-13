@@ -8,12 +8,11 @@ import {
   DataList,
   EmptyState,
   HeroMetric,
-  PageFrame,
   RowGroupHeader,
   RowMeta,
   RowTitle,
-  Section,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { CategoryDonut } from '#/components/category-donut'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
@@ -170,183 +169,204 @@ function DashboardPage() {
     data.topCategories.length === 0 &&
     attention.length === 0
 
-  return (
-    <AppShell
-      title="Dashboard"
-      actions={<PlaidLinkButton variant="outline" size="sm" />}
-    >
-      <PageFrame>
-        {isNew ? (
+  if (isNew) {
+    return (
+      <AppShell
+        title="Dashboard"
+        actions={<PlaidLinkButton variant="outline" size="sm" />}
+      >
+        <Page>
           <EmptyState
             title="Nothing connected yet"
             description="Link a bank and Bud fills in your net worth, where the money went, and what's due next."
             action={<PlaidLinkButton />}
           />
-        ) : (
-          <Fragment>
-            <section className="grid gap-8 md:grid-cols-[1fr_260px] md:items-end">
-              <HeroMetric
-                label="Net worth"
-                value={formatUsdPlain(data.netWorth)}
-                meta={heroMeta}
-              />
-              <div className="space-y-2">
-                <PaceBar
-                  label={hasFlexTarget ? 'Flex budget pace' : 'Spending pace'}
-                  spent={
-                    hasFlexTarget ? budget.totals.flexSpent : data.spentThisMonth
-                  }
-                  budget={
-                    hasFlexTarget ? flexPlanned : Math.max(data.spentThisMonth, 1)
-                  }
-                  pacePct={budget.pace.pct}
-                />
-                <p className="text-[12px] text-muted-foreground text-pretty">
-                  {hasFlexTarget ? (
-                    <span className="tabular-nums">
-                      {formatUsdPlain(budget.totals.flexSpent)} of{' '}
-                      {formatUsdPlain(flexPlanned)} flex
-                    </span>
-                  ) : (
-                    <Fragment>
-                      <Link to="/budget" className="font-medium">
-                        Set a flex budget
-                      </Link>{' '}
-                      to track against a target.
-                    </Fragment>
-                  )}
-                </p>
-              </div>
-            </section>
+        </Page>
+      </AppShell>
+    )
+  }
 
-            {attention.length > 0 ? (
-              <Section
-                title="Needs you"
-                action={
-                  <Link to="/accounts" className="section-link">
-                    All accounts
-                  </Link>
-                }
-              >
-                <ul className="flex flex-col gap-2">
-                  {attention.map((item) => (
-                    <li
-                      key={item.key}
-                      className="attention-band"
-                      data-severity={item.severity}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-medium text-[var(--sea-ink)]">
-                          {item.title}
-                        </p>
-                        <p className="truncate text-[12px] text-muted-foreground">
-                          {item.detail}
-                        </p>
-                      </div>
-                      {item.itemId ? (
-                        <PlaidLinkButton
-                          label="Reconnect"
-                          itemId={item.itemId}
-                          variant="outline"
-                          size="sm"
-                        />
-                      ) : item.amount != null ? (
-                        <span className="amount-cell shrink-0 text-[13px] text-[var(--sea-ink)]">
-                          {formatUsdPlain(item.amount)}
-                        </span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              </Section>
-            ) : null}
+  return (
+    <AppShell
+      title="Dashboard"
+      actions={<PlaidLinkButton variant="outline" size="sm" />}
+    >
+      <Page>
+        <PageSummary>
+          <HeroMetric
+            label="Net worth"
+            value={formatUsdPlain(data.netWorth)}
+            meta={heroMeta}
+          />
+          <div className="w-full max-w-[320px] space-y-2">
+            <PaceBar
+              label={hasFlexTarget ? 'Flex budget pace' : 'Spending pace'}
+              spent={
+                hasFlexTarget ? budget.totals.flexSpent : data.spentThisMonth
+              }
+              budget={
+                hasFlexTarget ? flexPlanned : Math.max(data.spentThisMonth, 1)
+              }
+              pacePct={budget.pace.pct}
+            />
+            <p className="text-[12px] text-muted-foreground text-pretty">
+              {hasFlexTarget ? (
+                <span className="tabular-nums">
+                  {formatUsdPlain(budget.totals.flexSpent)} of{' '}
+                  {formatUsdPlain(flexPlanned)} flex
+                </span>
+              ) : (
+                <Fragment>
+                  <Link to="/budget" className="font-medium">
+                    Set a flex budget
+                  </Link>{' '}
+                  to track against a target.
+                </Fragment>
+              )}
+            </p>
+          </div>
+        </PageSummary>
 
-            <Section
-              title="Where it's going"
-              description={`Biggest categories in ${monthLabel}.`}
-              value={formatUsdPlain(data.spentThisMonth)}
+        <PageBody>
+          {attention.length > 0 ? (
+            <Panel
+              id="dashboard-attention"
+              title="Needs you"
+              hint={`${attention.length} ${attention.length === 1 ? 'item' : 'items'}`}
               action={
-                <Link to="/cash-flow" className="section-link">
-                  Cash flow
+                <Link to="/accounts" className="section-link">
+                  All accounts
                 </Link>
               }
             >
-              {spendMix.length > 0 ? (
-                <div className="grid gap-6 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center">
-                  <CategoryDonut segments={spendMix} />
-                  <DataList>
-                    {spendMix.map((row) => (
-                      <li key={row.name} className="data-row">
-                        <span className="flex min-w-0 items-center gap-2">
-                          <CategoryDot color={row.color} />
-                          <span
-                            className={
-                              row.muted
-                                ? 'truncate text-muted-foreground'
-                                : 'truncate font-medium text-[var(--sea-ink)]'
-                            }
-                          >
-                            {row.name}
-                          </span>
-                        </span>
+              <ul className="flex flex-col gap-2 pt-1">
+                {attention.map((item) => (
+                  <li
+                    key={item.key}
+                    className="attention-band"
+                    data-severity={item.severity}
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-medium text-[var(--sea-ink)]">
+                        {item.title}
+                      </p>
+                      <p className="truncate text-[12px] text-muted-foreground">
+                        {item.detail}
+                      </p>
+                    </div>
+                    {item.itemId ? (
+                      <PlaidLinkButton
+                        label="Reconnect"
+                        itemId={item.itemId}
+                        variant="outline"
+                        size="sm"
+                      />
+                    ) : item.amount != null ? (
+                      <span className="amount-cell shrink-0 text-[13px] text-[var(--sea-ink)]">
+                        {formatUsdPlain(item.amount)}
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </Panel>
+          ) : null}
+
+          <Panel
+            id="dashboard-mix"
+            span={5}
+            title="Where it's going"
+            description={`Biggest categories in ${monthLabel}.`}
+            value={formatUsdPlain(data.spentThisMonth)}
+            action={
+              <Link to="/cash-flow" className="section-link">
+                Cash flow
+              </Link>
+            }
+          >
+            {spendMix.length > 0 ? (
+              <div className="grid gap-5 pt-1 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center">
+                <CategoryDonut segments={spendMix} />
+                <DataList>
+                  {spendMix.map((row) => (
+                    <li key={row.name} className="data-row">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <CategoryDot color={row.color} />
                         <span
                           className={
                             row.muted
-                              ? 'amount-cell font-medium text-muted-foreground'
-                              : 'amount-cell text-[var(--sea-ink)]'
+                              ? 'truncate text-muted-foreground'
+                              : 'truncate font-medium text-[var(--sea-ink)]'
                           }
                         >
-                          {formatUsdPlain(row.amount)}
+                          {row.name}
                         </span>
-                      </li>
-                    ))}
-                  </DataList>
-                </div>
-              ) : (
-                <p className="py-3 text-[13px] text-muted-foreground">
-                  No spending recorded in {monthLabel} yet.
-                </p>
-              )}
-            </Section>
+                      </span>
+                      <span
+                        className={
+                          row.muted
+                            ? 'amount-cell font-medium text-muted-foreground'
+                            : 'amount-cell text-[var(--sea-ink)]'
+                        }
+                      >
+                        {formatUsdPlain(row.amount)}
+                      </span>
+                    </li>
+                  ))}
+                </DataList>
+              </div>
+            ) : (
+              <p className="py-4 text-[13px] text-muted-foreground">
+                No spending recorded in {monthLabel} yet.
+              </p>
+            )}
+          </Panel>
 
-            <Section
-              title="Recent"
-              action={
-                <Link to="/transactions" className="section-link">
-                  View all
-                </Link>
-              }
-            >
-              <DataList>
-                {recentDays.map((day) => (
-                  <Fragment key={day.date}>
-                    <RowGroupHeader
-                      label={formatDayLabel(day.date)}
-                      value={day.spent > 0 ? formatUsdPlain(day.spent) : undefined}
-                    />
-                    {day.rows.map((tx) => (
-                      <li key={tx._id} className="data-row">
-                        <div className="min-w-0">
-                          <RowTitle>{tx.merchantName}</RowTitle>
-                          {tx.categoryName ? (
-                            <RowMeta>{tx.categoryName}</RowMeta>
-                          ) : null}
-                        </div>
-                        <Money amount={tx.amount} plaid />
-                      </li>
-                    ))}
-                  </Fragment>
-                ))}
-                {recentDays.length === 0 ? (
-                  <li className="py-3 text-[13px] text-muted-foreground">
-                    No transactions yet.
-                  </li>
-                ) : null}
-              </DataList>
-            </Section>
-          </Fragment>
-        )}
-      </PageFrame>
+          <Panel
+            id="dashboard-recent"
+            span={7}
+            title="Recent"
+            hint={
+              recentDays.length > 0
+                ? `${data.recent.length} transactions`
+                : undefined
+            }
+            action={
+              <Link to="/transactions" className="section-link">
+                View all
+              </Link>
+            }
+            flush
+          >
+            <DataList>
+              {recentDays.map((day) => (
+                <Fragment key={day.date}>
+                  <RowGroupHeader
+                    label={formatDayLabel(day.date)}
+                    value={day.spent > 0 ? formatUsdPlain(day.spent) : undefined}
+                  />
+                  {day.rows.map((tx) => (
+                    <li key={tx._id} className="data-row">
+                      <div className="min-w-0">
+                        <RowTitle>{tx.merchantName}</RowTitle>
+                        {tx.categoryName ? (
+                          <RowMeta>{tx.categoryName}</RowMeta>
+                        ) : null}
+                      </div>
+                      <Money amount={tx.amount} plaid />
+                    </li>
+                  ))}
+                </Fragment>
+              ))}
+              {recentDays.length === 0 ? (
+                <li className="py-6 text-[13px] text-muted-foreground">
+                  No transactions yet.
+                </li>
+              ) : null}
+            </DataList>
+          </Panel>
+        </PageBody>
+      </Page>
     </AppShell>
   )
 }

@@ -6,13 +6,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
-import {
-  CategoryDot,
-  DataList,
-  EmptyState,
-  PageFrame,
-  Section,
-} from '#/components/dense'
+import { CategoryDot, DataList, EmptyState } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -166,8 +161,8 @@ function CategoriesPage() {
 
   return (
     <AppShell title="Categories">
-      <PageFrame width="sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <Page>
+        <PageSummary className="items-center">
           <p className="max-w-md text-[13px] text-muted-foreground text-pretty">
             Every category has a type, and the type decides how it’s budgeted.
           </p>
@@ -184,7 +179,7 @@ function CategoriesPage() {
               className="pl-8"
             />
           </div>
-        </div>
+        </PageSummary>
 
         {categories.length === 0 ? (
           <EmptyState
@@ -193,14 +188,23 @@ function CategoriesPage() {
           />
         ) : null}
 
+        <PageBody>
         {model.sections.map((section) => {
           const rootOpen =
             composer?.kind === 'root' && composer.type === section.type
           return (
-            <Section
+            <Panel
               key={section.type}
+              id={`categories-${section.type}`}
+              span={4}
               title={section.title}
               description={section.description}
+              hint={
+                section.groups.length > 0
+                  ? `${section.groups.length}`
+                  : undefined
+              }
+              flush
               action={
                 <Button
                   variant="ghost"
@@ -261,9 +265,10 @@ function CategoriesPage() {
                   </li>
                 ) : null}
               </DataList>
-            </Section>
+            </Panel>
           )
         })}
+        </PageBody>
 
         {categories.length > 0 && model.sections.length === 0 ? (
           <div className="border-t border-border/70 py-10 text-center">
@@ -280,7 +285,7 @@ function CategoriesPage() {
             </Button>
           </div>
         ) : null}
-      </PageFrame>
+      </Page>
     </AppShell>
   )
 }

@@ -10,12 +10,11 @@ import {
   EmptyState,
   HeroMetric,
   Kicker,
-  PageFrame,
   RowGroupHeader,
-  Section,
   ShareBar,
   Stat,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Button } from '#/components/ui/button'
 import { Input } from '#/components/ui/input'
@@ -210,49 +209,49 @@ function NetWorthPage() {
         </Button>
       }
     >
-      <PageFrame width="lg">
-        <section className="flex flex-col gap-6">
-          <div className="grid gap-8 md:grid-cols-[1fr_auto] md:items-start">
-            <HeroMetric
-              label="Net worth"
-              value={formatUsdPlain(summary.netWorth)}
-              meta={
-                chart
-                  ? chart.delta === 0
-                    ? `Unchanged since ${formatDateShort(chart.first.date)}`
-                    : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
-                  : 'Take your first snapshot to start tracking change over time.'
-              }
+      <Page>
+        <PageSummary>
+          <HeroMetric
+            label="Net worth"
+            value={formatUsdPlain(summary.netWorth)}
+            meta={
+              chart
+                ? chart.delta === 0
+                  ? `Unchanged since ${formatDateShort(chart.first.date)}`
+                  : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
+                : 'Take your first snapshot to start tracking change over time.'
+            }
+          />
+          <div className="flex items-end gap-8">
+            {debtShare != null ? (
+              <div className="hidden w-[220px] space-y-2 sm:block">
+                <ShareBar
+                  value={summary.liabilities}
+                  total={summary.assets}
+                  color="color-mix(in oklab, var(--sea-ink) 34%, transparent)"
+                  className="h-2"
+                />
+                <p className="text-[11px] font-medium text-muted-foreground">
+                  Debts are {debtShare}% of what you own
+                </p>
+              </div>
+            ) : null}
+            <Stat
+              label="Assets"
+              value={formatUsdPlain(summary.assets)}
+              tone="positive"
             />
-            <div className="flex gap-8">
-              <Stat
-                label="Assets"
-                value={formatUsdPlain(summary.assets)}
-                tone="positive"
-              />
-              <Stat
-                label="Debts"
-                value={formatUsdPlain(summary.liabilities)}
-                tone={summary.liabilities > 0 ? 'default' : 'muted'}
-              />
-            </div>
+            <Stat
+              label="Debts"
+              value={formatUsdPlain(summary.liabilities)}
+              tone={summary.liabilities > 0 ? 'default' : 'muted'}
+            />
           </div>
-          {debtShare != null ? (
-            <div className="space-y-2">
-              <ShareBar
-                value={summary.liabilities}
-                total={summary.assets}
-                color="color-mix(in oklab, var(--sea-ink) 34%, transparent)"
-                className="h-2"
-              />
-              <p className="text-[11px] font-medium text-muted-foreground">
-                Debts are {debtShare}% of what you own
-              </p>
-            </div>
-          ) : null}
-        </section>
+        </PageSummary>
 
-        <Section
+        <PageBody>
+        <Panel
+          id="net-worth-trend"
           title="Trend"
           value={
             chart
@@ -277,7 +276,7 @@ function NetWorthPage() {
           }
         >
           {chart ? (
-            <div className="space-y-2">
+            <div className="space-y-2 pt-1">
               <div className="relative border-b border-border/70">
                 <svg
                   viewBox={`0 0 ${chart.w} ${chart.h}`}
@@ -339,13 +338,14 @@ function NetWorthPage() {
               }
             />
           )}
-        </Section>
+        </Panel>
 
-        <Section
+        <Panel
+          id="net-worth-assets"
+          span={6}
           title="Assets"
           description="Accounts and anything you've valued by hand."
           value={formatUsdPlain(summary.assets)}
-          sticky
           action={
             <Button
               variant="ghost"
@@ -358,7 +358,7 @@ function NetWorthPage() {
             </Button>
           }
         >
-          <DataList>
+          <DataList className="mt-1">
             {holdings.assetAccounts.length > 0 ? (
               <Fragment>
                 {holdings.manualAssets.length > 0 ? (
@@ -451,17 +451,18 @@ function NetWorthPage() {
               </Button>
             </div>
           ) : null}
-        </Section>
+        </Panel>
 
         {hasDebts ? (
-          <Section
+          <Panel
+            id="net-worth-debts"
+            span={6}
             title="Debts"
             description="Balances that subtract from what you own."
             value={formatUsdPlain(summary.liabilities)}
             tone="muted"
-            sticky
           >
-            <DataList>
+            <DataList className="mt-1">
               {holdings.debtAccounts.length > 0 ? (
                 <Fragment>
                   {holdings.manualDebts.length > 0 ? (
@@ -495,9 +496,10 @@ function NetWorthPage() {
                 </Fragment>
               ) : null}
             </DataList>
-          </Section>
+          </Panel>
         ) : null}
-      </PageFrame>
+        </PageBody>
+      </Page>
     </AppShell>
   )
 }

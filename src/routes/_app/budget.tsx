@@ -9,9 +9,8 @@ import {
   DataList,
   HeroMetric,
   Kicker,
-  PageFrame,
-  Section,
 } from '#/components/dense'
+import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { PaceBar } from '#/components/pace-bar'
 import { Button } from '#/components/ui/button'
@@ -121,8 +120,8 @@ function BudgetPage() {
       }
     >
       {data ? (
-        <PageFrame>
-          <section className="grid gap-8 md:grid-cols-[1fr_auto] md:items-end">
+        <Page>
+          <PageSummary>
             <HeroMetric
               label={rollup.planned > 0 ? 'Left to spend' : 'Spent this month'}
               value={formatUsdPlain(
@@ -160,9 +159,12 @@ function BudgetPage() {
                 />
               </div>
             </div>
-          </section>
+          </PageSummary>
 
-          <Section
+          <PageBody>
+          <Panel
+            id="budget-flex"
+            span={5}
             title="Flex pool"
             description="Groceries, dining, shopping — one monthly number."
             value={formatUsdPlain(data.totals.flexSpent)}
@@ -176,13 +178,12 @@ function BudgetPage() {
                 ? 'over'
                 : 'default'
             }
-            sticky
             action={
               <Input
                 inputMode="decimal"
                 value={flexBudget}
                 onChange={(e) => setFlexBudget(e.target.value)}
-                className="ml-1 h-8 w-[104px] text-right tabular-nums"
+                className="h-8 w-[104px] text-right tabular-nums"
                 placeholder="Budget"
                 aria-label="Flex budget"
               />
@@ -194,7 +195,7 @@ function BudgetPage() {
               pacePct={data.pace.pct}
               label={`${Math.round((data.totals.flexSpent / Math.max(rollup.flexPlanned, 1)) * 100)}% of flex spent`}
             />
-            <DataList className="mt-1">
+            <DataList className="mt-3">
               {data.items
                 .filter((i) => i.budgetType === 'flex' && i.spent > 0)
                 .map((i) => (
@@ -211,9 +212,11 @@ function BudgetPage() {
                   </li>
                 ))}
             </DataList>
-          </Section>
+          </Panel>
 
-          <Section
+          <Panel
+            id="budget-fixed"
+            span={7}
             title="Fixed"
             description="Rent, insurance, subscriptions — same every month."
             value={formatUsdPlain(rollup.fixedSpent)}
@@ -227,7 +230,7 @@ function BudgetPage() {
                 ? 'over'
                 : 'default'
             }
-            sticky
+            flush
           >
             <DataList>
               {data.items
@@ -286,13 +289,15 @@ function BudgetPage() {
                   )
                 })}
             </DataList>
-          </Section>
+          </Panel>
 
-          <Section
+          <Panel
+            id="budget-non-monthly"
+            span={5}
             title="Non-monthly"
             description="Travel and irregular expenses this month."
             value={formatUsdPlain(rollup.nonMonthlySpent)}
-            sticky
+            flush
           >
             <DataList>
               {data.items
@@ -308,8 +313,9 @@ function BudgetPage() {
                   </li>
                 ))}
             </DataList>
-          </Section>
-        </PageFrame>
+          </Panel>
+          </PageBody>
+        </Page>
       ) : null}
     </AppShell>
   )
