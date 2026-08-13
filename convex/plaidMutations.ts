@@ -248,6 +248,7 @@ export const upsertAccounts = internalMutation({
         })
       }
     }
+    await ctx.db.patch(args.itemId, { lastSyncedAt: Date.now() })
     await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
       userId: args.userId,
     })

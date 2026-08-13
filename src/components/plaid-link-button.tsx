@@ -21,6 +21,7 @@ export function PlaidLinkButton({
   const createLinkToken = useAction(api.plaidActions.createLinkToken)
   const createUpdateLinkToken = useAction(api.plaidActions.createUpdateLinkToken)
   const exchangePublicToken = useAction(api.plaidActions.exchangePublicToken)
+  const syncItem = useAction(api.plaidActions.syncItemForUser)
   const [linkToken, setLinkToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -31,25 +32,30 @@ export function PlaidLinkButton({
         institution: { institution_id: string; name: string } | null
       },
     ) => {
-      if (!publicToken) return
       try {
-        if (!itemId) {
-          await exchangePublicToken({
-            publicToken,
-            institutionId: metadata.institution?.institution_id,
-            institutionName: metadata.institution?.name ?? 'Institution',
-          })
-          toast.success('Accounts connected — syncing transactions…')
-        } else {
+        if (itemId) {
+          // Update mode (re-auth / extra products) often returns a null token.
+          await syncItem({ itemId })
           toast.success('Connection updated — syncing…')
+          return
         }
+        if (!publicToken) {
+          toast.error('Plaid did not return a token')
+          return
+        }
+        await exchangePublicToken({
+          publicToken,
+          institutionId: metadata.institution?.institution_id,
+          institutionName: metadata.institution?.name ?? 'Institution',
+        })
+        toast.success('Accounts connected — syncing…')
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Failed to connect')
       } finally {
         setLinkToken(null)
       }
     },
-    [exchangePublicToken, itemId],
+    [exchangePublicToken, itemId, syncItem],
   )
 
   const { open, ready } = usePlaidLink({

@@ -9,7 +9,17 @@ import {
 import { internal } from './_generated/api'
 import type { Id } from './_generated/dataModel'
 import { action, internalAction } from './_generated/server'
-import { getPlaidClient, getPlaidWebhookUrl } from './lib/plaidClient'
+import {
+  getPlaidClient,
+  getPlaidWebhookUrl,
+  isPlaidLoginRequired,
+  plaidErrorCode,
+} from './lib/plaidClient'
+
+const CONSENTED_PRODUCTS: Products[] = [
+  Products.Investments,
+  Products.Liabilities,
+]
 
 function mapAccountType(
   type: string | null | undefined,
@@ -70,15 +80,15 @@ export const createLinkToken = action({
     if (!userId) throw new Error('User not ready — call users.ensureReady first')
 
     const client = getPlaidClient()
-    const products = (args.products ?? ['transactions', 'liabilities']).map(
-      (p) => p as Products,
-    )
+    const products = (args.products ?? ['transactions']).map((p) => p as Products)
+    const additional = CONSENTED_PRODUCTS.filter((p) => !products.includes(p))
     const webhook = getPlaidWebhookUrl()
 
     const response = await client.linkTokenCreate({
       user: { client_user_id: userId },
       client_name: 'Bud',
       products,
+      additional_consented_products: additional,
       country_codes: [CountryCode.Us],
       language: 'en',
       webhook,
@@ -108,6 +118,7 @@ export const createUpdateLinkToken = action({
       country_codes: [CountryCode.Us],
       language: 'en',
       access_token: item.accessToken,
+      additional_consented_products: CONSENTED_PRODUCTS,
       webhook,
     })
     return { linkToken: response.data.link_token }
@@ -170,7 +181,10 @@ export const exchangePublicToken = action({
 })
 
 export const syncItem = internalAction({
-  args: { itemId: v.id('plaidItems') },
+  args: {
+    itemId: v.id('plaidItems'),
+    holdingsAttempt: v.optional(v.number()),
+  },
   returns: v.null(),
   handler: async (ctx, args) => {
     const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
@@ -179,9 +193,9 @@ export const syncItem = internalAction({
     if (!item) return null
 
     const client = getPlaidClient()
+    const holdingsAttempt = args.holdingsAttempt ?? 0
 
     try {
-      // Refresh balances
       const accountsRes = await client.accountsGet({
         access_token: item.accessToken,
       })
@@ -202,93 +216,121 @@ export const syncItem = internalAction({
         })),
       })
 
-      let cursor = item.syncCursor
-      let hasMore = true
-      while (hasMore) {
-        const syncRes = await client.transactionsSync({
-          access_token: item.accessToken,
-          cursor: cursor || undefined,
-          count: 100,
-        })
-        const data = syncRes.data
-        await ctx.runMutation(internal.plaidMutations.applyTransactionSyncPage, {
-          userId: item.userId,
-          itemId: item._id,
-          added: data.added.map(serializeTxn),
-          modified: data.modified.map(serializeTxn),
-          removed: data.removed.map((r) => ({
-            transaction_id: r.transaction_id,
-          })),
-          nextCursor: data.next_cursor,
-          hasMore: data.has_more,
-        })
-        cursor = data.next_cursor
-        hasMore = data.has_more
-      }
+      if (holdingsAttempt === 0) {
+        try {
+          let cursor = item.syncCursor
+          let hasMore = true
+          while (hasMore) {
+            const syncRes = await client.transactionsSync({
+              access_token: item.accessToken,
+              cursor: cursor || undefined,
+              count: 100,
+            })
+            const data = syncRes.data
+            await ctx.runMutation(
+              internal.plaidMutations.applyTransactionSyncPage,
+              {
+                userId: item.userId,
+                itemId: item._id,
+                added: data.added.map(serializeTxn),
+                modified: data.modified.map(serializeTxn),
+                removed: data.removed.map((r) => ({
+                  transaction_id: r.transaction_id,
+                })),
+                nextCursor: data.next_cursor,
+                hasMore: data.has_more,
+              },
+            )
+            cursor = data.next_cursor
+            hasMore = data.has_more
+          }
+        } catch (err) {
+          if (isPlaidLoginRequired(err)) throw err
+          console.error('Transaction sync skipped', plaidErrorCode(err), err)
+        }
 
-      // Liabilities (best-effort — sandbox may not support all)
-      try {
-        const liab = await client.liabilitiesGet({
-          access_token: item.accessToken,
-        })
-        const credit = liab.data.liabilities.credit ?? []
-        await ctx.runMutation(internal.plaidMutations.updateLiabilities, {
-          liabilities: credit.map((c) => ({
-            plaidAccountId: c.account_id ?? '',
-            lastStatementBalance: c.last_statement_balance ?? undefined,
-            lastStatementDate: c.last_statement_issue_date ?? undefined,
-            nextPaymentDueDate: c.next_payment_due_date ?? undefined,
-            minimumPayment: c.minimum_payment_amount ?? undefined,
-            aprs: (c.aprs ?? []).map((a) => ({
-              aprPercentage: a.apr_percentage,
-              aprType: a.apr_type,
+        try {
+          const liab = await client.liabilitiesGet({
+            access_token: item.accessToken,
+          })
+          const credit = liab.data.liabilities.credit ?? []
+          await ctx.runMutation(internal.plaidMutations.updateLiabilities, {
+            liabilities: credit.map((c) => ({
+              plaidAccountId: c.account_id ?? '',
+              lastStatementBalance: c.last_statement_balance ?? undefined,
+              lastStatementDate: c.last_statement_issue_date ?? undefined,
+              nextPaymentDueDate: c.next_payment_due_date ?? undefined,
+              minimumPayment: c.minimum_payment_amount ?? undefined,
+              aprs: (c.aprs ?? []).map((a) => ({
+                aprPercentage: a.apr_percentage,
+                aprType: a.apr_type,
+              })),
+              isOverdue: c.is_overdue === true,
             })),
-            isOverdue: c.is_overdue === true,
-          })),
-        })
-      } catch {
-        // Institution may not support liabilities
+          })
+        } catch {
+          // Institution may not support liabilities
+        }
       }
 
-      // Investments (best-effort)
-      try {
-        const holdings = await client.investmentsHoldingsGet({
-          access_token: item.accessToken,
-        })
-        const securitiesById = new Map(
-          holdings.data.securities.map((s) => [s.security_id, s]),
-        )
-        await ctx.runMutation(internal.plaidMutations.upsertHoldings, {
-          userId: item.userId,
-          holdings: holdings.data.holdings.map((h) => {
-            const sec = securitiesById.get(h.security_id)
-            return {
-              plaidAccountId: h.account_id,
-              plaidSecurityId: h.security_id,
-              symbol: sec?.ticker_symbol ?? undefined,
-              name: sec?.name ?? 'Security',
-              type: sec?.type ?? undefined,
-              closePrice: sec?.close_price ?? undefined,
-              closePriceAt: sec?.close_price_as_of ?? undefined,
-              quantity: h.quantity,
-              costBasis: h.cost_basis ?? undefined,
-              institutionValue: h.institution_value,
-              institutionPrice: h.institution_price,
-            }
-          }),
-        })
-      } catch {
-        // Institution may not support investments
+      const hasInvestment = accountsRes.data.accounts.some(
+        (a) => mapAccountType(a.type) === 'investment',
+      )
+      if (hasInvestment) {
+        try {
+          const holdings = await client.investmentsHoldingsGet({
+            access_token: item.accessToken,
+          })
+          const securitiesById = new Map(
+            holdings.data.securities.map((s) => [s.security_id, s]),
+          )
+          await ctx.runMutation(internal.plaidMutations.upsertHoldings, {
+            userId: item.userId,
+            holdings: holdings.data.holdings.map((h) => {
+              const sec = securitiesById.get(h.security_id)
+              return {
+                plaidAccountId: h.account_id,
+                plaidSecurityId: h.security_id,
+                symbol: sec?.ticker_symbol ?? undefined,
+                name: sec?.name ?? 'Security',
+                type: sec?.type ?? undefined,
+                closePrice: sec?.close_price ?? undefined,
+                closePriceAt: sec?.close_price_as_of ?? undefined,
+                quantity: h.quantity,
+                costBasis: h.cost_basis ?? undefined,
+                institutionValue: h.institution_value,
+                institutionPrice: h.institution_price,
+              }
+            }),
+          })
+        } catch (err) {
+          const code = plaidErrorCode(err)
+          if (code === 'PRODUCT_NOT_READY' && holdingsAttempt < 3) {
+            await ctx.scheduler.runAfter(
+              30_000 * (holdingsAttempt + 1),
+              internal.plaidActions.syncItem,
+              {
+                itemId: args.itemId,
+                holdingsAttempt: holdingsAttempt + 1,
+              },
+            )
+          } else if (
+            code !== 'PRODUCTS_NOT_SUPPORTED' &&
+            code !== 'NO_INVESTMENT_ACCOUNTS'
+          ) {
+            console.error('Investments sync failed', code, err)
+          }
+        }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed'
-      const loginRequired =
-        message.includes('ITEM_LOGIN_REQUIRED') ||
-        message.includes('ITEM_ERROR')
+      const loginRequired = isPlaidLoginRequired(err)
       await ctx.runMutation(internal.plaidMutations.markItemStatus, {
         itemId: item._id,
         status: loginRequired ? 'login_required' : 'error',
-        errorCode: loginRequired ? 'ITEM_LOGIN_REQUIRED' : 'SYNC_ERROR',
+        errorCode: loginRequired
+          ? 'ITEM_LOGIN_REQUIRED'
+          : (plaidErrorCode(err) ?? 'SYNC_ERROR'),
         errorMessage: message,
       })
     }
@@ -337,11 +379,15 @@ export const handleWebhook = internalAction({
     if (!item) return null
 
     if (
-      args.webhookType === 'TRANSACTIONS' &&
-      (args.webhookCode === 'SYNC_UPDATES_AVAILABLE' ||
-        args.webhookCode === 'DEFAULT_UPDATE' ||
-        args.webhookCode === 'INITIAL_UPDATE' ||
-        args.webhookCode === 'HISTORICAL_UPDATE')
+      (args.webhookType === 'TRANSACTIONS' &&
+        (args.webhookCode === 'SYNC_UPDATES_AVAILABLE' ||
+          args.webhookCode === 'DEFAULT_UPDATE' ||
+          args.webhookCode === 'INITIAL_UPDATE' ||
+          args.webhookCode === 'HISTORICAL_UPDATE')) ||
+      ((args.webhookType === 'HOLDINGS' ||
+        args.webhookType === 'INVESTMENTS_TRANSACTIONS') &&
+        (args.webhookCode === 'DEFAULT_UPDATE' ||
+          args.webhookCode === 'HISTORICAL_UPDATE'))
     ) {
       await ctx.scheduler.runAfter(0, internal.plaidActions.syncItem, {
         itemId: item._id,
