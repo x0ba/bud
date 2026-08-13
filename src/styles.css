@@ -194,18 +194,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  color: var(--lagoon-deep);
-  text-decoration-color: rgba(61, 122, 114, 0.4);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 2px;
-  transition:
-    color var(--duration-fast) var(--ease-out),
-    text-decoration-color var(--duration-fast) var(--ease-out);
-}
+/* In `base` so a Tailwind colour utility can still win: unlayered element rules
+   beat layered ones whatever their specificity, which quietly turned every
+   navigation label into a link colour despite the class asking for ink. */
+@layer base {
+  a {
+    color: var(--lagoon-deep);
+    text-decoration-color: rgba(61, 122, 114, 0.4);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+    transition:
+      color var(--duration-fast) var(--ease-out),
+      text-decoration-color var(--duration-fast) var(--ease-out);
+  }
 
-a:hover {
-  color: #2f5f59;
+  a:hover {
+    color: #2f5f59;
+  }
 }
 
 code {
@@ -277,15 +282,24 @@ pre code {
    sidebar does, with one hairline for the edge: chrome you can find, never
    chrome you look at. */
 .mobile-tabbar {
+  display: none;
   position: fixed;
   inset: auto 0 0;
   z-index: 40;
-  display: flex;
   align-items: stretch;
   gap: 0.125rem;
   padding: 0.375rem 0.5rem calc(0.375rem + env(safe-area-inset-bottom));
   border-top: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
   background: var(--background);
+}
+
+/* Shown from CSS rather than a `md:hidden` class: element rules here are
+   unlayered and would beat the utility, leaving the bar stuck to the bottom of
+   the desktop layout. */
+@media (width < 48rem) {
+  .mobile-tabbar {
+    display: flex;
+  }
 }
 
 .mobile-tab {
@@ -712,6 +726,12 @@ pre code {
 
 .ledger-table {
   width: 100%;
+  /* Auto layout lets a long account name or a five-figure amount widen the
+     table past its container, and the panel clips rather than scrolls — so the
+     amount, the one column you can't lose, fell off the right edge. Fixed
+     layout makes the declared percentages authoritative and the cells
+     truncate instead. */
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
   /* Hairline close, matching .data-list — no card chrome around the ledger.
@@ -783,12 +803,16 @@ pre code {
 
 /* The ledger as a receipt stub.
 
-   Four columns need ~700px; a phone has 366. Scrolling the table sideways
-   would put the amount — the thing you came for — off-screen, so below `md`
-   each row folds into a 2×2 stub instead: merchant and amount lead on the top
-   line, category and account demote to a muted second line. Same cells, same
-   markup, same reading order; only the geometry changes. */
-@media (width < 48rem) {
+   Scrolling the table sideways would put the amount — the thing you came for —
+   off-screen, so where four columns don't fit each row folds into a 2×2 stub
+   instead: merchant and amount lead on the top line, category and account
+   demote to a muted second line. Same cells, same markup, same reading order;
+   only the geometry changes.
+
+   The cut is at 64rem rather than the tab bar's 48rem: those are different
+   questions. The bar asks "is this a phone"; the ledger asks "is there room
+   for four columns beside the sidebar", and an iPad in portrait answers no. */
+@media (width < 64rem) {
   .ledger-table,
   .ledger-table tbody,
   .ledger-table tr,

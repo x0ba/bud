@@ -161,7 +161,7 @@ function CategoriesPage() {
   return (
     <AppShell title="Categories">
       <Page>
-        <PageSummary className="items-center">
+        <PageSummary className="sm:items-center">
           <p className="max-w-md text-[13px] text-muted-foreground text-pretty">
             Every category has a type, and the type decides how it’s budgeted.
           </p>

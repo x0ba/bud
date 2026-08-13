@@ -33,6 +33,70 @@ Base unit: **4px**. Common values: 8 / 12 / 16 / 24 / 32.
 Dense rows: `py-2.5` (10px). Panel padding: **12px**. Gap between panels: **16px**
 — the walls separate now, so the 32–40px section gap is gone. Page padding: `px-8`.
 
+On a phone one number frames everything: `--page-gutter` is **12px** and the
+header padding, the page padding, and the gap between panels all use it, so the
+content sits in a single consistent margin instead of three competing ones.
+
+## Phone
+
+The switch is at **48rem (768px)**. Below it the sidebar is gone and the tab bar
+is the whole navigation; at and above it nothing changes from the desktop layout.
+
+- **Bottom tab bar** (`.mobile-tabbar`) — Dashboard · Transactions · Budget ·
+  Accounts · More. Fixed, on the **canvas** (`--background`) like the sidebar, one
+  hairline top rule, `env(safe-area-inset-bottom)` under it. Active is the
+  sidebar's **muted fill** — one active language across both navigations. Labels
+  10/500 → 10/600 ink when active. Tabs are 44px tall.
+- **More** opens a bottom sheet with the remaining routes and a Settings group,
+  15px rows at 44px. It closes on navigation and when the viewport grows past
+  the breakpoint.
+- **Main** clears the bar: `padding-bottom: tabbar + safe-area + 24px`.
+- **`viewport-fit=cover`** in the root meta, or `env(safe-area-inset-*)` is 0.
+
+### Receipt-stub ledger
+
+Below **64rem** the transactions table folds into a 2×2 stub per row —
+merchant + amount on the top line, category + account demoted to a muted second
+line — using the same cells and the same reading order, only different geometry.
+The cut is 64rem rather than the tab bar's 48rem because they answer different
+questions: the bar asks "is this a phone", the ledger asks "is there room for
+four columns beside the sidebar". The table itself is `table-layout: fixed` so
+the declared 42/24/20/14 percentages hold and cells truncate instead of pushing
+the amount past the panel wall.
+
+### Panel head on a phone
+
+`.panel-trigger` takes `min-width: 60%` and the head wraps. A folded panel still
+reads as one row of title + figure when the trailing side is small, and only
+breaks onto a second line when a figure, its hint, and a control would otherwise
+crush the title into a column of single words.
+
+### Touch
+
+- `.data-row` and `.panel-head` grow to a 44px minimum under `(hover: none)`;
+  type and hairlines are untouched, because density is the point.
+- Small buttons get a **vertical-only** `::after` hit expansion, so buttons
+  sitting side by side in a row can never overlap targets.
+- `.row-action` replaces `opacity-0 group-hover:opacity-100`. A touch screen has
+  no hover, so those controls would simply never exist; there they rest at 50%.
+- The hero figure is `clamp(2rem, 9.2vw, 2.75rem)` — the page's one focal figure
+  cannot be the thing that clips.
+- Sheets come from the **bottom** on a phone (`side={phone ? 'bottom' : 'right'}`
+  via `useMediaQuery(PHONE)`), with a grab handle and real drag-to-dismiss.
+
+## Cascade hazard
+
+`src/styles.css` element and class rules are **unlayered**, and unlayered rules
+beat anything in `@layer utilities` whatever the specificity. A Tailwind class on
+an element that also matches a rule here silently loses. This is why:
+
+- the base `a { color }` lives in `@layer base` — otherwise every navigation
+  label rendered as a link colour despite the class asking for ink;
+- `.mobile-tabbar` hides itself with a media query rather than `md:hidden`.
+
+Before adding a plain CSS rule, check whether call sites pass a utility for the
+same property.
+
 ## Hierarchy
 
 Type scale ratio ~1.25 from 13px body.
@@ -191,3 +255,9 @@ Document scroll · sticky `h-dvh` sidebar · sticky header (`.app-shell-header`,
 - Multi-column masonry for a taxonomy → single scannable list
 - Add form parked at the bottom of the page → composer opens where the item lands
 - Inventing a hero figure for a page with no money on it → no hero at all
+- Hamburger drawer for phone navigation → bottom tab bar in the thumb zone,
+  with the six sit-down routes behind More
+- Horizontally scrolling the ledger table → the row folds into a stub, because
+  the amount is the one column that can't go off-screen
+- Shrinking the desktop layout proportionally → the frame changes: one 12px
+  gutter, a clamped hero, and panel heads that wrap on their own terms

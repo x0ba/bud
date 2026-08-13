@@ -20,6 +20,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '#/components/ui/sheet'
+import { PHONE, useMediaQuery } from '#/lib/use-media-query'
 import { cn } from '#/lib/utils'
 
 /**
@@ -102,18 +103,20 @@ function Tab({
  */
 export function MobileNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname })
+  const phone = useMediaQuery(PHONE)
   const [moreOpen, setMoreOpen] = useState(false)
 
-  // A destination reached from the drawer should close it behind you.
+  // A destination reached from the drawer should close it behind you — and so
+  // should a window that grew past the tab bar's reach.
   useEffect(() => {
     setMoreOpen(false)
-  }, [pathname])
+  }, [pathname, phone])
 
   const moreActive = IN_MORE.some((to) => pathname.startsWith(to))
 
   return (
     <>
-      <nav className="mobile-tabbar md:hidden" aria-label="Sections">
+      <nav className="mobile-tabbar" aria-label="Sections">
         {TABS.map((tab) => (
           <Tab
             key={tab.to}
@@ -133,11 +136,11 @@ export function MobileNav() {
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="md:hidden">
+        <SheetContent side="bottom">
           <SheetHeader className="px-4 pt-1 pb-2">
             <SheetTitle className="kicker">More</SheetTitle>
           </SheetHeader>
-          <div className="px-2 pb-2">
+          <div className="px-2 pb-4">
             <MoreGroup items={MORE} pathname={pathname} />
             <p className="kicker px-3 pt-5 pb-1.5">Settings</p>
             <MoreGroup items={MORE_SETTINGS} pathname={pathname} />
