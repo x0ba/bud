@@ -138,23 +138,25 @@ function BudgetPage() {
               }
             />
             <div className="flex flex-wrap items-end gap-3">
-              <div className="min-w-0 flex-1 sm:flex-none">
+              <div className="min-w-0 flex-1 basis-full sm:flex-none sm:basis-auto">
                 <Kicker>Month</Kicker>
                 <Input
                   type="month"
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
-                  className="mt-1.5 w-full sm:w-[150px]"
+                  className="mt-1.5 w-full min-w-0 sm:w-[150px]"
+                  aria-label="Month"
                 />
               </div>
-              <div className="min-w-0 flex-1 sm:flex-none">
+              <div className="min-w-0 flex-1 basis-full sm:flex-none sm:basis-auto">
                 <Kicker>Expected income</Kicker>
                 <Input
                   inputMode="decimal"
                   value={expectedIncome}
                   onChange={(e) => setExpectedIncome(e.target.value)}
-                  className="mt-1.5 w-full text-right tabular-nums sm:w-[130px]"
+                  className="mt-1.5 w-full min-w-0 text-right tabular-nums sm:w-[130px]"
                   placeholder="0"
+                  aria-label="Expected income"
                 />
               </div>
             </div>
