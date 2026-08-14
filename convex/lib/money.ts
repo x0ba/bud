@@ -64,6 +64,16 @@ export function monthBounds(month: string): { start: string; end: string } {
   return { start, end }
 }
 
+/** Shift a `YYYY-MM` key by a number of months. */
+export function shiftMonth(month: string, delta: number): string {
+  const [y, m] = month.split('-').map(Number)
+  return monthKey(new Date(Date.UTC(y, m - 1 + delta, 1)))
+}
+
+export function daysInMonth(month: string): number {
+  return Number(monthBounds(month).end.slice(8, 10))
+}
+
 export function dayOfMonthProgress(now = new Date()): {
   day: number
   daysInMonth: number

@@ -191,7 +191,7 @@ width its rows actually need.
 
 | Route        | Panels                                                                                                |
 | ------------ | ----------------------------------------------------------------------------------------------------- |
-| Dashboard    | Needs you (12) · Where it's going (5) · Recent (7)                                                    |
+| Dashboard    | Needs you (12) · Spending (12) · Where it's going (5) · Recent (7)                                    |
 | Transactions | Ledger (12), flush                                                                                    |
 | Budget       | Flex pool (6) · Fixed (6) · Non-monthly (6)                                                           |
 | Cash flow    | one panel **per budget type** (4 each)                                                                |
@@ -219,6 +219,14 @@ fields. Inset `bg-muted/40`, no hard shadow; focus lifts to `bg-background` +
 ring. Native `type="month"` / `type="date"` reset `appearance` and
 `field-sizing` so they honor that height and stay inside the page gutter.
 The UA otherwise sizes them to the formatted month name plus the picker.
+
+### Spending chart (`src/components/spending-chart.tsx`)
+
+Cumulative day-of-month line. This month is lagoon + area fill, ending at today
+with a 8px endpoint dot. The comparison series (last month / last year) is a
+stone hairline with no fill. Axes are 11px tabular muted; hover uses
+`ChartHoverTip` with both series. Same SVG approach as the net-worth trend —
+`preserveAspectRatio="none"`, strokes opt out, dots live in HTML.
 
 ### PaceBar
 

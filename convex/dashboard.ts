@@ -1,6 +1,14 @@
 import { v } from 'convex/values'
 import { authedQuery } from './lib/customFunctions'
-import { monthBounds, monthKey } from './lib/money'
+import {
+  countsTowardSpending,
+  daysInMonth,
+  monthBounds,
+  monthKey,
+  shiftMonth,
+} from './lib/money'
+import type { QueryCtx } from './_generated/server'
+import type { Id } from './_generated/dataModel'
 
 export const overview = authedQuery({
   args: {},
@@ -187,6 +195,89 @@ export const overview = authedQuery({
       creditDue,
       itemAlerts,
       recent,
+    }
+  },
+})
+
+const pacePoint = v.object({
+  day: v.number(),
+  cumulative: v.number(),
+})
+
+async function cumulativeSpend(
+  ctx: QueryCtx,
+  userId: Id<'users'>,
+  month: string,
+  throughDay: number,
+): Promise<Array<{ day: number; cumulative: number }>> {
+  const { start, end } = monthBounds(month)
+  const txs = await ctx.db
+    .query('transactions')
+    .withIndex('by_user_date', (q) =>
+      q.eq('userId', userId).gte('date', start).lte('date', end),
+    )
+    .collect()
+
+  const daily = new Array<number>(throughDay + 1).fill(0)
+  for (const tx of txs) {
+    if (!countsTowardSpending(tx)) continue
+    const day = Number(tx.date.slice(8, 10))
+    if (day >= 1 && day <= throughDay) daily[day] += tx.amount
+  }
+
+  const series: Array<{ day: number; cumulative: number }> = []
+  let running = 0
+  for (let day = 1; day <= throughDay; day++) {
+    running += daily[day] ?? 0
+    series.push({ day, cumulative: running })
+  }
+  return series
+}
+
+/**
+ * Cumulative daily spend for this month, last month, and the same month last
+ * year. `today` is passed in so the query stays deterministic.
+ */
+export const spendingPace = authedQuery({
+  args: {
+    month: v.string(),
+    today: v.string(),
+  },
+  returns: v.object({
+    month: v.string(),
+    throughDay: v.number(),
+    daysInMonth: v.number(),
+    thisMonth: v.array(pacePoint),
+    lastMonth: v.array(pacePoint),
+    lastYear: v.array(pacePoint),
+    spentThisMonth: v.number(),
+  }),
+  handler: async (ctx, args) => {
+    const days = daysInMonth(args.month)
+    const todayMonth = args.today.slice(0, 7)
+    const todayDay = Number(args.today.slice(8, 10))
+    const throughDay =
+      todayMonth === args.month
+        ? Math.min(days, Math.max(1, todayDay))
+        : days
+
+    const lastMonthKey = shiftMonth(args.month, -1)
+    const lastYearKey = shiftMonth(args.month, -12)
+
+    const [thisMonth, lastMonth, lastYear] = await Promise.all([
+      cumulativeSpend(ctx, ctx.user._id, args.month, throughDay),
+      cumulativeSpend(ctx, ctx.user._id, lastMonthKey, daysInMonth(lastMonthKey)),
+      cumulativeSpend(ctx, ctx.user._id, lastYearKey, daysInMonth(lastYearKey)),
+    ])
+
+    return {
+      month: args.month,
+      throughDay,
+      daysInMonth: days,
+      thisMonth,
+      lastMonth,
+      lastYear,
+      spentThisMonth: thisMonth.at(-1)?.cumulative ?? 0,
     }
   },
 })

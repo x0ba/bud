@@ -27,15 +27,23 @@ export function ChartHoverTip({
   label,
   value,
   detail,
+  rows,
 }: {
   x: number
   y: number
   label: string
-  value: string
+  value?: string
   detail?: string
+  rows?: Array<{ value: string; detail?: string }>
 }) {
   const flip = y < 56
   const left = Math.min(Math.max(x, 72), window.innerWidth - 72)
+  const lines =
+    rows && rows.length > 0
+      ? rows
+      : value != null
+        ? [{ value, detail }]
+        : []
 
   return createPortal(
     <div
@@ -56,14 +64,19 @@ export function ChartHoverTip({
       <p className="text-[11px] leading-none font-medium text-background/65">
         {label}
       </p>
-      <p className="mt-1 text-[13px] leading-none font-semibold tabular-nums">
-        {value}
-        {detail ? (
-          <span className="ml-1.5 font-medium text-background/65">
-            {detail}
-          </span>
-        ) : null}
-      </p>
+      {lines.map((line, i) => (
+        <p
+          key={`${line.value}-${line.detail ?? i}`}
+          className="mt-1 text-[13px] leading-none font-semibold tabular-nums"
+        >
+          {line.value}
+          {line.detail ? (
+            <span className="ml-1.5 font-medium text-background/65">
+              {line.detail}
+            </span>
+          ) : null}
+        </p>
+      ))}
     </div>,
     document.body,
   )

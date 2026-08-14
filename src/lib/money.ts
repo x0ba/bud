@@ -38,6 +38,12 @@ export function currentMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+/** Local calendar day as `YYYY-MM-DD` — pass into queries instead of `Date.now()`. */
+export function currentDay(): string {
+  const d = new Date()
+  return `${currentMonth()}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 /** Readable label for a `YYYY-MM` month key — year only when it isn't this one. */
 export function formatMonthLabel(month: string): string {
   const [year, m] = month.split('-').map(Number)

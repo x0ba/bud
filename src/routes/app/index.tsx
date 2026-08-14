@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from 'convex/react'
-import { Fragment, useMemo } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import {
@@ -18,19 +18,39 @@ import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { PaceBar } from '#/components/pace-bar'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
+import { SpendingChart } from '#/components/spending-chart'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '#/components/ui/select'
 import {
   cardPaymentStatus,
+  currentDay,
+  currentMonth,
   formatDayLabel,
   formatMonthLabel,
   formatUsdPlain,
 } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
+const COMPARE = {
+  last_month: 'Last month',
+  last_year: 'Last year',
+} as const
+
+type Compare = keyof typeof COMPARE
+
 export const Route = createFileRoute('/app/')({
   loader: () => {
     prewarmQueries(
       { query: api.dashboard.overview },
       { query: api.budgets.getMonth },
+      {
+        query: api.dashboard.spendingPace,
+        args: { month: currentMonth(), today: currentDay() },
+      },
     )
   },
   component: DashboardPage,
@@ -64,8 +84,12 @@ type MixRow = {
 }
 
 function DashboardPage() {
+  const [compare, setCompare] = useState<Compare>('last_month')
+  const month = currentMonth()
+  const today = currentDay()
   const data = useQuery(api.dashboard.overview)
   const budget = useQuery(api.budgets.getMonth, {})
+  const pace = useQuery(api.dashboard.spendingPace, { month, today })
 
   const attention = useMemo<Array<AttentionItem>>(() => {
     if (!data) return []
@@ -152,7 +176,7 @@ function DashboardPage() {
     return days
   }, [data])
 
-  if (!data || !budget) {
+  if (!data || !budget || !pace) {
     return (
       <AppShell
         title="Dashboard"
@@ -285,6 +309,8 @@ function DashboardPage() {
             </Panel>
           ) : null}
 
+          <SpendingPanel pace={pace} compare={compare} onCompare={setCompare} />
+
           <Panel
             id="dashboard-mix"
             span={5}
@@ -383,5 +409,77 @@ function DashboardPage() {
         </PageBody>
       </Page>
     </AppShell>
+  )
+}
+
+function SpendingPanel({
+  pace,
+  compare,
+  onCompare,
+}: {
+  pace: {
+    throughDay: number
+    daysInMonth: number
+    thisMonth: Array<{ day: number; cumulative: number }>
+    lastMonth: Array<{ day: number; cumulative: number }>
+    lastYear: Array<{ day: number; cumulative: number }>
+    spentThisMonth: number
+  }
+  compare: Compare
+  onCompare: (value: Compare) => void
+}) {
+  const prior = compare === 'last_month' ? pace.lastMonth : pace.lastYear
+  const compareLabel = COMPARE[compare]
+  const thisThrough = pace.thisMonth.at(-1)?.cumulative ?? 0
+  const priorThrough =
+    prior.find((p) => p.day === pace.throughDay)?.cumulative ??
+    prior.at(-1)?.cumulative ??
+    0
+  const delta = thisThrough - priorThrough
+  const hasSpend = thisThrough > 0 || prior.some((p) => p.cumulative > 0)
+  const hint =
+    hasSpend && priorThrough > 0 && delta !== 0
+      ? `${formatUsdPlain(Math.abs(delta))} ${delta > 0 ? 'more' : 'less'} than ${compareLabel.toLowerCase()}`
+      : undefined
+
+  return (
+    <Panel
+      id="dashboard-spending"
+      title="Spending"
+      value={formatUsdPlain(pace.spentThisMonth)}
+      hint={hint}
+      action={
+        <Select
+          value={compare}
+          onValueChange={(value) => onCompare(value as Compare)}
+        >
+          <SelectTrigger
+            size="sm"
+            className="h-7 border-border/70 bg-transparent px-2.5 text-[12px] text-muted-foreground"
+            aria-label="Spending comparison"
+          >
+            vs {COMPARE[compare].toLowerCase()}
+          </SelectTrigger>
+          <SelectContent align="end" position="popper">
+            <SelectItem value="last_month">This month vs. last month</SelectItem>
+            <SelectItem value="last_year">This month vs. last year</SelectItem>
+          </SelectContent>
+        </Select>
+      }
+    >
+      {hasSpend ? (
+        <SpendingChart
+          thisMonth={pace.thisMonth}
+          compare={prior}
+          compareLabel={compareLabel}
+          throughDay={pace.throughDay}
+          daysInMonth={pace.daysInMonth}
+        />
+      ) : (
+        <p className="py-4 text-[13px] text-muted-foreground">
+          No spending recorded this month yet.
+        </p>
+      )}
+    </Panel>
   )
 }
