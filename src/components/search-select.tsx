@@ -126,7 +126,7 @@ export function SearchSelect({
                   value={`${trimmed} create`}
                   className="text-[13px] text-[var(--sea-ink)]"
                   onSelect={() => {
-                    onCreate?.(trimmed)
+                    onCreate(trimmed)
                     close()
                   }}
                 >
