@@ -214,7 +214,11 @@ people compare across, so it became the panel.
 
 ### Controls
 
-Inputs/selects: inset `bg-muted/40`, no hard shadow; focus lifts to `bg-background` + ring.
+Inputs and boxed selects are **36px (`h-9`)**. One height, no `h-8` boxed
+fields. Inset `bg-muted/40`, no hard shadow; focus lifts to `bg-background` +
+ring. Native `type="month"` / `type="date"` reset `appearance` and
+`field-sizing` so they honor that height and stay inside the page gutter.
+The UA otherwise sizes them to the formatted month name plus the picker.
 
 ### PaceBar
 

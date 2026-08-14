@@ -378,7 +378,7 @@ function InlineComposer({
         onChange={(e) => setName(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-9 min-w-0 flex-1 sm:h-8 sm:w-[200px] sm:flex-none"
+        className="min-w-0 flex-1 sm:w-[200px] sm:flex-none"
         onKeyDown={(e) => {
           if (e.key === 'Enter') onSubmit(name)
           if (e.key === 'Escape') onCancel()

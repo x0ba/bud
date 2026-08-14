@@ -214,6 +214,57 @@ body {
   a:hover {
     color: #2f5f59;
   }
+
+  /* Native month/date controls size to the formatted value plus the picker,
+     which ignores width/height unless appearance is reset. That's how the
+     budget month field ran past the page gutter and sat taller than the
+     income field next to it. */
+  input[type='date'],
+  input[type='datetime-local'],
+  input[type='month'],
+  input[type='time'],
+  input[type='week'] {
+    max-width: 100%;
+  }
+
+  input[type='date']::-webkit-datetime-edit,
+  input[type='datetime-local']::-webkit-datetime-edit,
+  input[type='month']::-webkit-datetime-edit,
+  input[type='time']::-webkit-datetime-edit,
+  input[type='week']::-webkit-datetime-edit {
+    display: inline-flex;
+    min-width: 0;
+    padding: 0;
+  }
+
+  input[type='date']::-webkit-datetime-edit-fields-wrapper,
+  input[type='datetime-local']::-webkit-datetime-edit-fields-wrapper,
+  input[type='month']::-webkit-datetime-edit-fields-wrapper,
+  input[type='time']::-webkit-datetime-edit-fields-wrapper,
+  input[type='week']::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
+  input[type='date']::-webkit-date-and-time-value,
+  input[type='datetime-local']::-webkit-date-and-time-value,
+  input[type='month']::-webkit-date-and-time-value,
+  input[type='time']::-webkit-date-and-time-value,
+  input[type='week']::-webkit-date-and-time-value {
+    min-width: 0;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator,
+  input[type='datetime-local']::-webkit-calendar-picker-indicator,
+  input[type='month']::-webkit-calendar-picker-indicator,
+  input[type='time']::-webkit-calendar-picker-indicator,
+  input[type='week']::-webkit-calendar-picker-indicator {
+    width: 1rem;
+    height: 1rem;
+    margin-block: 0;
+    margin-inline-start: 0.25rem;
+    cursor: pointer;
+    opacity: 0.55;
+  }
 }
 
 /* Chrome / row links opt out. Unlayered so it beats the content-link

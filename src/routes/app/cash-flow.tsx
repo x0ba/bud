@@ -104,7 +104,7 @@ function CashFlowPage() {
           type="month"
           value={month}
           onChange={(e) => setMonth(e.target.value)}
-          className="h-8 w-[142px]"
+          className="w-44 max-w-full"
           aria-label="Month"
         />
       }
