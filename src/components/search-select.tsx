@@ -120,20 +120,22 @@ export function SearchSelect({
                 </CommandItem>
               ))}
             </CommandGroup>
+            {canCreate ? (
+              <CommandGroup className="border-t border-border/70">
+                <CommandItem
+                  value={`${trimmed} create`}
+                  className="text-[13px] text-[var(--sea-ink)]"
+                  onSelect={() => {
+                    onCreate?.(trimmed)
+                    close()
+                  }}
+                >
+                  <Plus className="size-3.5 text-muted-foreground" />
+                  {createLabel?.(trimmed) ?? `Create “${trimmed}”`}
+                </CommandItem>
+              </CommandGroup>
+            ) : null}
           </CommandList>
-          {canCreate ? (
-            <button
-              type="button"
-              className="flex w-full items-center gap-2 border-t border-border/70 px-2 py-2 text-left text-[13px] text-[var(--sea-ink)] transition-colors duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-accent"
-              onClick={() => {
-                onCreate(trimmed)
-                close()
-              }}
-            >
-              <Plus className="size-3.5 text-muted-foreground" />
-              {createLabel?.(trimmed) ?? `Create “${trimmed}”`}
-            </button>
-          ) : null}
         </Command>
       </PopoverContent>
     </Popover>

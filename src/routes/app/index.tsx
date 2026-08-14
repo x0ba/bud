@@ -446,7 +446,9 @@ function RecentRow({
 }) {
   const updateMeta = useMutation(api.transactions.updateMeta)
   const updateCategory = useMutation(api.transactions.updateCategory)
-  const createCategory = useMutation(api.categories.create)
+  const createAndAssignCategory = useMutation(
+    api.transactions.createAndAssignCategory,
+  )
   const [busy, setBusy] = useState(false)
 
   const merchantOptions = useMemo(() => {
@@ -502,15 +504,7 @@ function RecentRow({
 
   const makeCategory = (name: string) => {
     setBusy(true)
-    void createCategory({
-      name,
-      icon: 'tag',
-      color: '#c27803',
-      budgetType: 'flex',
-    })
-      .then((categoryId) =>
-        updateCategory({ transactionId: tx._id, categoryId }),
-      )
+    void createAndAssignCategory({ transactionId: tx._id, name })
       .then(() => toast.success(`Created ${name}`))
       .catch((e: Error) => toast.error(e.message))
       .finally(() => setBusy(false))
