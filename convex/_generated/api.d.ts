@@ -8,53 +8,53 @@
  * @module
  */
 
-import type * as accounts from '../accounts.js'
-import type * as budgets from '../budgets.js'
-import type * as categories from '../categories.js'
-import type * as crons from '../crons.js'
-import type * as dashboard from '../dashboard.js'
-import type * as http from '../http.js'
-import type * as investments from '../investments.js'
-import type * as lib_auth from '../lib/auth.js'
-import type * as lib_categories from '../lib/categories.js'
-import type * as lib_customFunctions from '../lib/customFunctions.js'
-import type * as lib_money from '../lib/money.js'
-import type * as lib_plaidClient from '../lib/plaidClient.js'
-import type * as lib_rules from '../lib/rules.js'
-import type * as netWorth from '../netWorth.js'
-import type * as plaidActions from '../plaidActions.js'
-import type * as plaidMutations from '../plaidMutations.js'
-import type * as rules from '../rules.js'
-import type * as transactions from '../transactions.js'
-import type * as users from '../users.js'
+import type * as accounts from "../accounts.js";
+import type * as budgets from "../budgets.js";
+import type * as categories from "../categories.js";
+import type * as crons from "../crons.js";
+import type * as dashboard from "../dashboard.js";
+import type * as http from "../http.js";
+import type * as investments from "../investments.js";
+import type * as lib_auth from "../lib/auth.js";
+import type * as lib_categories from "../lib/categories.js";
+import type * as lib_customFunctions from "../lib/customFunctions.js";
+import type * as lib_money from "../lib/money.js";
+import type * as lib_plaidClient from "../lib/plaidClient.js";
+import type * as lib_rules from "../lib/rules.js";
+import type * as netWorth from "../netWorth.js";
+import type * as plaidActions from "../plaidActions.js";
+import type * as plaidMutations from "../plaidMutations.js";
+import type * as rules from "../rules.js";
+import type * as transactions from "../transactions.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
-} from 'convex/server'
+} from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  accounts: typeof accounts
-  budgets: typeof budgets
-  categories: typeof categories
-  crons: typeof crons
-  dashboard: typeof dashboard
-  http: typeof http
-  investments: typeof investments
-  'lib/auth': typeof lib_auth
-  'lib/categories': typeof lib_categories
-  'lib/customFunctions': typeof lib_customFunctions
-  'lib/money': typeof lib_money
-  'lib/plaidClient': typeof lib_plaidClient
-  'lib/rules': typeof lib_rules
-  netWorth: typeof netWorth
-  plaidActions: typeof plaidActions
-  plaidMutations: typeof plaidMutations
-  rules: typeof rules
-  transactions: typeof transactions
-  users: typeof users
-}>
+  accounts: typeof accounts;
+  budgets: typeof budgets;
+  categories: typeof categories;
+  crons: typeof crons;
+  dashboard: typeof dashboard;
+  http: typeof http;
+  investments: typeof investments;
+  "lib/auth": typeof lib_auth;
+  "lib/categories": typeof lib_categories;
+  "lib/customFunctions": typeof lib_customFunctions;
+  "lib/money": typeof lib_money;
+  "lib/plaidClient": typeof lib_plaidClient;
+  "lib/rules": typeof lib_rules;
+  netWorth: typeof netWorth;
+  plaidActions: typeof plaidActions;
+  plaidMutations: typeof plaidMutations;
+  rules: typeof rules;
+  transactions: typeof transactions;
+  users: typeof users;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
@@ -66,8 +66,8 @@ declare const fullApi: ApiFromModules<{
  */
 export declare const api: FilterApi<
   typeof fullApi,
-  FunctionReference<any, 'public'>
->
+  FunctionReference<any, "public">
+>;
 
 /**
  * A utility for referencing Convex functions in your app's internal API.
@@ -79,7 +79,7 @@ export declare const api: FilterApi<
  */
 export declare const internal: FilterApi<
   typeof fullApi,
-  FunctionReference<any, 'internal'>
->
+  FunctionReference<any, "internal">
+>;
 
-export declare const components: {}
+export declare const components: {};

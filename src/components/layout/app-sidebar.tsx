@@ -7,6 +7,7 @@ import {
   LineChart,
   List,
   PanelLeftClose,
+  PanelLeftOpen,
   PieChart,
   Repeat,
   Settings2,
@@ -175,9 +176,13 @@ export function AppSidebar() {
                   onClick={toggleCollapsed}
                   aria-label="Expand sidebar"
                   aria-expanded={false}
-                  className="flex size-8 items-center justify-center rounded-md text-[var(--sea-ink)] outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="group relative flex size-8 items-center justify-center rounded-md text-[var(--sea-ink)] outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <SproutMark className="size-[22px]" />
+                  <SproutMark className="size-[22px] transition-opacity duration-[150ms] group-hover:opacity-0" />
+                  <PanelLeftOpen
+                    className="absolute size-4 opacity-0 transition-opacity duration-[150ms] group-hover:opacity-90"
+                    strokeWidth={1.75}
+                  />
                 </button>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>
