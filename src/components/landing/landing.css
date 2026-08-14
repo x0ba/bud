@@ -378,13 +378,8 @@
   pointer-events: none;
 }
 
-.lp-app {
-  --accent: var(--lagoon-deep);
-  --accent-soft: color-mix(in oklab, var(--lagoon) 18%, var(--foam));
-  --line: rgba(28, 25, 23, 0.1);
-  --line-soft: rgba(28, 25, 23, 0.06);
-  display: grid;
-  grid-template-columns: 148px minmax(0, 1fr);
+.lp-app,
+.lp-m {
   border: 1px solid var(--border);
   border-radius: 12px 12px 0 0;
   background: var(--background);
@@ -392,298 +387,93 @@
     0 1px 0 var(--inset-glint) inset,
     0 30px 60px rgba(28, 25, 23, 0.13);
   overflow: hidden;
-  font-size: 12px;
   text-align: left;
+  color: var(--foreground);
+  pointer-events: none;
+}
+
+.lp-app {
   animation: lp-rise 700ms var(--e) both;
 }
 
-/* On a phone the mock's sidebar would eat half the frame, so the replica drops
-   to its main column. */
+.lp-m {
+  border-radius: 11px 11px 0 0;
+  box-shadow:
+    0 1px 0 var(--inset-glint) inset,
+    0 22px 44px rgba(28, 25, 23, 0.14);
+}
+
 @media (width < 48rem) {
-  .lp-app {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .lp-app-side {
-    display: none;
-  }
-
-  .lp-app-figure {
-    font-size: 24px;
-  }
-
   .lp-stage {
     padding: 20px 20px 0;
   }
-}
 
-.lp-app-side {
-  padding: 14px 10px;
-  border-right: 1px solid var(--line-soft);
-  background: var(--foam);
-}
-
-.lp-app-brand {
-  padding: 0 8px 14px;
-  font-family: 'Instrument Sans', sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--sea-ink);
-}
-
-.lp-app-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.lp-app-nav span {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  color: var(--muted-foreground);
-  font-size: 11.5px;
-  font-weight: 500;
-}
-
-.lp-app-nav span[data-active='true'] {
-  background: rgba(28, 25, 23, 0.07);
-  color: var(--sea-ink);
-}
-
-.lp-app-nav i {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
-  opacity: 0.4;
-}
-
-.lp-app-main {
-  padding: 16px 18px 22px;
-  min-width: 0;
-}
-
-.lp-app-hero {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 14px;
-  padding-bottom: 16px;
-}
-
-.lp-app-kicker {
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-.lp-app-figure {
-  margin-top: 4px;
-  font-size: 30px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  font-variant-numeric: tabular-nums;
-  color: var(--sea-ink);
-}
-
-.lp-app-delta {
-  margin-top: 6px;
-  font-size: 11px;
-  color: var(--palm);
-}
-
-.lp-spark {
-  width: 190px;
-  height: 52px;
-}
-
-.lp-spark path {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-dasharray: 320;
-  stroke-dashoffset: 320;
-  animation: lp-draw 1.5s var(--e) 250ms both;
-}
-
-.lp-app-panels {
-  display: grid;
-  gap: 10px;
-}
-
-@media (width >= 40rem) {
-  .lp-app-panels {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  .lp-app .lp-preview-side {
+    display: none;
   }
 }
 
-.lp-app-col {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
+/* The shot is the real app chrome, isolated so landing type and gutters
+   cannot leak in. Container queries size the dashboard split to the frame,
+   not the window. */
+.lp-preview {
+  --page-gutter: 1rem;
+  --tabbar-height: 0px;
+  --app-header-height: 3rem;
+  container-type: inline-size;
+  container-name: lp-preview;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-.lp-app-panel {
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--card);
-  overflow: hidden;
+.lp-m .lp-preview {
+  --page-gutter: 0.75rem;
 }
 
-.lp-app-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  border-bottom: 1px solid rgba(28, 25, 23, 0.07);
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--sea-ink);
-}
-
-.lp-app-panel-head em {
-  font-style: normal;
-  font-weight: 500;
-  color: var(--muted-foreground);
-}
-
-.lp-app-panel-body {
-  padding: 10px;
-}
-
-.lp-pace {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--muted-foreground);
-}
-
-.lp-pace b {
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--sea-ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-pace-track {
+.lp-preview .app-shell-header {
   position: relative;
-  margin-top: 8px;
-  height: 7px;
-  border-radius: 999px;
-  background: rgba(28, 25, 23, 0.08);
+  top: auto;
+}
+
+.lp-preview .app-shell-main {
+  padding-bottom: 1.5rem;
+}
+
+.lp-preview-shell {
+  display: flex;
+  min-height: 560px;
+  background: var(--background);
+}
+
+.lp-preview-side {
+  position: relative;
+  display: flex;
+  width: 212px;
+  min-width: 0;
+  flex-shrink: 0;
+  flex-direction: column;
   overflow: hidden;
+  background: var(--background);
 }
 
-.lp-pace-track i {
-  display: block;
-  width: 0;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-  animation: lp-fill 1.1s var(--e) 420ms both;
+.lp-preview-split {
+  display: grid;
+  gap: 0.75rem;
 }
 
-.lp-donut-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+@container lp-preview (min-width: 40rem) {
+  .lp-preview-split {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 1rem;
+  }
 }
 
-.lp-donut {
-  flex: 0 0 auto;
-  width: 66px;
-  height: 66px;
-  border-radius: 999px;
-  background: conic-gradient(
-    var(--chart-1) 0 34%,
-    var(--chart-2) 34% 58%,
-    var(--chart-3) 58% 76%,
-    var(--chart-5) 76% 89%,
-    color-mix(in oklab, var(--sea-ink) 14%, transparent) 89% 100%
-  );
-  mask: radial-gradient(circle, transparent 56%, #000 57%);
-}
-
-.lp-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-  flex: 1 1 auto;
-}
-
-.lp-legend div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--sea-ink-soft);
-}
-
-.lp-legend b {
-  font-weight: 500;
-  color: var(--sea-ink);
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-legend i {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--c);
-  margin-right: 6px;
-}
-
-.lp-legend span {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-
-.lp-txns {
-  display: flex;
-  flex-direction: column;
-}
-
-.lp-txn {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 10px;
-  border-bottom: 1px solid rgba(28, 25, 23, 0.06);
-  font-size: 11.5px;
-}
-
-.lp-txn:last-child {
-  border-bottom: 0;
-}
-
-.lp-txn-cat {
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: rgba(28, 25, 23, 0.06);
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-
-.lp-txn-amt {
-  font-variant-numeric: tabular-nums;
-  color: var(--sea-ink);
+@container lp-preview (max-width: 28rem) {
+  .lp-preview-debt-share {
+    display: none;
+  }
 }
 
 /* A few degrees of tilt reads as a product shot rather than a screenshot pasted
@@ -697,21 +487,6 @@
   to {
     opacity: 1;
     transform: perspective(1800px) rotateX(4deg) translateY(0);
-  }
-}
-
-@keyframes lp-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes lp-fill {
-  from {
-    width: 0;
-  }
-  to {
-    width: var(--w, 62%);
   }
 }
 
@@ -884,33 +659,9 @@
   pointer-events: none;
 }
 
-/* A phone has about 290px inside the frame. Rather than squeeze the desktop
-   replica into it — which turned merchant names into two-letter stubs — the
-   replicas shed their middle column and show the shape the app actually takes
-   on a phone: the name leads, the amount closes. */
 @media (width < 48rem) {
   .lp-feature-visual {
     padding: 20px 20px 0;
-  }
-
-  .lp-m-next,
-  .lp-m-note,
-  .lp-m-mini {
-    display: none;
-  }
-
-  .lp-m-rec .lp-m-name {
-    flex-wrap: wrap;
-    gap: 2px 7px;
-  }
-
-  .lp-m-learn-row {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .lp-m-learn-row em {
-    flex-basis: 100%;
   }
 }
 
@@ -992,360 +743,6 @@
       transparent 70%
     ),
     linear-gradient(160deg, #d8e8e2, var(--sand));
-}
-
-/* Screen replicas inside the frames ── */
-.lp-m {
-  --accent: var(--lagoon-deep);
-  --accent-soft: color-mix(in oklab, var(--lagoon) 18%, var(--foam));
-  --line: rgba(28, 25, 23, 0.1);
-  --line-soft: rgba(28, 25, 23, 0.06);
-  position: relative;
-  border: 1px solid var(--border);
-  border-radius: 11px 11px 0 0;
-  background: var(--card);
-  box-shadow:
-    0 1px 0 var(--inset-glint) inset,
-    0 22px 44px rgba(28, 25, 23, 0.14);
-  overflow: hidden;
-  font-size: 12px;
-  text-align: left;
-  color: var(--sea-ink);
-}
-
-.lp-m-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 9px 12px;
-  border-bottom: 1px solid rgba(28, 25, 23, 0.08);
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.lp-m-head em {
-  font-style: normal;
-  font-weight: 500;
-  color: var(--muted-foreground);
-}
-
-.lp-m-body {
-  padding: 12px;
-}
-
-.lp-m-groups,
-.lp-m-rows {
-  display: flex;
-  flex-direction: column;
-}
-
-.lp-m-group {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px 5px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-.lp-m-group b {
-  font-weight: 500;
-  color: var(--sea-ink-soft);
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-m-row,
-.lp-m-rec,
-.lp-m-cat,
-.lp-m-fix {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 8px 12px;
-  border-top: 1px solid rgba(28, 25, 23, 0.055);
-  font-size: 11.5px;
-}
-
-.lp-m-inst {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 18px;
-  height: 18px;
-  border-radius: 5px;
-  background: color-mix(in oklab, var(--lagoon) 14%, transparent);
-  color: var(--lagoon-deep);
-  font-size: 9.5px;
-  font-style: normal;
-  font-weight: 600;
-}
-
-.lp-m-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.lp-m-name em {
-  font-style: normal;
-  color: var(--muted-foreground);
-}
-
-.lp-m-note,
-.lp-m-next {
-  flex: 0 0 auto;
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-
-.lp-m-amt {
-  flex: 0 0 auto;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-m-amt[data-up='true'] {
-  color: var(--palm);
-}
-
-.lp-m-amt[data-up='false'] {
-  color: var(--chart-5);
-}
-
-.lp-m-figure {
-  margin: 0;
-  font-size: 27px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-m-delta {
-  margin: 6px 0 0;
-  font-size: 11px;
-  color: var(--palm);
-}
-
-.lp-m-chart {
-  display: block;
-  width: 100%;
-  height: 92px;
-  margin-top: 10px;
-}
-
-.lp-m-line {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-
-.lp-m-splits {
-  display: flex;
-  gap: 18px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(28, 25, 23, 0.07);
-}
-
-.lp-m-splits div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.lp-m-splits span {
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-
-.lp-m-splits b {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-.lp-m-rec .lp-m-name {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.lp-m-rec em {
-  font-style: normal;
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-
-.lp-m-flag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--chart-3) 12%, transparent);
-  font-size: 9.5px;
-  color: var(--chart-5);
-}
-
-.lp-m-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(28, 25, 23, 0.06);
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-
-.lp-m-chip[data-changed='true'] {
-  background: var(--accent-soft);
-  color: var(--accent);
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--lagoon-deep) 24%, transparent);
-}
-
-.lp-m-cat[data-editing='true'] {
-  background: color-mix(in oklab, var(--lagoon) 5%, transparent);
-}
-
-.lp-m-learn {
-  margin: 10px 12px 14px;
-  padding: 11px 12px;
-  border: 1px solid color-mix(in oklab, var(--lagoon-deep) 22%, transparent);
-  border-radius: 9px;
-  background: var(--card);
-  box-shadow: 0 6px 18px rgba(28, 25, 23, 0.06);
-}
-
-.lp-m-learn p {
-  margin: 0 0 9px;
-  font-size: 11.5px;
-}
-
-.lp-m-learn-row {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 10.5px;
-}
-
-.lp-m-learn-row em {
-  font-style: normal;
-  color: var(--muted-foreground);
-}
-
-.lp-m-ghost,
-.lp-m-solid {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 500;
-}
-
-.lp-m-ghost {
-  border: 1px solid rgba(28, 25, 23, 0.14);
-  color: var(--sea-ink-soft);
-}
-
-.lp-m-solid {
-  background: var(--accent);
-  color: var(--primary-foreground);
-}
-
-/* Budget replica ── the flex pool is the focal point of the screen, so it gets
-   the tint and the pace bar while the fixed lines stay a plain list. */
-.lp-m-kicker {
-  margin: 0 0 5px;
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
-}
-
-.lp-m-pool {
-  padding: 11px 12px 12px;
-  border-block: 1px solid rgba(28, 25, 23, 0.07);
-  background: color-mix(in oklab, var(--lagoon) 6%, transparent);
-}
-
-.lp-m-pool-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 9px;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-
-.lp-m-pool-head em {
-  display: block;
-  margin-top: 2px;
-  font-size: 10px;
-  font-style: normal;
-  font-weight: 400;
-  color: var(--muted-foreground);
-}
-
-/* Where the month actually is, against how much of the pool is gone. */
-.lp-m-today {
-  position: absolute;
-  inset-block: 0;
-  width: 2px;
-  border-radius: 999px;
-  background: rgba(28, 25, 23, 0.55);
-}
-
-.lp-m-pace-note {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 7px;
-  font-size: 10px;
-  color: var(--muted-foreground);
-}
-
-.lp-m-fix .lp-m-name em {
-  font-size: 10px;
-}
-
-.lp-m-mini {
-  flex: 0 0 auto;
-  width: 52px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(28, 25, 23, 0.09);
-  overflow: hidden;
-}
-
-.lp-m-mini i {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--lagoon-deep) 65%, transparent);
-}
-
-/* Reads as the field it is on the real screen: a number you typed once. */
-.lp-m-field {
-  flex: 0 0 auto;
-  padding: 3px 9px;
-  border: 1px solid rgba(28, 25, 23, 0.16);
-  border-radius: 7px;
-  background: var(--card);
-  font-size: 11px;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  color: var(--sea-ink);
 }
 
 /* Budget section ── the positions Bud takes on budgeting, beside the screen
@@ -1563,9 +960,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lp-app,
-  .lp-spark path,
-  .lp-pace-track i {
+  .lp-app {
     animation-duration: 1ms;
     animation-delay: 0ms;
   }
