@@ -71,7 +71,6 @@ function areaPath(points: Array<Point>, axisDays: number, max: number): string {
   const line = linePath(points, axisDays, max)
   const last = points[points.length - 1]
   const first = points[0]
-  if (!last || !first) return ''
   return `${line} L ${dayX(last.day, axisDays)} ${H} L ${dayX(first.day, axisDays)} ${H} Z`
 }
 

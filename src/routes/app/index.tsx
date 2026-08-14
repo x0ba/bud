@@ -17,10 +17,8 @@ import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { PaceBar } from '#/components/pace-bar'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
-import {
-  SearchSelect,
-  type SearchSelectOption,
-} from '#/components/search-select'
+import { SearchSelect } from '#/components/search-select'
+import type { SearchSelectOption } from '#/components/search-select'
 import { SpendingChart } from '#/components/spending-chart'
 import {
   Select,
@@ -531,7 +529,7 @@ function RecentRow({
           disabled={busy}
           className="inline-pick-title"
         >
-          <span className="truncate">{tx.merchantName ?? 'Unknown'}</span>
+          <span className="truncate">{tx.merchantName}</span>
         </SearchSelect>
         <SearchSelect
           value={tx.categoryId}

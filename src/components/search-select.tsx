@@ -126,7 +126,7 @@ export function SearchSelect({
               type="button"
               className="flex w-full items-center gap-2 border-t border-border/70 px-2 py-2 text-left text-[13px] text-[var(--sea-ink)] transition-colors duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-accent"
               onClick={() => {
-                onCreate?.(trimmed)
+                onCreate(trimmed)
                 close()
               }}
             >
