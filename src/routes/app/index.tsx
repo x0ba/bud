@@ -616,7 +616,9 @@ function SpendingPanel({
             vs {COMPARE[compare].toLowerCase()}
           </SelectTrigger>
           <SelectContent align="end" position="popper">
-            <SelectItem value="last_month">This month vs. last month</SelectItem>
+            <SelectItem value="last_month">
+              This month vs. last month
+            </SelectItem>
             <SelectItem value="last_year">This month vs. last year</SelectItem>
           </SelectContent>
         </Select>

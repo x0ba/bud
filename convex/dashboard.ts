@@ -259,16 +259,19 @@ export const spendingPace = authedQuery({
     const todayMonth = args.today.slice(0, 7)
     const todayDay = Number(args.today.slice(8, 10))
     const throughDay =
-      todayMonth === args.month
-        ? Math.min(days, Math.max(1, todayDay))
-        : days
+      todayMonth === args.month ? Math.min(days, Math.max(1, todayDay)) : days
 
     const lastMonthKey = shiftMonth(args.month, -1)
     const lastYearKey = shiftMonth(args.month, -12)
 
     const [thisMonth, lastMonth, lastYear] = await Promise.all([
       cumulativeSpend(ctx, ctx.user._id, args.month, throughDay),
-      cumulativeSpend(ctx, ctx.user._id, lastMonthKey, daysInMonth(lastMonthKey)),
+      cumulativeSpend(
+        ctx,
+        ctx.user._id,
+        lastMonthKey,
+        daysInMonth(lastMonthKey),
+      ),
       cumulativeSpend(ctx, ctx.user._id, lastYearKey, daysInMonth(lastYearKey)),
     ])
 
