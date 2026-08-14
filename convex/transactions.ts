@@ -213,6 +213,26 @@ export const recent = authedQuery({
   },
 })
 
+/** Distinct merchant names from recent activity — enough to pick from, bounded. */
+export const listMerchants = authedQuery({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    const txs = await ctx.db
+      .query('transactions')
+      .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
+      .order('desc')
+      .take(400)
+
+    const names = new Set<string>()
+    for (const tx of txs) {
+      const name = (tx.merchantName ?? tx.originalDescription).trim()
+      if (name) names.add(name)
+    }
+    return [...names].sort((a, b) => a.localeCompare(b))
+  },
+})
+
 export const updateCategory = authedMutation({
   args: {
     transactionId: v.id('transactions'),

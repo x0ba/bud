@@ -54,6 +54,7 @@ export const overview = authedQuery({
         date: v.string(),
         amount: v.number(),
         merchantName: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         categoryName: v.optional(v.string()),
         categoryColor: v.optional(v.string()),
       }),
@@ -179,6 +180,7 @@ export const overview = authedQuery({
           date: t.date,
           amount: t.amount,
           merchantName: t.merchantName ?? t.originalDescription,
+          categoryId: t.categoryId,
           categoryName: cat?.name,
           categoryColor: cat?.color,
         }

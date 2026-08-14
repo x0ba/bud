@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useQuery } from 'convex/react'
+import { useMutation, useQuery } from 'convex/react'
 import { Fragment, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import {
@@ -9,8 +10,6 @@ import {
   EmptyState,
   HeroMetric,
   RowGroupHeader,
-  RowMeta,
-  RowTitle,
 } from '#/components/dense'
 import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { CategoryDonut } from '#/components/category-donut'
@@ -18,6 +17,10 @@ import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { PaceBar } from '#/components/pace-bar'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
+import {
+  SearchSelect,
+  type SearchSelectOption,
+} from '#/components/search-select'
 import { SpendingChart } from '#/components/spending-chart'
 import {
   Select,
@@ -47,6 +50,8 @@ export const Route = createFileRoute('/app/')({
     prewarmQueries(
       { query: api.dashboard.overview },
       { query: api.budgets.getMonth },
+      { query: api.categories.list },
+      { query: api.transactions.listMerchants },
       {
         query: api.dashboard.spendingPace,
         args: { month: currentMonth(), today: currentDay() },
@@ -90,6 +95,8 @@ function DashboardPage() {
   const data = useQuery(api.dashboard.overview)
   const budget = useQuery(api.budgets.getMonth, {})
   const pace = useQuery(api.dashboard.spendingPace, { month, today })
+  const categories = useQuery(api.categories.list)
+  const merchants = useQuery(api.transactions.listMerchants)
 
   const attention = useMemo<Array<AttentionItem>>(() => {
     if (!data) return []
@@ -387,15 +394,12 @@ function DashboardPage() {
                     }
                   />
                   {day.rows.map((tx) => (
-                    <li key={tx._id} className="data-row">
-                      <div className="min-w-0">
-                        <RowTitle>{tx.merchantName}</RowTitle>
-                        {tx.categoryName ? (
-                          <RowMeta>{tx.categoryName}</RowMeta>
-                        ) : null}
-                      </div>
-                      <Money amount={tx.amount} plaid />
-                    </li>
+                    <RecentRow
+                      key={tx._id}
+                      tx={tx}
+                      merchants={merchants ?? []}
+                      categories={categories ?? []}
+                    />
                   ))}
                 </Fragment>
               ))}
@@ -409,6 +413,157 @@ function DashboardPage() {
         </PageBody>
       </Page>
     </AppShell>
+  )
+}
+
+type RecentTx = NonNullable<
+  (typeof api.dashboard.overview)['_returnType']
+>['recent'][number]
+type CategoryList = NonNullable<(typeof api.categories.list)['_returnType']>
+
+function categoryFamilies(categories: CategoryList) {
+  const ids = new Set(categories.map((c) => c._id))
+  const childrenOf = new Map<string, CategoryList>()
+  const roots: CategoryList = []
+  for (const c of categories) {
+    if (c.parentId && ids.has(c.parentId)) {
+      const siblings = childrenOf.get(c.parentId)
+      if (siblings) siblings.push(c)
+      else childrenOf.set(c.parentId, [c])
+    } else {
+      roots.push(c)
+    }
+  }
+  return { roots, childrenOf }
+}
+
+function RecentRow({
+  tx,
+  merchants,
+  categories,
+}: {
+  tx: RecentTx
+  merchants: Array<string>
+  categories: CategoryList
+}) {
+  const updateMeta = useMutation(api.transactions.updateMeta)
+  const updateCategory = useMutation(api.transactions.updateCategory)
+  const createCategory = useMutation(api.categories.create)
+  const [busy, setBusy] = useState(false)
+
+  const merchantOptions = useMemo(() => {
+    const names = new Set(merchants)
+    if (tx.merchantName) names.add(tx.merchantName)
+    return [...names]
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ value: name, label: name }))
+  }, [merchants, tx.merchantName])
+
+  const categoryOptions = useMemo(() => {
+    const families = categoryFamilies(categories)
+    const items: Array<SearchSelectOption> = []
+    for (const parent of families.roots) {
+      items.push({
+        value: parent._id,
+        label: parent.name,
+        icon: <CategoryDot color={parent.color} className="size-1.5" />,
+      })
+      for (const child of families.childrenOf.get(parent._id) ?? []) {
+        items.push({
+          value: child._id,
+          label: child.name,
+          keywords: parent.name,
+          icon: <CategoryDot color={child.color} className="size-1.5" />,
+          muted: true,
+          indent: true,
+        })
+      }
+    }
+    return items
+  }, [categories])
+
+  const selected = categories.find((c) => c._id === tx.categoryId)
+
+  const setMerchant = (name: string) => {
+    if (name === tx.merchantName) return
+    setBusy(true)
+    void updateMeta({ transactionId: tx._id, merchantName: name })
+      .then(() => toast.success('Merchant updated'))
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setBusy(false))
+  }
+
+  const setCategory = (categoryId: Id<'categories'>) => {
+    if (categoryId === tx.categoryId) return
+    setBusy(true)
+    void updateCategory({ transactionId: tx._id, categoryId })
+      .then(() => toast.success('Category updated'))
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setBusy(false))
+  }
+
+  const makeCategory = (name: string) => {
+    setBusy(true)
+    void createCategory({
+      name,
+      icon: 'tag',
+      color: '#c27803',
+      budgetType: 'flex',
+    })
+      .then((categoryId) =>
+        updateCategory({ transactionId: tx._id, categoryId }),
+      )
+      .then(() => toast.success(`Created ${name}`))
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setBusy(false))
+  }
+
+  return (
+    <li className="recent-tx">
+      <div className="recent-tx-main">
+        <SearchSelect
+          value={tx.merchantName}
+          options={merchantOptions}
+          onSelect={setMerchant}
+          onCreate={setMerchant}
+          searchPlaceholder="Search merchants…"
+          aria-label="Merchant"
+          disabled={busy}
+          className="inline-pick-title"
+        >
+          <span className="truncate">{tx.merchantName ?? 'Unknown'}</span>
+        </SearchSelect>
+        <SearchSelect
+          value={tx.categoryId}
+          options={categoryOptions}
+          onSelect={(id) => setCategory(id as Id<'categories'>)}
+          onCreate={makeCategory}
+          searchPlaceholder="Search categories…"
+          placeholder="Uncategorized"
+          createLabel={(q) => `Create “${q}”`}
+          aria-label="Category"
+          disabled={busy}
+          className="inline-pick-meta"
+        >
+          {selected ? (
+            <>
+              <CategoryDot color={selected.color} className="size-1.5" />
+              <span className="truncate">{selected.name}</span>
+            </>
+          ) : tx.categoryName ? (
+            <>
+              {tx.categoryColor ? (
+                <CategoryDot color={tx.categoryColor} className="size-1.5" />
+              ) : null}
+              <span className="truncate">{tx.categoryName}</span>
+            </>
+          ) : (
+            <span className="truncate">Uncategorized</span>
+          )}
+        </SearchSelect>
+      </div>
+      <Money amount={tx.amount} plaid className="shrink-0" />
+    </li>
   )
 }
 
