@@ -54,6 +54,7 @@ export const overview = authedQuery({
         date: v.string(),
         amount: v.number(),
         merchantName: v.optional(v.string()),
+        categoryId: v.optional(v.id('categories')),
         categoryName: v.optional(v.string()),
         categoryColor: v.optional(v.string()),
       }),
@@ -179,6 +180,7 @@ export const overview = authedQuery({
           date: t.date,
           amount: t.amount,
           merchantName: t.merchantName ?? t.originalDescription,
+          categoryId: t.categoryId,
           categoryName: cat?.name,
           categoryColor: cat?.color,
         }
@@ -257,16 +259,19 @@ export const spendingPace = authedQuery({
     const todayMonth = args.today.slice(0, 7)
     const todayDay = Number(args.today.slice(8, 10))
     const throughDay =
-      todayMonth === args.month
-        ? Math.min(days, Math.max(1, todayDay))
-        : days
+      todayMonth === args.month ? Math.min(days, Math.max(1, todayDay)) : days
 
     const lastMonthKey = shiftMonth(args.month, -1)
     const lastYearKey = shiftMonth(args.month, -12)
 
     const [thisMonth, lastMonth, lastYear] = await Promise.all([
       cumulativeSpend(ctx, ctx.user._id, args.month, throughDay),
-      cumulativeSpend(ctx, ctx.user._id, lastMonthKey, daysInMonth(lastMonthKey)),
+      cumulativeSpend(
+        ctx,
+        ctx.user._id,
+        lastMonthKey,
+        daysInMonth(lastMonthKey),
+      ),
       cumulativeSpend(ctx, ctx.user._id, lastYearKey, daysInMonth(lastYearKey)),
     ])
 

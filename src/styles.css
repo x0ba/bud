@@ -728,6 +728,101 @@ pre code {
   display: flex;
 }
 
+/* Recent transactions: two stacked pickers, so the row leads from the top
+   (merchant + amount) and the category sits a step below instead of sharing
+   a vertically-centered pair of lines. */
+.data-list > li.recent-tx {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-block: 0.75rem;
+}
+
+.recent-tx-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.recent-tx-main .inline-pick {
+  width: 100%;
+}
+
+.recent-tx .amount-cell {
+  padding-top: 0.125rem;
+}
+
+/* Text that is also a select — same type as the static row, a muted wash
+   only when you go looking for it. */
+.inline-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.125rem 0.25rem;
+  margin-inline: -0.25rem;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.inline-pick-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--sea-ink);
+}
+
+.inline-pick-meta {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .inline-pick:hover {
+    background: color-mix(in oklab, var(--muted) 80%, transparent);
+  }
+}
+
+.inline-pick:focus-visible,
+.inline-pick[data-state='open'] {
+  background: color-mix(in oklab, var(--muted) 80%, transparent);
+}
+
+.inline-pick:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 40%, transparent);
+}
+
+.inline-pick:active {
+  transform: scale(0.98);
+}
+
+.inline-pick:disabled {
+  cursor: default;
+  opacity: 0.6;
+  transform: none;
+}
+
+@media (hover: none) {
+  .recent-tx-main {
+    gap: 0.375rem;
+  }
+
+  .inline-pick {
+    padding-block: 0.25rem;
+  }
+}
+
 /* The one place a page raises its voice: a connection that stopped syncing, or
    a card due now. Tint plus a 2px rule so it reads as a state on the page, not
    as another section competing for the eye. */

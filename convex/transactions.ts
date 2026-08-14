@@ -213,6 +213,77 @@ export const recent = authedQuery({
   },
 })
 
+/** Distinct merchant names from recent activity — enough to pick from, bounded. */
+export const listMerchants = authedQuery({
+  args: {},
+  returns: v.array(v.string()),
+  handler: async (ctx) => {
+    const txs = await ctx.db
+      .query('transactions')
+      .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
+      .order('desc')
+      .take(400)
+
+    const names = new Set<string>()
+    for (const tx of txs) {
+      const name = (tx.merchantName ?? tx.originalDescription).trim()
+      if (name) names.add(name)
+    }
+    return [...names].sort((a, b) => a.localeCompare(b))
+  },
+})
+
+/** Mint a Flex category and file the charge in one write so a failed assign cannot orphan it. */
+export const createAndAssignCategory = authedMutation({
+  args: {
+    transactionId: v.id('transactions'),
+    name: v.string(),
+  },
+  returns: v.id('categories'),
+  handler: async (ctx, args) => {
+    const tx = await ctx.db.get(args.transactionId)
+    if (!tx || tx.userId !== ctx.user._id) throw new Error('Not found')
+
+    const name = args.name.trim()
+    if (!name) throw new Error('Name is required')
+
+    const reused = await ctx.db
+      .query('categories')
+      .withIndex('by_user_name', (q) =>
+        q.eq('userId', ctx.user._id).eq('name', name),
+      )
+      .first()
+
+    let categoryId = reused?._id
+    let budgetType = reused?.budgetType
+    if (!categoryId) {
+      const existing = await ctx.db
+        .query('categories')
+        .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
+        .collect()
+      categoryId = await ctx.db.insert('categories', {
+        userId: ctx.user._id,
+        name,
+        icon: 'tag',
+        color: '#c27803',
+        isSystem: false,
+        budgetType: 'flex',
+        excludeFromBudget: false,
+        sortOrder: existing.length,
+      })
+      budgetType = 'flex'
+    }
+
+    await ctx.db.patch(args.transactionId, {
+      categoryId,
+      categorySource: 'user',
+      isTransfer: budgetType === 'transfer',
+    })
+
+    return categoryId
+  },
+})
+
 export const updateCategory = authedMutation({
   args: {
     transactionId: v.id('transactions'),

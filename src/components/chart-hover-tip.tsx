@@ -39,11 +39,7 @@ export function ChartHoverTip({
   const flip = y < 56
   const left = Math.min(Math.max(x, 72), window.innerWidth - 72)
   const lines =
-    rows && rows.length > 0
-      ? rows
-      : value != null
-        ? [{ value, detail }]
-        : []
+    rows && rows.length > 0 ? rows : value != null ? [{ value, detail }] : []
 
   return createPortal(
     <div

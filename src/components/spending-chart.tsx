@@ -71,7 +71,6 @@ function areaPath(points: Array<Point>, axisDays: number, max: number): string {
   const line = linePath(points, axisDays, max)
   const last = points[points.length - 1]
   const first = points[0]
-  if (!last || !first) return ''
   return `${line} L ${dayX(last.day, axisDays)} ${H} L ${dayX(first.day, axisDays)} ${H} Z`
 }
 
@@ -203,7 +202,11 @@ export function SpendingChart({
           >
             <defs>
               <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--lagoon)" stopOpacity="0.28" />
+                <stop
+                  offset="0%"
+                  stopColor="var(--lagoon)"
+                  stopOpacity="0.28"
+                />
                 <stop offset="100%" stopColor="var(--lagoon)" stopOpacity="0" />
               </linearGradient>
             </defs>
