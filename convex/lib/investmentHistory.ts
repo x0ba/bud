@@ -28,10 +28,14 @@ export function rangeCutoff(range: HistoryRange, today: string): string {
   const [year, month, day] = today.split('-').map(Number)
   if (!year || !month || !day) return '0000-01-01'
   if (range === 'YTD') return `${year}-01-01`
-  const date = new Date(Date.UTC(year, month - 1, day))
+  const date = new Date(Date.UTC(year, month - 1, 1))
   if (range === '1M') date.setUTCMonth(date.getUTCMonth() - 1)
   else if (range === '3M') date.setUTCMonth(date.getUTCMonth() - 3)
   else date.setUTCFullYear(date.getUTCFullYear() - 1)
+  const lastDay = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0),
+  ).getUTCDate()
+  date.setUTCDate(Math.min(day, lastDay))
   return date.toISOString().slice(0, 10)
 }
 

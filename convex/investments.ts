@@ -72,14 +72,17 @@ export const portfolio = authedQuery({
       .sort((a, b) => b.currentBalance - a.currentBalance)
 
     const rows = []
-    let holdingsValue = 0
     const byTypeMap = new Map<string, number>()
+    const holdingsByAccount = new Map<string, number>()
 
     for (const h of holdings) {
       const security = await ctx.db.get(h.securityId)
-      holdingsValue += h.institutionValue
       const type = security?.type ?? 'other'
       byTypeMap.set(type, (byTypeMap.get(type) ?? 0) + h.institutionValue)
+      holdingsByAccount.set(
+        h.accountId,
+        (holdingsByAccount.get(h.accountId) ?? 0) + h.institutionValue,
+      )
       rows.push({
         _id: h._id,
         name: security?.name ?? 'Security',
@@ -107,14 +110,14 @@ export const portfolio = authedQuery({
             ).values(),
           ]
         : []
-
-    const accountValue = investmentAccounts.reduce(
-      (sum, a) => sum + a.currentBalance,
+    const totalValue = investmentAccounts.reduce(
+      (sum, account) =>
+        sum + (holdingsByAccount.get(account._id) ?? account.currentBalance),
       0,
     )
 
     return {
-      totalValue: rows.length > 0 ? holdingsValue : accountValue,
+      totalValue,
       holdings: rows.sort((a, b) => b.institutionValue - a.institutionValue),
       byType: [...byTypeMap.entries()].map(([type, value]) => ({
         type,

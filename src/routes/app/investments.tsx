@@ -70,26 +70,40 @@ function InvestmentsPage() {
   const [filter, setFilter] = useState(ALL_FILTER)
   const today = utcDay()
   const data = useQuery(api.investments.portfolio)
+  const selectedAccountId = filter.startsWith('account:')
+    ? (filter.slice('account:'.length) as Id<'accounts'>)
+    : undefined
+  const selectedHoldingId = filter.startsWith('holding:')
+    ? (filter.slice('holding:'.length) as Id<'holdings'>)
+    : undefined
+  const accountId =
+    selectedAccountId &&
+    data?.accounts.some((account) => account._id === selectedAccountId)
+      ? selectedAccountId
+      : undefined
+  const holdingId =
+    selectedHoldingId &&
+    data?.holdings.some((holding) => holding._id === selectedHoldingId)
+      ? selectedHoldingId
+      : undefined
   const history = useQuery(api.investments.history, {
     range,
     today,
-    accountId: filter.startsWith('account:')
-      ? (filter.slice('account:'.length) as Id<'accounts'>)
-      : undefined,
-    holdingId: filter.startsWith('holding:')
-      ? (filter.slice('holding:'.length) as Id<'holdings'>)
-      : undefined,
+    accountId,
+    holdingId,
   })
   const snapshotNow = useMutation(api.investments.snapshotNow)
 
-  const ensuredToday = useRef(false)
+  const ensuredDay = useRef<string | null>(null)
   useEffect(() => {
     if (!data || history === undefined) return
     if (data.accounts.length === 0 && data.holdings.length === 0) return
     const last = history.at(-1)?.date
-    if (last === today || ensuredToday.current) return
-    ensuredToday.current = true
-    void snapshotNow({})
+    if (last === today || ensuredDay.current === today) return
+    ensuredDay.current = today
+    void snapshotNow({}).catch(() => {
+      if (ensuredDay.current === today) ensuredDay.current = null
+    })
   }, [data, history, snapshotNow, today])
 
   const filterOptions = useMemo((): Array<SearchSelectOption> => {
@@ -129,6 +143,13 @@ function InvestmentsPage() {
     }
     return options
   }, [data])
+
+  useEffect(() => {
+    if (!data || filter === ALL_FILTER) return
+    if (!filterOptions.some((option) => option.value === filter)) {
+      setFilter(ALL_FILTER)
+    }
+  }, [data, filter, filterOptions])
 
   const filterLabel =
     filterOptions.find((option) => option.value === filter)?.label ??

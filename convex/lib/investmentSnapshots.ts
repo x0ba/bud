@@ -57,19 +57,11 @@ export async function writeInvestmentSnapshot(
     }
   }
 
-  const holdingsValue = activeHoldings.reduce(
-    (sum, holding) => sum + holding.institutionValue,
-    0,
-  )
-  const accountValue = investmentAccounts.reduce(
-    (sum, account) => sum + account.currentBalance,
-    0,
-  )
-  const totalValue = activeHoldings.length > 0 ? holdingsValue : accountValue
   const byAccount = [...byAccountMap.entries()].map(([accountId, value]) => ({
     accountId,
     value,
   }))
+  const totalValue = byAccount.reduce((sum, row) => sum + row.value, 0)
 
   const date = todayKey()
   const existing = await ctx.db

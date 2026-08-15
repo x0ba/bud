@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChartHoverTip, svgPointToClient } from '#/components/chart-hover-tip'
 import { formatDateShort, formatUsdPlain } from '#/lib/money'
 
@@ -34,6 +34,10 @@ export function TrendLineChart({
     clientX: number
     clientY: number
   } | null>(null)
+
+  useEffect(() => {
+    setHover(null)
+  }, [points])
 
   const chart = useMemo(() => {
     if (points.length === 0) return null
