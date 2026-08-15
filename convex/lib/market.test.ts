@@ -4,6 +4,7 @@ import {
   addDays,
   barDate,
   currentMarkPrice,
+  lastWeekday,
   dayPnl,
   markValue,
   normalizeSymbol,
@@ -225,6 +226,9 @@ describe('history', () => {
     assert.equal(rangeStart('2026-08-15', '1Y'), '2025-08-15')
     assert.equal(rangeStart('2026-03-31', '1M'), '2026-02-28')
     assert.equal(addDays('2026-08-15', -4), '2026-08-11')
+    assert.equal(lastWeekday('2026-08-15'), '2026-08-14') // Saturday → Friday
+    assert.equal(lastWeekday('2026-08-16'), '2026-08-14') // Sunday → Friday
+    assert.equal(lastWeekday('2026-08-17'), '2026-08-17')
   })
 
   it('maps Alpaca bar timestamps onto the New York session date', () => {

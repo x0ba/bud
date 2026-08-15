@@ -65,7 +65,7 @@ function formatPct(n: number): string {
 export const Route = createFileRoute('/app/investments')({
   loader: () => {
     prewarmQueries(
-      { query: api.investments.portfolio },
+      { query: api.investments.portfolio, args: { today: utcDay() } },
       { query: api.investments.marketStatus },
       {
         query: api.investments.history,
@@ -81,7 +81,7 @@ function InvestmentsPage() {
   const [filter, setFilter] = useState(ALL_FILTER)
   const [refreshing, setRefreshing] = useState(false)
   const today = utcDay()
-  const data = useQuery(api.investments.portfolio)
+  const data = useQuery(api.investments.portfolio, { today })
   const status = useQuery(api.investments.marketStatus)
   const refresh = useAction(api.alpacaActions.refreshMarketData)
   const selectedAccountId = filter.startsWith('account:')

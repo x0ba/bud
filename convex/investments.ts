@@ -9,6 +9,7 @@ import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import {
   currentMarkPrice,
   dayPnl,
+  lastWeekday,
   markValue,
   normalizeSymbol,
   reconstructHistory,
@@ -50,7 +51,7 @@ export const marketStatus = authedQuery({
 })
 
 export const portfolio = authedQuery({
-  args: {},
+  args: { today: v.optional(v.string()) },
   returns: v.object({
     totalValue: v.number(),
     dayChange: v.optional(v.number()),
@@ -81,7 +82,7 @@ export const portfolio = authedQuery({
       }),
     ),
   }),
-  handler: async (ctx) => {
+  handler: async (ctx, args) => {
     const holdings = await ctx.db
       .query('holdings')
       .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
@@ -117,11 +118,13 @@ export const portfolio = authedQuery({
 
     const rows = []
     let dayChangeSum = 0
-    let hasDayChange = false
+    let dayCovered = 0
     let quotedAt: number | undefined
+    let missingQuote = false
     let lastPlaidSyncedAt: number | undefined
     let quoteable = 0
     let withHistory = 0
+    const historyFloor = args.today ? lastWeekday(args.today) : undefined
     const byTypeMap = new Map<string, number>()
     const holdingsByAccount = new Map<string, number>()
 
@@ -150,15 +153,19 @@ export const portfolio = authedQuery({
         h.accountId,
         (holdingsByAccount.get(h.accountId) ?? 0) + value,
       )
-      if (change != null) {
+      if (alpacaSymbol && change != null) {
         dayChangeSum += change
-        hasDayChange = true
+        dayCovered += 1
       }
-      if (security?.livePriceAt != null) {
-        quotedAt =
-          quotedAt == null
-            ? security.livePriceAt
-            : Math.max(quotedAt, security.livePriceAt)
+      if (alpacaSymbol) {
+        if (security?.livePriceAt != null) {
+          quotedAt =
+            quotedAt == null
+              ? security.livePriceAt
+              : Math.min(quotedAt, security.livePriceAt)
+        } else {
+          missingQuote = true
+        }
       }
       if (h.lastPlaidSyncedAt != null) {
         lastPlaidSyncedAt =
@@ -168,7 +175,12 @@ export const portfolio = authedQuery({
       }
       if (alpacaSymbol) {
         quoteable += 1
-        if (security?.historyTo) withHistory += 1
+        if (
+          security?.historyTo &&
+          (historyFloor == null || security.historyTo >= historyFloor)
+        ) {
+          withHistory += 1
+        }
       }
 
       rows.push({
@@ -221,8 +233,9 @@ export const portfolio = authedQuery({
 
     return {
       totalValue,
-      dayChange: hasDayChange ? dayChangeSum : undefined,
-      quotedAt,
+      dayChange:
+        quoteable > 0 && dayCovered === quoteable ? dayChangeSum : undefined,
+      quotedAt: missingQuote ? undefined : quotedAt,
       lastPlaidSyncedAt,
       historyReady: quoteable === 0 || withHistory === quoteable,
       holdings: rows.sort((a, b) => b.markValue - a.markValue),
@@ -261,13 +274,6 @@ export const history = authedQuery({
       if (!holding || holding.userId !== ctx.user._id) {
         throw new Error('Holding not found')
       }
-      const fromBars = await historyFromBars(
-        ctx,
-        holding,
-        args.range ?? '3M',
-        args.today,
-      )
-      if (fromBars && fromBars.length > 0) return fromBars
     }
 
     const [snapshots, netWorthSnaps, accounts] = await Promise.all([
@@ -298,7 +304,7 @@ export const history = authedQuery({
         .map((account) => account._id),
     )
 
-    return investmentHistorySeries({
+    const series = investmentHistorySeries({
       snapshots: snapshots.map((snap) => ({
         date: snap.date,
         totalValue: snap.totalValue,
@@ -324,6 +330,14 @@ export const history = authedQuery({
       accountId: args.accountId,
       holdingId: args.holdingId,
     })
+    if (series.length > 0 || !args.holdingId) return series
+
+    const holding = await ctx.db.get(args.holdingId)
+    if (!holding || holding.userId !== ctx.user._id) return series
+    return (
+      (await historyFromBars(ctx, holding, args.range ?? '3M', args.today)) ??
+      series
+    )
   },
 })
 
@@ -344,7 +358,9 @@ async function historyFromBars(
   const security = await ctx.db.get(holding.securityId)
   const symbol = normalizeSymbol(security?.alpacaSymbol ?? security?.symbol)
   if (!symbol) return null
-  const start = rangeCutoff(range, today)
+  const acquired = new Date(holding._creationTime).toISOString().slice(0, 10)
+  const rangeFrom = rangeCutoff(range, today)
+  const start = acquired > rangeFrom ? acquired : rangeFrom
   const rows = await ctx.db
     .query('securityBars')
     .withIndex('by_symbol_date', (q) =>

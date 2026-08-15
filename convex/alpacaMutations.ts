@@ -1,7 +1,7 @@
 import { v } from 'convex/values'
 import { internalMutation, internalQuery } from './_generated/server'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
-import { addDays, normalizeSymbol } from './lib/market'
+import { addDays, lastWeekday, normalizeSymbol } from './lib/market'
 
 export const ensureAlpacaSymbols = internalMutation({
   args: { userId: v.id('users') },
@@ -83,7 +83,7 @@ export const historyGapsForUser = internalQuery({
     }
 
     const floor = addDays(args.asOf, -args.lookbackDays)
-    const staleBefore = addDays(args.asOf, -4)
+    const staleBefore = lastWeekday(args.asOf)
     const gaps: Array<{ symbol: string; start: string }> = []
 
     for (const symbol of symbols) {
@@ -130,8 +130,12 @@ export const applyQuotes = internalMutation({
         await ctx.db.patch(security._id, {
           livePrice: quote.price,
           livePriceAt: quote.quotedAt,
-          previousClose: quote.previousClose,
-          dailyOpen: quote.dailyOpen,
+          ...(quote.previousClose !== undefined
+            ? { previousClose: quote.previousClose }
+            : {}),
+          ...(quote.dailyOpen !== undefined
+            ? { dailyOpen: quote.dailyOpen }
+            : {}),
         })
         updated += 1
       }

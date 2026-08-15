@@ -157,6 +157,16 @@ export function addDays(day: string, days: number): string {
   return formatDay(next)
 }
 
+/** Friday when `day` is a weekend; otherwise `day` itself. */
+export function lastWeekday(day: string): string {
+  const [year, month, date] = day.split('-').map(Number)
+  if (!year || !month || !date) return day
+  const dow = new Date(year, month - 1, date).getDay()
+  if (dow === 0) return addDays(day, -2)
+  if (dow === 6) return addDays(day, -1)
+  return day
+}
+
 function formatDay(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
