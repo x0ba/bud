@@ -2,6 +2,12 @@ import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { internalMutation, internalQuery } from './_generated/server'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
+import {
+  currentMarkPrice,
+  markValue,
+  normalizeSymbol,
+  reconcileHolding,
+} from './lib/market'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
 const accountType = v.union(
@@ -537,6 +543,8 @@ export const upsertHoldings = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const now = Date.now()
+    const alpacaSymbol = (raw?: string) => normalizeSymbol(raw) ?? undefined
     const kept = new Set<string>()
     for (const h of args.holdings) {
       const account = await ctx.db
@@ -553,26 +561,25 @@ export const upsertHoldings = internalMutation({
           q.eq('plaidSecurityId', h.plaidSecurityId),
         )
         .unique()
+      const symbolFields = {
+        symbol: h.symbol,
+        alpacaSymbol: alpacaSymbol(h.symbol),
+        name: h.name,
+        type: h.type,
+        closePrice: h.closePrice,
+        closePriceAt: h.closePriceAt,
+      }
       if (security) {
-        await ctx.db.patch(security._id, {
-          symbol: h.symbol,
-          name: h.name,
-          type: h.type,
-          closePrice: h.closePrice,
-          closePriceAt: h.closePriceAt,
-        })
+        await ctx.db.patch(security._id, symbolFields)
       } else {
         const securityId = await ctx.db.insert('securities', {
           plaidSecurityId: h.plaidSecurityId,
-          symbol: h.symbol,
-          name: h.name,
-          type: h.type,
-          closePrice: h.closePrice,
-          closePriceAt: h.closePriceAt,
+          ...symbolFields,
         })
         security = await ctx.db.get(securityId)
       }
       if (!security) continue
+      security = (await ctx.db.get(security._id)) ?? security
 
       const existing = await ctx.db
         .query('holdings')
@@ -580,23 +587,73 @@ export const upsertHoldings = internalMutation({
           q.eq('accountId', account._id).eq('securityId', security._id),
         )
         .unique()
+
+      const livePrice = currentMarkPrice({
+        livePrice: security.livePrice,
+        closePrice: security.closePrice,
+        institutionPrice: h.institutionPrice,
+      })
+      const plaidFields = {
+        quantity: h.quantity,
+        costBasis: h.costBasis,
+        institutionValue: h.institutionValue,
+        institutionPrice: h.institutionPrice,
+        lastPlaidQuantity: h.quantity,
+        lastPlaidValue: h.institutionValue,
+        lastPlaidPrice: h.institutionPrice,
+        lastPlaidSyncedAt: now,
+      }
+
       if (existing) {
-        await ctx.db.patch(existing._id, {
-          quantity: h.quantity,
-          costBasis: h.costBasis,
-          institutionValue: h.institutionValue,
-          institutionPrice: h.institutionPrice,
+        const previousMarkValue = markValue(
+          existing.quantity,
+          currentMarkPrice({
+            livePrice: security.livePrice,
+            closePrice: security.closePrice,
+            institutionPrice: existing.institutionPrice,
+          }),
+          existing.institutionValue,
+        )
+        const rec = reconcileHolding({
+          previousQuantity: existing.quantity,
+          previousMarkValue,
+          plaidQuantity: h.quantity,
+          plaidValue: h.institutionValue,
+          livePrice,
         })
+        await ctx.db.patch(existing._id, {
+          ...plaidFields,
+          lastReconcileDelta: rec.valueDelta,
+          lastReconcileAt: now,
+        })
+        if (
+          Math.abs(rec.quantityDelta) > 1e-8 ||
+          Math.abs(rec.valueDelta) > 0.01
+        ) {
+          await ctx.db.insert('holdingReconciles', {
+            userId: args.userId,
+            holdingId: existing._id,
+            accountId: account._id,
+            securityId: security._id,
+            plaidQuantity: h.quantity,
+            plaidValue: h.institutionValue,
+            plaidPrice: h.institutionPrice,
+            previousQuantity: existing.quantity,
+            previousMarkValue,
+            quantityDelta: rec.quantityDelta,
+            valueDelta: rec.valueDelta,
+            markPrice: livePrice,
+            priceDrift: rec.priceDrift,
+            reconciledAt: now,
+          })
+        }
         kept.add(existing._id)
       } else {
         const holdingId = await ctx.db.insert('holdings', {
           userId: args.userId,
           accountId: account._id,
           securityId: security._id,
-          quantity: h.quantity,
-          costBasis: h.costBasis,
-          institutionValue: h.institutionValue,
-          institutionPrice: h.institutionPrice,
+          ...plaidFields,
         })
         kept.add(holdingId)
       }
@@ -613,7 +670,15 @@ export const upsertHoldings = internalMutation({
         .withIndex('by_account', (q) => q.eq('accountId', account._id))
         .collect()
       for (const holding of existing) {
-        if (!kept.has(holding._id)) await ctx.db.delete(holding._id)
+        if (kept.has(holding._id)) continue
+        const recs = await ctx.db
+          .query('holdingReconciles')
+          .withIndex('by_holding', (q) => q.eq('holdingId', holding._id))
+          .collect()
+        for (const rec of recs) {
+          await ctx.db.delete(rec._id)
+        }
+        await ctx.db.delete(holding._id)
       }
     }
 

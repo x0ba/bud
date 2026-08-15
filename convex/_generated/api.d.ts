@@ -9,15 +9,19 @@
  */
 
 import type * as accounts from "../accounts.js";
+import type * as alpacaActions from "../alpacaActions.js";
+import type * as alpacaMutations from "../alpacaMutations.js";
 import type * as budgets from "../budgets.js";
 import type * as categories from "../categories.js";
 import type * as crons from "../crons.js";
 import type * as dashboard from "../dashboard.js";
 import type * as http from "../http.js";
 import type * as investments from "../investments.js";
+import type * as lib_alpaca from "../lib/alpaca.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_categories from "../lib/categories.js";
 import type * as lib_customFunctions from "../lib/customFunctions.js";
+import type * as lib_market from "../lib/market.js";
 import type * as lib_money from "../lib/money.js";
 import type * as lib_plaidClient from "../lib/plaidClient.js";
 import type * as lib_rules from "../lib/rules.js";
@@ -36,15 +40,19 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   accounts: typeof accounts;
+  alpacaActions: typeof alpacaActions;
+  alpacaMutations: typeof alpacaMutations;
   budgets: typeof budgets;
   categories: typeof categories;
   crons: typeof crons;
   dashboard: typeof dashboard;
   http: typeof http;
   investments: typeof investments;
+  "lib/alpaca": typeof lib_alpaca;
   "lib/auth": typeof lib_auth;
   "lib/categories": typeof lib_categories;
   "lib/customFunctions": typeof lib_customFunctions;
+  "lib/market": typeof lib_market;
   "lib/money": typeof lib_money;
   "lib/plaidClient": typeof lib_plaidClient;
   "lib/rules": typeof lib_rules;

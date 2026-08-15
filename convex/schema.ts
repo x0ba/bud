@@ -233,11 +233,31 @@ export default defineSchema({
   securities: defineTable({
     plaidSecurityId: v.string(),
     symbol: v.optional(v.string()),
+    alpacaSymbol: v.optional(v.string()),
     name: v.string(),
     type: v.optional(v.string()),
     closePrice: v.optional(v.number()),
     closePriceAt: v.optional(v.string()),
-  }).index('by_plaid_security_id', ['plaidSecurityId']),
+    livePrice: v.optional(v.number()),
+    livePriceAt: v.optional(v.number()),
+    previousClose: v.optional(v.number()),
+    dailyOpen: v.optional(v.number()),
+    historyFrom: v.optional(v.string()),
+    historyTo: v.optional(v.string()),
+    historySyncedAt: v.optional(v.number()),
+  })
+    .index('by_plaid_security_id', ['plaidSecurityId'])
+    .index('by_alpaca_symbol', ['alpacaSymbol']),
+
+  securityBars: defineTable({
+    symbol: v.string(),
+    date: v.string(),
+    open: v.number(),
+    high: v.number(),
+    low: v.number(),
+    close: v.number(),
+    volume: v.optional(v.number()),
+  }).index('by_symbol_date', ['symbol', 'date']),
 
   holdings: defineTable({
     userId: v.id('users'),
@@ -247,10 +267,35 @@ export default defineSchema({
     costBasis: v.optional(v.number()),
     institutionValue: v.number(),
     institutionPrice: v.number(),
+    lastPlaidQuantity: v.optional(v.number()),
+    lastPlaidValue: v.optional(v.number()),
+    lastPlaidPrice: v.optional(v.number()),
+    lastPlaidSyncedAt: v.optional(v.number()),
+    lastReconcileDelta: v.optional(v.number()),
+    lastReconcileAt: v.optional(v.number()),
   })
     .index('by_user', ['userId'])
     .index('by_account', ['accountId'])
     .index('by_account_security', ['accountId', 'securityId']),
+
+  holdingReconciles: defineTable({
+    userId: v.id('users'),
+    holdingId: v.id('holdings'),
+    accountId: v.id('accounts'),
+    securityId: v.id('securities'),
+    plaidQuantity: v.number(),
+    plaidValue: v.number(),
+    plaidPrice: v.number(),
+    previousQuantity: v.number(),
+    previousMarkValue: v.number(),
+    quantityDelta: v.number(),
+    valueDelta: v.number(),
+    markPrice: v.optional(v.number()),
+    priceDrift: v.optional(v.number()),
+    reconciledAt: v.number(),
+  })
+    .index('by_user', ['userId'])
+    .index('by_holding', ['holdingId']),
 
   investmentTxns: defineTable({
     userId: v.id('users'),

@@ -9,6 +9,12 @@ crons.daily(
   internal.plaidActions.syncAllItems,
 )
 
+crons.interval(
+  'refresh alpaca marks',
+  { minutes: 15 },
+  internal.alpacaActions.refreshAllQuotes,
+)
+
 // After the 10:00 Plaid sync so the daily point uses fresh balances.
 crons.daily(
   'net worth snapshot',

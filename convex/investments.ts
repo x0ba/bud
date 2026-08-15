@@ -1,24 +1,65 @@
 import { v } from 'convex/values'
+import type { Doc } from './_generated/dataModel'
+import type { QueryCtx } from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
-import { investmentHistorySeries, rangeCutoff } from './lib/investmentHistory'
+import { isAlpacaConfigured } from './lib/alpaca'
+import {
+  investmentHistorySeries,
+  rangeCutoff,
+  type HistoryRange,
+} from './lib/investmentHistory'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
+import {
+  currentMarkPrice,
+  dayPnl,
+  markValue,
+  normalizeSymbol,
+  reconstructHistory,
+} from './lib/market'
 
 const holdingRow = v.object({
   _id: v.id('holdings'),
   name: v.string(),
   symbol: v.optional(v.string()),
+  alpacaSymbol: v.optional(v.string()),
   quantity: v.number(),
   institutionValue: v.number(),
   institutionPrice: v.number(),
+  markPrice: v.optional(v.number()),
+  markValue: v.number(),
+  priceSource: v.union(v.literal('alpaca'), v.literal('plaid')),
+  dayChange: v.optional(v.number()),
+  dayChangePct: v.optional(v.number()),
   costBasis: v.optional(v.number()),
   accountName: v.optional(v.string()),
   type: v.optional(v.string()),
+  quotedAt: v.optional(v.number()),
+  lastPlaidSyncedAt: v.optional(v.number()),
+  lastReconcileDelta: v.optional(v.number()),
+})
+
+const historyRange = v.union(
+  v.literal('1M'),
+  v.literal('3M'),
+  v.literal('YTD'),
+  v.literal('1Y'),
+  v.literal('ALL'),
+)
+
+export const marketStatus = authedQuery({
+  args: {},
+  returns: v.object({ configured: v.boolean() }),
+  handler: async () => ({ configured: isAlpacaConfigured() }),
 })
 
 export const portfolio = authedQuery({
   args: {},
   returns: v.object({
     totalValue: v.number(),
+    dayChange: v.optional(v.number()),
+    quotedAt: v.optional(v.number()),
+    lastPlaidSyncedAt: v.optional(v.number()),
+    historyReady: v.boolean(),
     holdings: v.array(holdingRow),
     byType: v.array(
       v.object({
@@ -78,27 +119,86 @@ export const portfolio = authedQuery({
     )
 
     const rows = []
+    let dayChangeSum = 0
+    let hasDayChange = false
+    let quotedAt: number | undefined
+    let lastPlaidSyncedAt: number | undefined
+    let quoteable = 0
+    let withHistory = 0
     const byTypeMap = new Map<string, number>()
     const holdingsByAccount = new Map<string, number>()
 
     for (const h of activeHoldings) {
       const security = await ctx.db.get(h.securityId)
+      const price = currentMarkPrice({
+        livePrice: security?.livePrice,
+        closePrice: security?.closePrice,
+        institutionPrice: h.institutionPrice,
+      })
+      const value = markValue(h.quantity, price, h.institutionValue)
+      const source: 'alpaca' | 'plaid' =
+        security?.livePrice != null ? 'alpaca' : 'plaid'
+      const change = dayPnl(
+        h.quantity,
+        security?.livePrice,
+        security?.previousClose,
+      )
       const type = security?.type ?? 'other'
-      byTypeMap.set(type, (byTypeMap.get(type) ?? 0) + h.institutionValue)
+      const alpacaSymbol = normalizeSymbol(
+        security?.alpacaSymbol ?? security?.symbol,
+      )
+
+      byTypeMap.set(type, (byTypeMap.get(type) ?? 0) + value)
       holdingsByAccount.set(
         h.accountId,
-        (holdingsByAccount.get(h.accountId) ?? 0) + h.institutionValue,
+        (holdingsByAccount.get(h.accountId) ?? 0) + value,
       )
+      if (change != null) {
+        dayChangeSum += change
+        hasDayChange = true
+      }
+      if (security?.livePriceAt != null) {
+        quotedAt =
+          quotedAt == null
+            ? security.livePriceAt
+            : Math.max(quotedAt, security.livePriceAt)
+      }
+      if (h.lastPlaidSyncedAt != null) {
+        lastPlaidSyncedAt =
+          lastPlaidSyncedAt == null
+            ? h.lastPlaidSyncedAt
+            : Math.max(lastPlaidSyncedAt, h.lastPlaidSyncedAt)
+      }
+      if (alpacaSymbol) {
+        quoteable += 1
+        if (security?.historyTo) withHistory += 1
+      }
+
       rows.push({
         _id: h._id,
         name: security?.name ?? 'Security',
         symbol: security?.symbol,
+        alpacaSymbol: alpacaSymbol ?? undefined,
         quantity: h.quantity,
         institutionValue: h.institutionValue,
         institutionPrice: h.institutionPrice,
+        markPrice: price,
+        markValue: value,
+        priceSource: source,
+        dayChange: change,
+        dayChangePct:
+          change != null &&
+          security?.livePrice != null &&
+          security.previousClose
+            ? (security.livePrice - security.previousClose) /
+              security.previousClose
+            : undefined,
         costBasis: h.costBasis,
         accountName: accountMap.get(h.accountId),
         type,
+        quotedAt: security?.livePriceAt,
+        lastPlaidSyncedAt: h.lastPlaidSyncedAt,
+        lastReconcileDelta: h.lastReconcileDelta,
       })
     }
 
@@ -112,7 +212,7 @@ export const portfolio = authedQuery({
                   itemId: a.itemId,
                   institutionName: a.institutionName ?? 'Institution',
                 },
-              ]),
+              )),
             ).values(),
           ]
         : []
@@ -124,7 +224,11 @@ export const portfolio = authedQuery({
 
     return {
       totalValue,
-      holdings: rows.sort((a, b) => b.institutionValue - a.institutionValue),
+      dayChange: hasDayChange ? dayChangeSum : undefined,
+      quotedAt,
+      lastPlaidSyncedAt,
+      historyReady: quoteable === 0 || withHistory === quoteable,
+      holdings: rows.sort((a, b) => b.markValue - a.markValue),
       byType: [...byTypeMap.entries()].map(([type, value]) => ({
         type,
         value,
@@ -134,14 +238,6 @@ export const portfolio = authedQuery({
     }
   },
 })
-
-const historyRange = v.union(
-  v.literal('1M'),
-  v.literal('3M'),
-  v.literal('YTD'),
-  v.literal('1Y'),
-  v.literal('ALL'),
-)
 
 export const history = authedQuery({
   args: {
@@ -168,6 +264,13 @@ export const history = authedQuery({
       if (!holding || holding.userId !== ctx.user._id) {
         throw new Error('Holding not found')
       }
+      const fromBars = await historyFromBars(
+        ctx,
+        holding,
+        args.range ?? '3M',
+        args.today,
+      )
+      if (fromBars && fromBars.length > 0) return fromBars
     }
 
     const [snapshots, netWorthSnaps, accounts] = await Promise.all([
@@ -234,3 +337,29 @@ export const snapshotNow = authedMutation({
     return await writeInvestmentSnapshot(ctx, ctx.user._id)
   },
 })
+
+async function historyFromBars(
+  ctx: QueryCtx,
+  holding: Doc<'holdings'>,
+  range: HistoryRange,
+  today: string,
+): Promise<Array<{ date: string; value: number }> | null> {
+  const security = await ctx.db.get(holding.securityId)
+  const symbol = normalizeSymbol(security?.alpacaSymbol ?? security?.symbol)
+  if (!symbol) return null
+  const start = rangeCutoff(range, today)
+  const rows = await ctx.db
+    .query('securityBars')
+    .withIndex('by_symbol_date', (q) => q.eq('symbol', symbol).gte('date', start))
+    .collect()
+  const bars = rows
+    .filter((row) => row.date <= today)
+    .map((row) => ({ date: row.date, close: row.close }))
+  if (bars.length === 0) return null
+  return reconstructHistory(
+    [{ symbol, quantity: holding.quantity, cashValue: 0 }],
+    { [symbol]: bars },
+    start,
+    today,
+  )
+}
