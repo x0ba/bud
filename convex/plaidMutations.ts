@@ -7,6 +7,7 @@ import {
   markValue,
   normalizeSymbol,
   reconcileHolding,
+  resetMarketStateIfTickerChanged,
 } from './lib/market'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
@@ -561,13 +562,22 @@ export const upsertHoldings = internalMutation({
           q.eq('plaidSecurityId', h.plaidSecurityId),
         )
         .unique()
+      const nextAlpaca = alpacaSymbol(h.symbol)
       const symbolFields = {
         symbol: h.symbol,
-        alpacaSymbol: alpacaSymbol(h.symbol),
+        alpacaSymbol: nextAlpaca,
         name: h.name,
         type: h.type,
         closePrice: h.closePrice,
         closePriceAt: h.closePriceAt,
+        ...(security
+          ? resetMarketStateIfTickerChanged({
+              previousSymbol: normalizeSymbol(
+                security.alpacaSymbol ?? security.symbol,
+              ),
+              nextSymbol: nextAlpaca,
+            })
+          : {}),
       }
       if (security) {
         await ctx.db.patch(security._id, symbolFields)

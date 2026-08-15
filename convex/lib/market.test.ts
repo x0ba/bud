@@ -10,6 +10,7 @@ import {
   rangeStart,
   reconcileHolding,
   reconstructHistory,
+  resetMarketStateIfTickerChanged,
   snapshotMark,
 } from './market.ts'
 
@@ -72,6 +73,35 @@ describe('mark-to-market', () => {
   it('computes day P&L from previous close', () => {
     assert.equal(dayPnl(10, 110, 100), 100)
     assert.equal(dayPnl(10, 110, undefined), undefined)
+  })
+
+  it('drops the prior ticker mark when Plaid restates the symbol', () => {
+    const stored = {
+      livePrice: 42,
+      livePriceAt: 1,
+      previousClose: 40,
+      dailyOpen: 41,
+      historyFrom: '2026-01-01',
+      historyTo: '2026-08-01',
+      historySyncedAt: 2,
+      closePrice: 10,
+    }
+    const sameTicker = resetMarketStateIfTickerChanged({
+      previousSymbol: 'AAPL',
+      nextSymbol: 'AAPL',
+    })
+    assert.deepEqual(sameTicker, {})
+    assert.equal(currentMarkPrice({ ...stored, ...sameTicker }), 42)
+
+    const renamed = resetMarketStateIfTickerChanged({
+      previousSymbol: 'FB',
+      nextSymbol: 'META',
+    })
+    assert.equal(
+      currentMarkPrice({ ...stored, ...renamed, closePrice: 11 }),
+      11,
+    )
+    assert.equal(renamed.historyTo, undefined)
   })
 })
 

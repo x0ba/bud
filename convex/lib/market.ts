@@ -12,6 +12,32 @@ export function normalizeSymbol(raw: string | undefined | null): string | null {
   return ALPACA_SYMBOL.test(symbol) ? symbol : null
 }
 
+export function resetMarketStateIfTickerChanged(input: {
+  previousSymbol?: string | null
+  nextSymbol?: string | null
+}): {
+  livePrice?: undefined
+  livePriceAt?: undefined
+  previousClose?: undefined
+  dailyOpen?: undefined
+  historyFrom?: undefined
+  historyTo?: undefined
+  historySyncedAt?: undefined
+} {
+  if ((input.previousSymbol ?? null) === (input.nextSymbol ?? null)) {
+    return {}
+  }
+  return {
+    livePrice: undefined,
+    livePriceAt: undefined,
+    previousClose: undefined,
+    dailyOpen: undefined,
+    historyFrom: undefined,
+    historyTo: undefined,
+    historySyncedAt: undefined,
+  }
+}
+
 export function currentMarkPrice(input: {
   livePrice?: number
   closePrice?: number
