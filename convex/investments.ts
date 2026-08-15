@@ -70,12 +70,18 @@ export const portfolio = authedQuery({
         currentBalance: a.currentBalance,
       }))
       .sort((a, b) => b.currentBalance - a.currentBalance)
+    const investmentIds = new Set(
+      investmentAccounts.map((account) => account._id),
+    )
+    const activeHoldings = holdings.filter((holding) =>
+      investmentIds.has(holding.accountId),
+    )
 
     const rows = []
     const byTypeMap = new Map<string, number>()
     const holdingsByAccount = new Map<string, number>()
 
-    for (const h of holdings) {
+    for (const h of activeHoldings) {
       const security = await ctx.db.get(h.securityId)
       const type = security?.type ?? 'other'
       byTypeMap.set(type, (byTypeMap.get(type) ?? 0) + h.institutionValue)
