@@ -1,5 +1,6 @@
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
+import { currentMarkPrice, markValue } from './market'
 
 function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10)
@@ -39,15 +40,25 @@ export async function writeInvestmentSnapshot(
   }> = []
 
   for (const holding of activeHoldings) {
+    const security = await ctx.db.get(holding.securityId)
+    const value = markValue(
+      holding.quantity,
+      currentMarkPrice({
+        livePrice: security?.livePrice,
+        closePrice: security?.closePrice,
+        institutionPrice: holding.institutionPrice,
+      }),
+      holding.institutionValue,
+    )
     byHolding.push({
       holdingId: holding._id,
       accountId: holding.accountId,
       securityId: holding.securityId,
-      value: holding.institutionValue,
+      value,
     })
     byAccountMap.set(
       holding.accountId,
-      (byAccountMap.get(holding.accountId) ?? 0) + holding.institutionValue,
+      (byAccountMap.get(holding.accountId) ?? 0) + value,
     )
   }
 

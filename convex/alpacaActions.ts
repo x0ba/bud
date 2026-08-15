@@ -70,6 +70,11 @@ async function refreshUserMarketData(
       internal.alpacaMutations.applyQuotes,
       { quotes },
     )
+    if (quotesUpdated > 0) {
+      await ctx.runMutation(internal.alpacaMutations.snapshotUserInvestments, {
+        userId: args.userId,
+      })
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Alpaca request failed'
     console.error('Alpaca quote refresh failed', message)

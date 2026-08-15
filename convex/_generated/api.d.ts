@@ -21,6 +21,8 @@ import type * as lib_alpaca from "../lib/alpaca.js";
 import type * as lib_auth from "../lib/auth.js";
 import type * as lib_categories from "../lib/categories.js";
 import type * as lib_customFunctions from "../lib/customFunctions.js";
+import type * as lib_investmentHistory from "../lib/investmentHistory.js";
+import type * as lib_investmentSnapshots from "../lib/investmentSnapshots.js";
 import type * as lib_market from "../lib/market.js";
 import type * as lib_money from "../lib/money.js";
 import type * as lib_plaidClient from "../lib/plaidClient.js";
@@ -52,6 +54,8 @@ declare const fullApi: ApiFromModules<{
   "lib/auth": typeof lib_auth;
   "lib/categories": typeof lib_categories;
   "lib/customFunctions": typeof lib_customFunctions;
+  "lib/investmentHistory": typeof lib_investmentHistory;
+  "lib/investmentSnapshots": typeof lib_investmentSnapshots;
   "lib/market": typeof lib_market;
   "lib/money": typeof lib_money;
   "lib/plaidClient": typeof lib_plaidClient;

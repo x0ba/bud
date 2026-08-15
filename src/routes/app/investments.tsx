@@ -466,7 +466,8 @@ function InvestmentsPage() {
                                 <p className="amount-cell text-[var(--sea-ink)]">
                                   {formatUsdPlain(h.markValue)}
                                 </p>
-                                {h.dayChange != null && h.dayChangePct != null ? (
+                                {h.dayChange != null &&
+                                h.dayChangePct != null ? (
                                   <p
                                     className={cn(
                                       'text-[11px] tabular-nums',
@@ -477,7 +478,11 @@ function InvestmentsPage() {
                                           : 'text-muted-foreground',
                                     )}
                                   >
-                                    {h.dayChange > 0 ? '+' : h.dayChange < 0 ? '−' : ''}
+                                    {h.dayChange > 0
+                                      ? '+'
+                                      : h.dayChange < 0
+                                        ? '−'
+                                        : ''}
                                     {formatUsdPlain(Math.abs(h.dayChange))} ·{' '}
                                     {formatPct(h.dayChangePct)}
                                   </p>

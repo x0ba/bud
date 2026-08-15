@@ -212,7 +212,7 @@ export const portfolio = authedQuery({
                   itemId: a.itemId,
                   institutionName: a.institutionName ?? 'Institution',
                 },
-              )),
+              ]),
             ).values(),
           ]
         : []
@@ -350,7 +350,9 @@ async function historyFromBars(
   const start = rangeCutoff(range, today)
   const rows = await ctx.db
     .query('securityBars')
-    .withIndex('by_symbol_date', (q) => q.eq('symbol', symbol).gte('date', start))
+    .withIndex('by_symbol_date', (q) =>
+      q.eq('symbol', symbol).gte('date', start),
+    )
     .collect()
   const bars = rows
     .filter((row) => row.date <= today)

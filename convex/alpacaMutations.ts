@@ -1,5 +1,6 @@
 import { v } from 'convex/values'
 import { internalMutation, internalQuery } from './_generated/server'
+import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import { addDays, normalizeSymbol } from './lib/market'
 
 export const ensureAlpacaSymbols = internalMutation({
@@ -136,6 +137,14 @@ export const applyQuotes = internalMutation({
       }
     }
     return updated
+  },
+})
+
+export const snapshotUserInvestments = internalMutation({
+  args: { userId: v.id('users') },
+  returns: v.union(v.id('investmentSnapshots'), v.null()),
+  handler: async (ctx, args) => {
+    return await writeInvestmentSnapshot(ctx, args.userId)
   },
 })
 
