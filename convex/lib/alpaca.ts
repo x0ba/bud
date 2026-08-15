@@ -97,14 +97,12 @@ export async function fetchSnapshots(
       if (!snap) continue
       const mark = snapshotMark(snap)
       if (mark.price == null) continue
-      const stamp =
-        snap.latestQuote?.t ?? snap.latestTrade?.t ?? snap.dailyBar?.t
       quotes.push({
         symbol,
         price: mark.price,
         previousClose: mark.previousClose,
         dailyOpen: mark.dailyOpen,
-        quotedAt: stamp ? Date.parse(stamp) : Date.now(),
+        quotedAt: mark.timestamp ? Date.parse(mark.timestamp) : Date.now(),
       })
     }
   }

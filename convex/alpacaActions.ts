@@ -10,6 +10,9 @@ import {
   fetchSnapshots,
   isAlpacaConfigured,
 } from './lib/alpaca'
+import { chunk } from './lib/market'
+
+const BAR_MUTATION_CHUNK = 200
 
 const refreshResult = v.object({
   configured: v.boolean(),
@@ -56,52 +59,64 @@ async function refreshUserMarketData(
     }
   }
 
+  let quotesUpdated = 0
+  let barsUpdated = 0
+  let skipped: string[] = []
   try {
     const quotes = await fetchSnapshots(symbols)
     const quoted = new Set(quotes.map((q) => q.symbol))
-    const skipped = symbols.filter((s) => !quoted.has(s))
-    const quotesUpdated: number = await ctx.runMutation(
+    skipped = symbols.filter((s) => !quoted.has(s))
+    quotesUpdated = await ctx.runMutation(
       internal.alpacaMutations.applyQuotes,
       { quotes },
     )
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Alpaca request failed'
+    console.error('Alpaca quote refresh failed', message)
+    return {
+      configured: true,
+      quotesUpdated,
+      barsUpdated,
+      skipped: skipped.length > 0 ? skipped : symbols,
+      error: message,
+    }
+  }
 
-    let barsUpdated = 0
-    if (args.backfill) {
-      const asOf = args.asOf ?? new Date().toISOString().slice(0, 10)
-      const gaps = await ctx.runQuery(
-        internal.alpacaMutations.historyGapsForUser,
-        { userId: args.userId, asOf, lookbackDays: 400 },
-      )
-      const byStart = new Map<string, string[]>()
-      for (const gap of gaps) {
-        const list = byStart.get(gap.start) ?? []
-        list.push(gap.symbol)
-        byStart.set(gap.start, list)
-      }
-      for (const [start, group] of byStart) {
-        const bars = await fetchDailyBars(group, start, asOf)
-        if (bars.length === 0) continue
+  if (!args.backfill) {
+    return { configured: true, quotesUpdated, barsUpdated, skipped }
+  }
+
+  try {
+    const asOf = args.asOf ?? new Date().toISOString().slice(0, 10)
+    const gaps = await ctx.runQuery(
+      internal.alpacaMutations.historyGapsForUser,
+      { userId: args.userId, asOf, lookbackDays: 400 },
+    )
+    const byStart = new Map<string, string[]>()
+    for (const gap of gaps) {
+      const list = byStart.get(gap.start) ?? []
+      list.push(gap.symbol)
+      byStart.set(gap.start, list)
+    }
+    for (const [start, group] of byStart) {
+      const bars = await fetchDailyBars(group, start, asOf)
+      if (bars.length === 0) continue
+      for (const piece of chunk(bars, BAR_MUTATION_CHUNK)) {
         barsUpdated += await ctx.runMutation(
           internal.alpacaMutations.applyBars,
-          { bars, syncedAt: Date.now() },
+          { bars: piece, syncedAt: Date.now() },
         )
       }
     }
-
+    return { configured: true, quotesUpdated, barsUpdated, skipped }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Alpaca request failed'
+    console.error('Alpaca history backfill failed', message)
     return {
       configured: true,
       quotesUpdated,
       barsUpdated,
       skipped,
-    }
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Alpaca request failed'
-    console.error('Alpaca refresh failed', message)
-    return {
-      configured: true,
-      quotesUpdated: 0,
-      barsUpdated: 0,
-      skipped: symbols,
       error: message,
     }
   }

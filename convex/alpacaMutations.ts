@@ -44,8 +44,16 @@ export const listUsersWithHoldings = internalQuery({
   args: {},
   returns: v.array(v.id('users')),
   handler: async (ctx) => {
-    const holdings = await ctx.db.query('holdings').collect()
-    return [...new Set(holdings.map((h) => h.userId))]
+    const users = await ctx.db.query('users').collect()
+    const ids = []
+    for (const user of users) {
+      const holding = await ctx.db
+        .query('holdings')
+        .withIndex('by_user', (q) => q.eq('userId', user._id))
+        .first()
+      if (holding) ids.push(user._id)
+    }
+    return ids
   },
 })
 

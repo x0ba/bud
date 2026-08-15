@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChartHoverTip, svgPointToClient } from '#/components/chart-hover-tip'
 import { EmptyState } from '#/components/dense'
 import { formatDateShort, formatUsdPlain } from '#/lib/money'
@@ -69,6 +69,10 @@ export function PortfolioChart({
       delta: last.value - first.value,
       endTopPct: (plotted[plotted.length - 1].y / h) * 100,
     }
+  }, [points])
+
+  useEffect(() => {
+    setHover(null)
   }, [points])
 
   if (!chart) {

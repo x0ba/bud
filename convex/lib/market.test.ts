@@ -48,12 +48,24 @@ describe('mark-to-market', () => {
   it('uses the quote midpoint when both sides are live', () => {
     assert.deepEqual(
       snapshotMark({
-        latestQuote: { bp: 100, ap: 102 },
-        latestTrade: { p: 99 },
-        dailyBar: { o: 98, c: 99.5 },
+        latestQuote: { bp: 100, ap: 102, t: '2026-08-15T14:30:00Z' },
+        latestTrade: { p: 99, t: '2026-08-15T14:00:00Z' },
+        dailyBar: { o: 98, c: 99.5, t: '2026-08-15T13:30:00Z' },
         prevDailyBar: { c: 97 },
       }),
-      { price: 101, previousClose: 97, dailyOpen: 98 },
+      {
+        price: 101,
+        previousClose: 97,
+        dailyOpen: 98,
+        timestamp: '2026-08-15T14:30:00Z',
+      },
+    )
+    assert.equal(
+      snapshotMark({
+        latestQuote: { bp: 0, ap: 0, t: 'quote' },
+        latestTrade: { p: 99, t: 'trade' },
+      }).timestamp,
+      'trade',
     )
   })
 
@@ -103,6 +115,37 @@ describe('history', () => {
     ])
   })
 
+  it('keeps a cash-only book as a single point when there are no bars', () => {
+    assert.deepEqual(
+      reconstructHistory(
+        [{ symbol: null, quantity: 0, cashValue: 250 }],
+        {},
+        '2026-01-01',
+        '2026-01-04',
+      ),
+      [{ date: '2026-01-04', value: 250 }],
+    )
+  })
+
+  it('waits until every ticker has a close before emitting a date', () => {
+    const series = reconstructHistory(
+      [
+        { symbol: 'AAPL', quantity: 1, cashValue: 0 },
+        { symbol: 'MSFT', quantity: 1, cashValue: 0 },
+      ],
+      {
+        AAPL: [
+          { date: '2026-01-01', close: 10 },
+          { date: '2026-01-02', close: 12 },
+        ],
+        MSFT: [{ date: '2026-01-02', close: 20 }],
+      },
+      '2026-01-01',
+      '2026-01-02',
+    )
+    assert.deepEqual(series, [{ date: '2026-01-02', value: 32 }])
+  })
+
   it('forward-fills a missing close so the line does not drop to zero', () => {
     const series = reconstructHistory(
       [
@@ -129,6 +172,7 @@ describe('history', () => {
     assert.equal(rangeStart('2026-08-15', 'YTD'), '2026-01-01')
     assert.equal(rangeStart('2026-08-15', '1M'), '2026-07-15')
     assert.equal(rangeStart('2026-08-15', '1Y'), '2025-08-15')
+    assert.equal(rangeStart('2026-03-31', '1M'), '2026-02-28')
     assert.equal(addDays('2026-08-15', -4), '2026-08-11')
   })
 

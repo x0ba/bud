@@ -44,14 +44,15 @@ export function dayPnl(
 }
 
 export function snapshotMark(snapshot: {
-  latestQuote?: { bp?: number; ap?: number }
-  latestTrade?: { p?: number }
-  dailyBar?: { o?: number; c?: number }
+  latestQuote?: { bp?: number; ap?: number; t?: string }
+  latestTrade?: { p?: number; t?: string }
+  dailyBar?: { o?: number; c?: number; t?: string }
   prevDailyBar?: { c?: number }
 }): {
   price: number | undefined
   previousClose: number | undefined
   dailyOpen: number | undefined
+  timestamp: string | undefined
 } {
   const bid = snapshot.latestQuote?.bp
   const ask = snapshot.latestQuote?.ap
@@ -65,6 +66,12 @@ export function snapshotMark(snapshot: {
     mid ??
     (trade != null && trade > 0 ? trade : undefined) ??
     (close != null && close > 0 ? close : undefined)
+  const timestamp =
+    mid != null
+      ? snapshot.latestQuote?.t
+      : trade != null && trade > 0
+        ? snapshot.latestTrade?.t
+        : snapshot.dailyBar?.t
   const previousClose =
     snapshot.prevDailyBar?.c != null && snapshot.prevDailyBar.c > 0
       ? snapshot.prevDailyBar.c
@@ -73,7 +80,7 @@ export function snapshotMark(snapshot: {
     snapshot.dailyBar?.o != null && snapshot.dailyBar.o > 0
       ? snapshot.dailyBar.o
       : undefined
-  return { price, previousClose, dailyOpen }
+  return { price, previousClose, dailyOpen, timestamp }
 }
 
 export function reconcileHolding(input: {
@@ -101,10 +108,12 @@ export function rangeStart(asOf: string, range: MarketRange): string {
   const [year, month, day] = asOf.split('-').map(Number)
   if (!year || !month || !day) return asOf
   if (range === 'YTD') return `${year}-01-01`
-  const date = new Date(year, month - 1, day)
+  const date = new Date(year, month - 1, 1)
   if (range === '1M') date.setMonth(date.getMonth() - 1)
   if (range === '3M') date.setMonth(date.getMonth() - 3)
   if (range === '1Y') date.setFullYear(date.getFullYear() - 1)
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+  date.setDate(Math.min(day, lastDay))
   return formatDay(date)
 }
 
@@ -161,7 +170,9 @@ export function reconstructHistory(
   }
 
   const dates = [...dated].sort()
-  if (dates.length === 0) return []
+  if (dates.length === 0) {
+    return cash !== 0 ? [{ date: endDate, value: cash }] : []
+  }
 
   const lastClose = new Map<string, number>()
   const series: Array<{ date: string; value: number }> = []
@@ -172,15 +183,17 @@ export function reconstructHistory(
       if (close != null) lastClose.set(symbol, close)
     }
     let equity = 0
-    let priced = false
+    let fullyPriced = true
     for (const position of positions) {
       if (!position.symbol) continue
       const close = lastClose.get(position.symbol)
-      if (close == null) continue
+      if (close == null) {
+        fullyPriced = false
+        continue
+      }
       equity += position.quantity * close
-      priced = true
     }
-    if (priced || cash !== 0) {
+    if (fullyPriced) {
       series.push({ date, value: equity + cash })
     }
   }
