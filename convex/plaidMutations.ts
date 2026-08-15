@@ -563,6 +563,12 @@ export const upsertHoldings = internalMutation({
         )
         .unique()
       const nextAlpaca = alpacaSymbol(h.symbol)
+      const priorMark = security
+        ? {
+            livePrice: security.livePrice,
+            closePrice: security.closePrice,
+          }
+        : undefined
       const symbolFields = {
         symbol: h.symbol,
         alpacaSymbol: nextAlpaca,
@@ -618,8 +624,8 @@ export const upsertHoldings = internalMutation({
         const previousMarkValue = markValue(
           existing.quantity,
           currentMarkPrice({
-            livePrice: security.livePrice,
-            closePrice: security.closePrice,
+            livePrice: priorMark?.livePrice,
+            closePrice: priorMark?.closePrice,
             institutionPrice: existing.institutionPrice,
           }),
           existing.institutionValue,

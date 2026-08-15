@@ -106,6 +106,27 @@ describe('mark-to-market', () => {
 })
 
 describe('reconcileHolding', () => {
+  it('keeps the pre-reset mark as the reconcile baseline on a ticker change', () => {
+    const previousMarkValue = markValue(
+      10,
+      currentMarkPrice({
+        livePrice: 125,
+        closePrice: 50,
+        institutionPrice: 125,
+      }),
+      1250,
+    )
+    const rec = reconcileHolding({
+      previousQuantity: 10,
+      previousMarkValue,
+      plaidQuantity: 10,
+      plaidValue: 1250,
+      livePrice: currentMarkPrice({ closePrice: 50, institutionPrice: 125 }),
+    })
+    assert.equal(previousMarkValue, 1250)
+    assert.equal(rec.valueDelta, 0)
+  })
+
   it('records the gap between the marked book and the Plaid restatement', () => {
     const rec = reconcileHolding({
       previousQuantity: 10,
