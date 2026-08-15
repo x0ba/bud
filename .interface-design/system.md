@@ -196,7 +196,7 @@ width its rows actually need.
 | Budget       | Flex pool (6) · Fixed (6) · Non-monthly (6)                                                           |
 | Cash flow    | one panel **per budget type** (4 each)                                                                |
 | Net worth    | Trend (12) · Assets (6) · Debts (6)                                                                   |
-| Investments  | Allocation (4) · Holdings (8)                                                                         |
+| Investments  | Trend (12) · Allocation (4) · Holdings (8)                                                            |
 | Accounts     | Needs attention (12) · one panel per account type (6) · Hidden & closed (6, folded) · Connections (6) |
 | Categories   | one panel per budget type (4 each)                                                                    |
 
@@ -220,13 +220,20 @@ ring. Native `type="month"` / `type="date"` reset `appearance` and
 `field-sizing` so they honor that height and stay inside the page gutter.
 The UA otherwise sizes them to the formatted month name plus the picker.
 
+### Trend line (`src/components/trend-line-chart.tsx`)
+
+Daily value line used by net worth and investments. Lagoon stroke + area fill,
+8px endpoint dot, `ChartHoverTip` on the nearest point. Same SVG approach as
+the spending chart — `preserveAspectRatio="none"`, strokes opt out, dots live
+in HTML. Investments adds a SearchSelect (All / Accounts / Positions) beside
+the range pills; the default series is the whole portfolio.
+
 ### Spending chart (`src/components/spending-chart.tsx`)
 
 Cumulative day-of-month line. This month is lagoon + area fill, ending at today
 with a 8px endpoint dot. The comparison series (last month / last year) is a
 stone hairline with no fill. Axes are 11px tabular muted; hover uses
-`ChartHoverTip` with both series. Same SVG approach as the net-worth trend —
-`preserveAspectRatio="none"`, strokes opt out, dots live in HTML.
+`ChartHoverTip` with both series. Same SVG approach as the trend line.
 
 ### PaceBar
 

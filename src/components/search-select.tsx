@@ -22,6 +22,37 @@ export type SearchSelectOption = {
   icon?: React.ReactNode
   muted?: boolean
   indent?: boolean
+  group?: string
+}
+
+function groupedOptions(options: Array<SearchSelectOption>) {
+  const groups: Array<{
+    heading?: string
+    options: Array<SearchSelectOption>
+  }> = []
+  const byHeading = new Map<string, Array<SearchSelectOption>>()
+
+  for (const option of options) {
+    if (!option.group) {
+      const last = groups.at(-1)
+      if (last !== undefined && last.heading === undefined) {
+        last.options.push(option)
+      } else {
+        groups.push({ options: [option] })
+      }
+      continue
+    }
+    const existing = byHeading.get(option.group)
+    if (existing) {
+      existing.push(option)
+      continue
+    }
+    const next = [option]
+    byHeading.set(option.group, next)
+    groups.push({ heading: option.group, options: next })
+  }
+
+  return groups
 }
 
 /**
@@ -97,29 +128,34 @@ export function SearchSelect({
           />
           <CommandList>
             {canCreate ? null : <CommandEmpty>{emptyText}</CommandEmpty>}
-            <CommandGroup>
-              {options.map((opt) => (
-                <CommandItem
-                  key={opt.value}
-                  value={`${opt.label} ${opt.keywords ?? ''} ${opt.value}`}
-                  className={cn(
-                    'text-[13px]',
-                    opt.indent && 'pl-6',
-                    opt.muted && 'text-muted-foreground',
-                  )}
-                  onSelect={() => {
-                    if (opt.value !== value) onSelect(opt.value)
-                    close()
-                  }}
-                >
-                  {opt.icon}
-                  <span className="min-w-0 flex-1 truncate">{opt.label}</span>
-                  {opt.value === value ? (
-                    <CheckIcon className="size-3.5 text-muted-foreground" />
-                  ) : null}
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            {groupedOptions(options).map((group) => (
+              <CommandGroup
+                key={group.heading ?? 'default'}
+                heading={group.heading}
+              >
+                {group.options.map((opt) => (
+                  <CommandItem
+                    key={opt.value}
+                    value={`${opt.label} ${opt.keywords ?? ''} ${opt.value}`}
+                    className={cn(
+                      'text-[13px]',
+                      opt.indent && 'pl-6',
+                      opt.muted && 'text-muted-foreground',
+                    )}
+                    onSelect={() => {
+                      if (opt.value !== value) onSelect(opt.value)
+                      close()
+                    }}
+                  >
+                    {opt.icon}
+                    <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+                    {opt.value === value ? (
+                      <CheckIcon className="size-3.5 text-muted-foreground" />
+                    ) : null}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
             {canCreate ? (
               <CommandGroup className="border-t border-border/70">
                 <CommandItem

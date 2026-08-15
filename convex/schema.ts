@@ -202,6 +202,26 @@ export default defineSchema({
     ),
   }).index('by_user_date', ['userId', 'date']),
 
+  investmentSnapshots: defineTable({
+    userId: v.id('users'),
+    date: v.string(),
+    totalValue: v.number(),
+    byAccount: v.array(
+      v.object({
+        accountId: v.id('accounts'),
+        value: v.number(),
+      }),
+    ),
+    byHolding: v.array(
+      v.object({
+        holdingId: v.id('holdings'),
+        accountId: v.id('accounts'),
+        securityId: v.id('securities'),
+        value: v.number(),
+      }),
+    ),
+  }).index('by_user_date', ['userId', 'date']),
+
   manualAssets: defineTable({
     userId: v.id('users'),
     name: v.string(),

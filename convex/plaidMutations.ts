@@ -1,6 +1,7 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { internalMutation, internalQuery } from './_generated/server'
+import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
 const accountType = v.union(
@@ -517,6 +518,7 @@ export const updateLiabilities = internalMutation({
 export const upsertHoldings = internalMutation({
   args: {
     userId: v.id('users'),
+    itemId: v.id('plaidItems'),
     holdings: v.array(
       v.object({
         plaidAccountId: v.string(),
@@ -535,6 +537,7 @@ export const upsertHoldings = internalMutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const kept = new Set<string>()
     for (const h of args.holdings) {
       const account = await ctx.db
         .query('accounts')
@@ -584,8 +587,9 @@ export const upsertHoldings = internalMutation({
           institutionValue: h.institutionValue,
           institutionPrice: h.institutionPrice,
         })
+        kept.add(existing._id)
       } else {
-        await ctx.db.insert('holdings', {
+        const holdingId = await ctx.db.insert('holdings', {
           userId: args.userId,
           accountId: account._id,
           securityId: security._id,
@@ -594,8 +598,26 @@ export const upsertHoldings = internalMutation({
           institutionValue: h.institutionValue,
           institutionPrice: h.institutionPrice,
         })
+        kept.add(holdingId)
       }
     }
+
+    const itemAccounts = await ctx.db
+      .query('accounts')
+      .withIndex('by_item', (q) => q.eq('itemId', args.itemId))
+      .collect()
+    for (const account of itemAccounts) {
+      if (account.type !== 'investment') continue
+      const existing = await ctx.db
+        .query('holdings')
+        .withIndex('by_account', (q) => q.eq('accountId', account._id))
+        .collect()
+      for (const holding of existing) {
+        if (!kept.has(holding._id)) await ctx.db.delete(holding._id)
+      }
+    }
+
+    await writeInvestmentSnapshot(ctx, args.userId)
     return null
   },
 })
