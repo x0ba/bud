@@ -3,11 +3,8 @@ import type { Doc } from './_generated/dataModel'
 import type { QueryCtx } from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
 import { isAlpacaConfigured } from './lib/alpaca'
-import {
-  investmentHistorySeries,
-  rangeCutoff,
-  type HistoryRange,
-} from './lib/investmentHistory'
+import { investmentHistorySeries, rangeCutoff } from './lib/investmentHistory'
+import type { HistoryRange } from './lib/investmentHistory'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import {
   currentMarkPrice,
