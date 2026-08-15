@@ -4,6 +4,7 @@ import type { Id } from './_generated/dataModel'
 import { internalMutation, internalQuery } from './_generated/server'
 import type { MutationCtx } from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
+import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 
 function todayKey(d = new Date()): string {
   return d.toISOString().slice(0, 10)
@@ -287,6 +288,7 @@ export const snapshotUser = internalMutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     await writeSnapshot(ctx, args.userId)
+    await writeInvestmentSnapshot(ctx, args.userId)
     return null
   },
 })

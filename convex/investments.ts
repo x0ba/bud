@@ -1,5 +1,7 @@
 import { v } from 'convex/values'
-import { authedQuery } from './lib/customFunctions'
+import { authedMutation, authedQuery } from './lib/customFunctions'
+import { investmentHistorySeries, rangeCutoff } from './lib/investmentHistory'
+import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 
 const holdingRow = v.object({
   _id: v.id('holdings'),
@@ -121,5 +123,100 @@ export const portfolio = authedQuery({
       accounts: investmentAccounts,
       accessItems,
     }
+  },
+})
+
+const historyRange = v.union(
+  v.literal('1M'),
+  v.literal('3M'),
+  v.literal('YTD'),
+  v.literal('1Y'),
+  v.literal('ALL'),
+)
+
+export const history = authedQuery({
+  args: {
+    range: v.optional(historyRange),
+    today: v.string(),
+    accountId: v.optional(v.id('accounts')),
+    holdingId: v.optional(v.id('holdings')),
+  },
+  returns: v.array(
+    v.object({
+      date: v.string(),
+      value: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    if (args.accountId) {
+      const account = await ctx.db.get(args.accountId)
+      if (!account || account.userId !== ctx.user._id) {
+        throw new Error('Account not found')
+      }
+    }
+    if (args.holdingId) {
+      const holding = await ctx.db.get(args.holdingId)
+      if (!holding || holding.userId !== ctx.user._id) {
+        throw new Error('Holding not found')
+      }
+    }
+
+    const [snapshots, netWorthSnaps, accounts] = await Promise.all([
+      ctx.db
+        .query('investmentSnapshots')
+        .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
+        .order('asc')
+        .collect(),
+      ctx.db
+        .query('netWorthSnapshots')
+        .withIndex('by_user_date', (q) => q.eq('userId', ctx.user._id))
+        .order('asc')
+        .collect(),
+      ctx.db
+        .query('accounts')
+        .withIndex('by_user', (q) => q.eq('userId', ctx.user._id))
+        .collect(),
+    ])
+
+    const investmentAccountIds = new Set(
+      accounts
+        .filter((account) => account.type === 'investment')
+        .map((account) => account._id),
+    )
+
+    return investmentHistorySeries({
+      snapshots: snapshots.map((snap) => ({
+        date: snap.date,
+        totalValue: snap.totalValue,
+        byAccount: snap.byAccount.map((row) => ({
+          accountId: row.accountId,
+          value: row.value,
+        })),
+        byHolding: snap.byHolding.map((row) => ({
+          holdingId: row.holdingId,
+          accountId: row.accountId,
+          value: row.value,
+        })),
+      })),
+      fallback: netWorthSnaps.map((snap) => ({
+        date: snap.date,
+        byAccount: snap.byAccount.map((row) => ({
+          accountId: row.accountId,
+          balance: row.balance,
+        })),
+      })),
+      investmentAccountIds,
+      cutoff: rangeCutoff(args.range ?? '3M', args.today),
+      accountId: args.accountId,
+      holdingId: args.holdingId,
+    })
+  },
+})
+
+export const snapshotNow = authedMutation({
+  args: {},
+  returns: v.union(v.id('investmentSnapshots'), v.null()),
+  handler: async (ctx) => {
+    return await writeInvestmentSnapshot(ctx, ctx.user._id)
   },
 })

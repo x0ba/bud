@@ -1,6 +1,7 @@
 import { v } from 'convex/values'
 import { internal } from './_generated/api'
 import { internalMutation, internalQuery } from './_generated/server'
+import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
 const accountType = v.union(
@@ -596,6 +597,7 @@ export const upsertHoldings = internalMutation({
         })
       }
     }
+    await writeInvestmentSnapshot(ctx, args.userId)
     return null
   },
 })
