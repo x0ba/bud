@@ -189,7 +189,12 @@ export const history = authedQuery({
 
     const investmentAccountIds = new Set(
       accounts
-        .filter((account) => account.type === 'investment')
+        .filter(
+          (account) =>
+            account.type === 'investment' &&
+            !account.isHidden &&
+            !account.isClosed,
+        )
         .map((account) => account._id),
     )
 

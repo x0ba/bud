@@ -289,6 +289,7 @@ export const syncItem = internalAction({
           )
           await ctx.runMutation(internal.plaidMutations.upsertHoldings, {
             userId: item.userId,
+            itemId: item._id,
             holdings: holdings.data.holdings.map((h) => {
               const sec = securitiesById.get(h.security_id)
               return {
