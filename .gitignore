@@ -15,3 +15,5 @@ todos.json
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+/.direnv
