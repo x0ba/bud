@@ -140,10 +140,16 @@ export const createUpdateLinkToken = action({
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Not authenticated')
 
+    const userId = await ctx.runQuery(
+      internal.plaidMutations.getUserByClerkId,
+      { clerkId: identity.subject },
+    )
+    if (!userId) throw new Error('User not ready')
+
     const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
       itemId: args.itemId,
     })
-    if (!item) throw new Error('Item not found')
+    if (!item || item.userId !== userId) throw new Error('Item not found')
 
     const client = getPlaidClient()
     const webhook = getPlaidWebhookUrl()
