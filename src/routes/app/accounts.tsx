@@ -34,6 +34,9 @@ export const Route = createFileRoute('/app/accounts')({
 
 type Account = FunctionReturnType<typeof api.accounts.list>[number]
 type Item = FunctionReturnType<typeof api.accounts.listItems>[number]
+type SyncItemResult = FunctionReturnType<
+  typeof api.plaidActions.syncItemForUser
+>
 
 /**
  * Sections follow what the money *is*, not which institution holds it. A person
@@ -68,22 +71,21 @@ function AccountsPage() {
   const syncError = (error: unknown) =>
     error instanceof Error ? error.message : 'Sync failed'
 
-  const sync = (item: Item) =>
-    toast.promise(syncItem({ itemId: item._id }), {
-      loading: `Syncing ${item.institutionName}…`,
-      success: `Synced ${item.institutionName}`,
-      error: syncError,
-    })
+  const sync = (item: Item) => {
+    const toastId = toast.loading(`Syncing ${item.institutionName}…`)
+    void syncItem({ itemId: item._id })
+      .then((result) =>
+        finishItemSyncToast(toastId, item.institutionName, result),
+      )
+      .catch((error: unknown) => toast.error(syncError(error), { id: toastId }))
+  }
 
-  const syncAll = (connections: Array<Item>) =>
-    toast.promise(
-      Promise.all(connections.map((item) => syncItem({ itemId: item._id }))),
-      {
-        loading: 'Syncing all…',
-        success: 'Synced',
-        error: syncError,
-      },
-    )
+  const syncAll = (connections: Array<Item>) => {
+    const toastId = toast.loading('Syncing all…')
+    void Promise.all(connections.map((item) => syncItem({ itemId: item._id })))
+      .then((results) => finishAllSyncToast(toastId, results))
+      .catch((error: unknown) => toast.error(syncError(error), { id: toastId }))
+  }
 
   const view = useMemo(
     () => (accounts && items ? buildView(accounts, items) : null),
@@ -582,4 +584,48 @@ function buildAlerts(live: Array<Account>, items: Array<Item>): Array<Alert> {
   return alerts.sort((a, b) =>
     a.severity === b.severity ? 0 : a.severity === 'urgent' ? -1 : 1,
   )
+}
+
+function isCompleteSync(result: SyncItemResult) {
+  return result.failed.length === 0 && result.deferred.length === 0
+}
+
+function finishItemSyncToast(
+  toastId: string | number,
+  name: string,
+  result: SyncItemResult,
+) {
+  if (isCompleteSync(result)) {
+    toast.success(`Synced ${name}`, { id: toastId })
+    return
+  }
+  toast.warning(incompleteItemSyncMessage(name, result), { id: toastId })
+}
+
+function finishAllSyncToast(
+  toastId: string | number,
+  results: Array<SyncItemResult>,
+) {
+  if (results.every(isCompleteSync)) {
+    toast.success('Synced', { id: toastId })
+    return
+  }
+  if (results.every((result) => result.failed.length === 0)) {
+    toast.warning("Synced. Some holdings aren't ready yet.", { id: toastId })
+    return
+  }
+  toast.warning("Couldn't finish syncing some institutions", { id: toastId })
+}
+
+function incompleteItemSyncMessage(name: string, result: SyncItemResult) {
+  if (result.failed.length === 0) {
+    return `${name} synced. Holdings aren't ready yet.`
+  }
+  if (result.failed.length === 1 && result.failed[0] === 'transactions') {
+    return `Couldn't refresh ${name} transactions`
+  }
+  if (result.failed.length === 1 && result.failed[0] === 'holdings') {
+    return `Couldn't refresh ${name} holdings`
+  }
+  return `Couldn't finish syncing ${name}`
 }

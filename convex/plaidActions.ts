@@ -1,6 +1,6 @@
 'use node'
 
-import { v } from 'convex/values'
+import { v, type Infer } from 'convex/values'
 import { CountryCode, Products } from 'plaid'
 import type { Transaction as PlaidTransaction } from 'plaid'
 import { internal } from './_generated/api'
@@ -17,6 +17,37 @@ const CONSENTED_PRODUCTS: Products[] = [
   Products.Investments,
   Products.Liabilities,
 ]
+
+const syncProduct = v.union(
+  v.literal('accounts'),
+  v.literal('transactions'),
+  v.literal('liabilities'),
+  v.literal('holdings'),
+)
+
+const syncItemResult = v.object({
+  completed: v.array(syncProduct),
+  failed: v.array(syncProduct),
+  deferred: v.array(syncProduct),
+  errorMessage: v.optional(v.string()),
+})
+
+type SyncProduct = Infer<typeof syncProduct>
+type SyncItemResult = Infer<typeof syncItemResult>
+
+function syncResult(parts: {
+  completed?: Array<SyncProduct>
+  failed?: Array<SyncProduct>
+  deferred?: Array<SyncProduct>
+  errorMessage?: string
+}): SyncItemResult {
+  return {
+    completed: parts.completed ?? [],
+    failed: parts.failed ?? [],
+    deferred: parts.deferred ?? [],
+    ...(parts.errorMessage ? { errorMessage: parts.errorMessage } : {}),
+  }
+}
 
 function mapAccountType(
   type: string | null | undefined,
@@ -188,15 +219,20 @@ export const syncItem = internalAction({
     itemId: v.id('plaidItems'),
     holdingsAttempt: v.optional(v.number()),
   },
-  returns: v.null(),
-  handler: async (ctx, args) => {
+  returns: syncItemResult,
+  handler: async (ctx, args): Promise<SyncItemResult> => {
     const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
       itemId: args.itemId,
     })
-    if (!item) return null
+    if (!item) {
+      return syncResult({ errorMessage: 'Item not found' })
+    }
 
     const client = getPlaidClient()
     const holdingsAttempt = args.holdingsAttempt ?? 0
+    const completed: Array<SyncProduct> = []
+    const failed: Array<SyncProduct> = []
+    const deferred: Array<SyncProduct> = []
 
     try {
       const accountsRes = await client.accountsGet({
@@ -218,6 +254,7 @@ export const syncItem = internalAction({
           isoCurrency: a.balances.iso_currency_code ?? 'USD',
         })),
       })
+      completed.push('accounts')
 
       if (holdingsAttempt === 0) {
         try {
@@ -247,9 +284,11 @@ export const syncItem = internalAction({
             cursor = data.next_cursor
             hasMore = data.has_more
           }
+          completed.push('transactions')
         } catch (err) {
           if (isPlaidLoginRequired(err)) throw err
           console.error('Transaction sync skipped', plaidErrorCode(err), err)
+          failed.push('transactions')
         }
 
         try {
@@ -271,6 +310,7 @@ export const syncItem = internalAction({
               isOverdue: c.is_overdue === true,
             })),
           })
+          completed.push('liabilities')
         } catch {
           // Institution may not support liabilities
         }
@@ -307,6 +347,7 @@ export const syncItem = internalAction({
               }
             }),
           })
+          completed.push('holdings')
         } catch (err) {
           const code = plaidErrorCode(err)
           if (code === 'PRODUCT_NOT_READY' && holdingsAttempt < 3) {
@@ -318,17 +359,20 @@ export const syncItem = internalAction({
                 holdingsAttempt: holdingsAttempt + 1,
               },
             )
+            deferred.push('holdings')
           } else if (
             code !== 'PRODUCTS_NOT_SUPPORTED' &&
             code !== 'NO_INVESTMENT_ACCOUNTS'
           ) {
             console.error('Investments sync failed', code, err)
+            failed.push('holdings')
           }
         }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Sync failed'
       const loginRequired = isPlaidLoginRequired(err)
+      if (!completed.includes('accounts')) failed.push('accounts')
       await ctx.runMutation(internal.plaidMutations.markItemStatus, {
         itemId: item._id,
         status: loginRequired ? 'login_required' : 'error',
@@ -337,20 +381,38 @@ export const syncItem = internalAction({
           : (plaidErrorCode(err) ?? 'SYNC_ERROR'),
         errorMessage: message,
       })
+      return syncResult({ completed, failed, deferred, errorMessage: message })
     }
 
-    return null
+    return syncResult({ completed, failed, deferred })
   },
 })
 
 export const syncItemForUser = action({
   args: { itemId: v.id('plaidItems') },
-  returns: v.null(),
-  handler: async (ctx, args) => {
+  returns: syncItemResult,
+  handler: async (ctx, args): Promise<SyncItemResult> => {
     const identity = await ctx.auth.getUserIdentity()
     if (!identity) throw new Error('Not authenticated')
-    await ctx.runAction(internal.plaidActions.syncItem, { itemId: args.itemId })
-    return null
+
+    const userId = await ctx.runQuery(
+      internal.plaidMutations.getUserByClerkId,
+      { clerkId: identity.subject },
+    )
+    if (!userId) throw new Error('User not ready')
+
+    const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
+      itemId: args.itemId,
+    })
+    if (!item || item.userId !== userId) throw new Error('Item not found')
+
+    const result = await ctx.runAction(internal.plaidActions.syncItem, {
+      itemId: args.itemId,
+    })
+    if (result.errorMessage) {
+      throw new Error(result.errorMessage)
+    }
+    return result
   },
 })
 
