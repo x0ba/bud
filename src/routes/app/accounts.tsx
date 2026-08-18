@@ -68,23 +68,22 @@ function AccountsPage() {
   const items = useQuery(api.accounts.listItems)
   const syncItem = useAction(api.plaidActions.syncItemForUser)
 
-  const syncError = (error: unknown) =>
-    error instanceof Error ? error.message : 'Sync failed'
-
   const sync = (item: Item) => {
     const toastId = toast.loading(`Syncing ${item.institutionName}…`)
     void syncItem({ itemId: item._id })
       .then((result) =>
         finishItemSyncToast(toastId, item.institutionName, result),
       )
-      .catch((error: unknown) => toast.error(syncError(error), { id: toastId }))
+      .catch((error: unknown) =>
+        toast.error(syncErrorMessage(error), { id: toastId }),
+      )
   }
 
   const syncAll = (connections: Array<Item>) => {
     const toastId = toast.loading('Syncing all…')
-    void Promise.all(connections.map((item) => syncItem({ itemId: item._id })))
-      .then((results) => finishAllSyncToast(toastId, results))
-      .catch((error: unknown) => toast.error(syncError(error), { id: toastId }))
+    void Promise.allSettled(
+      connections.map((item) => syncItem({ itemId: item._id })),
+    ).then((settlements) => finishAllSyncToast(toastId, settlements))
   }
 
   const view = useMemo(
@@ -604,17 +603,37 @@ function finishItemSyncToast(
 
 function finishAllSyncToast(
   toastId: string | number,
-  results: Array<SyncItemResult>,
+  settlements: Array<PromiseSettledResult<SyncItemResult>>,
 ) {
-  if (results.every(isCompleteSync)) {
+  const results = settlements.flatMap((settlement) =>
+    settlement.status === 'fulfilled' ? [settlement.value] : [],
+  )
+  const rejected = settlements.filter(
+    (settlement) => settlement.status === 'rejected',
+  )
+  if (rejected.length === settlements.length) {
+    const first = rejected[0]
+    toast.error(first ? syncErrorMessage(first.reason) : 'Sync failed', {
+      id: toastId,
+    })
+    return
+  }
+  if (rejected.length === 0 && results.every(isCompleteSync)) {
     toast.success('Synced', { id: toastId })
     return
   }
-  if (results.every((result) => result.failed.length === 0)) {
+  if (
+    rejected.length === 0 &&
+    results.every((result) => result.failed.length === 0)
+  ) {
     toast.warning("Synced. Some holdings aren't ready yet.", { id: toastId })
     return
   }
   toast.warning("Couldn't finish syncing some institutions", { id: toastId })
+}
+
+function syncErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Sync failed'
 }
 
 function incompleteItemSyncMessage(name: string, result: SyncItemResult) {

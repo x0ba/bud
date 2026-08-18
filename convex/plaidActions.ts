@@ -1,6 +1,7 @@
 'use node'
 
-import { v, type Infer } from 'convex/values'
+import { v } from 'convex/values'
+import type { Infer } from 'convex/values'
 import { CountryCode, Products } from 'plaid'
 import type { Transaction as PlaidTransaction } from 'plaid'
 import { internal } from './_generated/api'
