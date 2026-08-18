@@ -609,13 +609,11 @@ function finishAllSyncToast(
     settlement.status === 'fulfilled' ? [settlement.value] : [],
   )
   const rejected = settlements.filter(
-    (settlement) => settlement.status === 'rejected',
+    (settlement): settlement is PromiseRejectedResult =>
+      settlement.status === 'rejected',
   )
-  if (rejected.length === settlements.length) {
-    const first = rejected[0]
-    toast.error(first ? syncErrorMessage(first.reason) : 'Sync failed', {
-      id: toastId,
-    })
+  if (rejected.length > 0 && rejected.length === settlements.length) {
+    toast.error(syncErrorMessage(rejected[0].reason), { id: toastId })
     return
   }
   if (rejected.length === 0 && results.every(isCompleteSync)) {
