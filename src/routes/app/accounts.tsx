@@ -34,6 +34,9 @@ export const Route = createFileRoute('/app/accounts')({
 
 type Account = FunctionReturnType<typeof api.accounts.list>[number]
 type Item = FunctionReturnType<typeof api.accounts.listItems>[number]
+type SyncItemResult = FunctionReturnType<
+  typeof api.plaidActions.syncItemForUser
+>
 
 /**
  * Sections follow what the money *is*, not which institution holds it. A person
@@ -65,10 +68,23 @@ function AccountsPage() {
   const items = useQuery(api.accounts.listItems)
   const syncItem = useAction(api.plaidActions.syncItemForUser)
 
-  const sync = (itemId: Id<'plaidItems'>) =>
-    void syncItem({ itemId })
-      .then(() => toast.success('Sync started'))
-      .catch((e: Error) => toast.error(e.message))
+  const sync = (item: Item) => {
+    const toastId = toast.loading(`Syncing ${item.institutionName}…`)
+    void syncItem({ itemId: item._id })
+      .then((result) =>
+        finishItemSyncToast(toastId, item.institutionName, result),
+      )
+      .catch((error: unknown) =>
+        toast.error(syncErrorMessage(error), { id: toastId }),
+      )
+  }
+
+  const syncAll = (connections: Array<Item>) => {
+    const toastId = toast.loading('Syncing all…')
+    void Promise.allSettled(
+      connections.map((item) => syncItem({ itemId: item._id })),
+    ).then((settlements) => finishAllSyncToast(toastId, settlements))
+  }
 
   const view = useMemo(
     () => (accounts && items ? buildView(accounts, items) : null),
@@ -234,7 +250,7 @@ function AccountsPage() {
                     <Button
                       variant="ghost"
                       size="xs"
-                      onClick={() => view.items.forEach((i) => sync(i._id))}
+                      onClick={() => syncAll(view.items)}
                     >
                       Sync all
                     </Button>
@@ -289,7 +305,7 @@ function AccountsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => sync(item._id)}
+                            onClick={() => sync(item)}
                           >
                             Sync
                           </Button>
@@ -567,4 +583,69 @@ function buildAlerts(live: Array<Account>, items: Array<Item>): Array<Alert> {
   return alerts.sort((a, b) =>
     a.severity === b.severity ? 0 : a.severity === 'urgent' ? -1 : 1,
   )
+}
+
+function isCompleteSync(result: SyncItemResult) {
+  return result.failed.length === 0 && result.deferred.length === 0
+}
+
+function finishItemSyncToast(
+  toastId: string | number,
+  name: string,
+  result: SyncItemResult,
+) {
+  if (isCompleteSync(result)) {
+    toast.success(`Synced ${name}`, { id: toastId })
+    return
+  }
+  toast.warning(incompleteItemSyncMessage(name, result), { id: toastId })
+}
+
+function finishAllSyncToast(
+  toastId: string | number,
+  settlements: Array<PromiseSettledResult<SyncItemResult>>,
+) {
+  const results = settlements.flatMap((settlement) =>
+    settlement.status === 'fulfilled' ? [settlement.value] : [],
+  )
+  const rejected = settlements.filter(
+    (settlement): settlement is PromiseRejectedResult =>
+      settlement.status === 'rejected',
+  )
+  if (rejected.length > 0 && rejected.length === settlements.length) {
+    toast.error(syncErrorMessage(rejected[0].reason), { id: toastId })
+    return
+  }
+  if (rejected.length === 0 && results.every(isCompleteSync)) {
+    toast.success('Synced', { id: toastId })
+    return
+  }
+  if (
+    rejected.length === 0 &&
+    results.every((result) => result.failed.length === 0)
+  ) {
+    toast.warning("Synced. Some holdings aren't ready yet.", { id: toastId })
+    return
+  }
+  toast.warning("Couldn't finish syncing some institutions", { id: toastId })
+}
+
+function syncErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Sync failed'
+}
+
+function incompleteItemSyncMessage(name: string, result: SyncItemResult) {
+  if (result.failed.length === 0) {
+    return `${name} synced. Holdings aren't ready yet.`
+  }
+  if (result.failed.length === 1 && result.failed[0] === 'transactions') {
+    return `Couldn't refresh ${name} transactions`
+  }
+  if (result.failed.length === 1 && result.failed[0] === 'holdings') {
+    return `Couldn't refresh ${name} holdings`
+  }
+  if (result.failed.length === 1 && result.failed[0] === 'liabilities') {
+    return `Couldn't refresh ${name} payments`
+  }
+  return `Couldn't finish syncing ${name}`
 }
