@@ -1,6 +1,15 @@
 import { v } from 'convex/values'
+import type { Infer } from 'convex/values'
 import { internal } from './_generated/api'
+import type { Doc, Id } from './_generated/dataModel'
+import type { MutationCtx } from './_generated/server'
 import { internalMutation, internalQuery } from './_generated/server'
+import {
+  findDuplicateAccount,
+  sameInstitution,
+  type AccountIdentity,
+  type InstitutionIdentity,
+} from './lib/accountIdentity'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
@@ -11,6 +20,151 @@ const accountType = v.union(
   v.literal('loan'),
   v.literal('other'),
 )
+
+const linkedAccount = v.object({
+  plaidAccountId: v.string(),
+  name: v.string(),
+  officialName: v.optional(v.string()),
+  mask: v.optional(v.string()),
+  type: accountType,
+  subtype: v.optional(v.string()),
+  currentBalance: v.number(),
+  availableBalance: v.optional(v.number()),
+  limit: v.optional(v.number()),
+  isoCurrency: v.string(),
+})
+
+type LinkedAccount = Infer<typeof linkedAccount>
+
+async function institutionAccounts(
+  ctx: MutationCtx,
+  userId: Id<'users'>,
+  institution: InstitutionIdentity,
+): Promise<Array<Doc<'accounts'>>> {
+  const items = await ctx.db
+    .query('plaidItems')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect()
+  const itemIds = new Set(
+    items
+      .filter((item) => sameInstitution(item, institution))
+      .map((item) => item._id),
+  )
+  if (itemIds.size === 0) return []
+
+  const accounts = await ctx.db
+    .query('accounts')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect()
+  return accounts.filter((account) => itemIds.has(account.itemId))
+}
+
+async function findInstitutionItem(
+  ctx: MutationCtx,
+  userId: Id<'users'>,
+  institution: InstitutionIdentity,
+  exceptItemId?: Id<'plaidItems'>,
+): Promise<Id<'plaidItems'> | null> {
+  const items = await ctx.db
+    .query('plaidItems')
+    .withIndex('by_user', (q) => q.eq('userId', userId))
+    .collect()
+  const match = items.find(
+    (item) => item._id !== exceptItemId && sameInstitution(item, institution),
+  )
+  return match?._id ?? null
+}
+
+function identityOf(account: LinkedAccount): AccountIdentity {
+  return {
+    plaidAccountId: account.plaidAccountId,
+    name: account.name,
+    officialName: account.officialName,
+    mask: account.mask,
+    type: account.type,
+    subtype: account.subtype,
+  }
+}
+
+async function upsertLinkedAccount(
+  ctx: MutationCtx,
+  args: {
+    userId: Id<'users'>
+    itemId: Id<'plaidItems'>
+    account: LinkedAccount
+    candidates: Array<Doc<'accounts'>>
+  },
+): Promise<'inserted' | 'updated'> {
+  const existing = findDuplicateAccount(
+    identityOf(args.account),
+    args.candidates,
+  )
+  if (existing) {
+    const sameConnection =
+      existing.itemId === args.itemId ||
+      existing.plaidAccountId === args.account.plaidAccountId
+    if (sameConnection) {
+      await ctx.db.patch(existing._id, {
+        name: args.account.name,
+        officialName: args.account.officialName,
+        mask: args.account.mask,
+        type: args.account.type,
+        subtype: args.account.subtype,
+        currentBalance: args.account.currentBalance,
+        availableBalance: args.account.availableBalance,
+        limit: args.account.limit,
+        isoCurrency: args.account.isoCurrency,
+        itemId: args.itemId,
+        plaidAccountId: args.account.plaidAccountId,
+      })
+    } else {
+      await ctx.db.patch(existing._id, {
+        name: args.account.name,
+        officialName: args.account.officialName,
+        currentBalance: args.account.currentBalance,
+        availableBalance: args.account.availableBalance,
+        limit: args.account.limit,
+      })
+    }
+    return 'updated'
+  }
+
+  const accountId = await ctx.db.insert('accounts', {
+    userId: args.userId,
+    itemId: args.itemId,
+    plaidAccountId: args.account.plaidAccountId,
+    name: args.account.name,
+    officialName: args.account.officialName,
+    mask: args.account.mask,
+    type: args.account.type,
+    subtype: args.account.subtype,
+    currentBalance: args.account.currentBalance,
+    availableBalance: args.account.availableBalance,
+    limit: args.account.limit,
+    isoCurrency: args.account.isoCurrency,
+    isHidden: false,
+    isClosed: false,
+  })
+  args.candidates.push({
+    _id: accountId,
+    _creationTime: 0,
+    userId: args.userId,
+    itemId: args.itemId,
+    plaidAccountId: args.account.plaidAccountId,
+    name: args.account.name,
+    officialName: args.account.officialName,
+    mask: args.account.mask,
+    type: args.account.type,
+    subtype: args.account.subtype,
+    currentBalance: args.account.currentBalance,
+    availableBalance: args.account.availableBalance,
+    limit: args.account.limit,
+    isoCurrency: args.account.isoCurrency,
+    isHidden: false,
+    isClosed: false,
+  })
+  return 'inserted'
+}
 
 const syncedTransaction = v.object({
   transaction_id: v.string(),
@@ -113,22 +267,13 @@ export const storeItemAndAccounts = internalMutation({
     accessToken: v.string(),
     institutionId: v.optional(v.string()),
     institutionName: v.string(),
-    accounts: v.array(
-      v.object({
-        plaidAccountId: v.string(),
-        name: v.string(),
-        officialName: v.optional(v.string()),
-        mask: v.optional(v.string()),
-        type: accountType,
-        subtype: v.optional(v.string()),
-        currentBalance: v.number(),
-        availableBalance: v.optional(v.number()),
-        limit: v.optional(v.number()),
-        isoCurrency: v.string(),
-      }),
-    ),
+    accounts: v.array(linkedAccount),
   },
-  returns: v.id('plaidItems'),
+  returns: v.object({
+    itemId: v.id('plaidItems'),
+    insertedAccountCount: v.number(),
+    discardedAccessToken: v.optional(v.string()),
+  }),
   handler: async (ctx, args) => {
     const existing = await ctx.db
       .query('plaidItems')
@@ -137,7 +282,13 @@ export const storeItemAndAccounts = internalMutation({
       )
       .unique()
 
+    const institution = {
+      institutionId: args.institutionId,
+      institutionName: args.institutionName,
+    }
+
     let itemId = existing?._id
+    let createdItem = false
     if (itemId) {
       await ctx.db.patch(itemId, {
         accessToken: args.accessToken,
@@ -156,53 +307,45 @@ export const storeItemAndAccounts = internalMutation({
         institutionName: args.institutionName,
         status: 'ok',
       })
+      createdItem = true
     }
 
+    const candidates = await institutionAccounts(ctx, args.userId, institution)
+    let insertedAccountCount = 0
     for (const acct of args.accounts) {
-      const existingAcct = await ctx.db
-        .query('accounts')
-        .withIndex('by_plaid_account_id', (q) =>
-          q.eq('plaidAccountId', acct.plaidAccountId),
-        )
-        .unique()
+      const result = await upsertLinkedAccount(ctx, {
+        userId: args.userId,
+        itemId,
+        account: acct,
+        candidates,
+      })
+      if (result === 'inserted') insertedAccountCount++
+    }
 
-      if (existingAcct) {
-        await ctx.db.patch(existingAcct._id, {
-          name: acct.name,
-          officialName: acct.officialName,
-          mask: acct.mask,
-          type: acct.type,
-          subtype: acct.subtype,
-          currentBalance: acct.currentBalance,
-          availableBalance: acct.availableBalance,
-          limit: acct.limit,
-          isoCurrency: acct.isoCurrency,
-          itemId,
-        })
-      } else {
-        await ctx.db.insert('accounts', {
+    if (createdItem && insertedAccountCount === 0) {
+      const existingItemId = await findInstitutionItem(
+        ctx,
+        args.userId,
+        institution,
+        itemId,
+      )
+      if (existingItemId) {
+        await ctx.db.delete(itemId)
+        await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
           userId: args.userId,
-          itemId,
-          plaidAccountId: acct.plaidAccountId,
-          name: acct.name,
-          officialName: acct.officialName,
-          mask: acct.mask,
-          type: acct.type,
-          subtype: acct.subtype,
-          currentBalance: acct.currentBalance,
-          availableBalance: acct.availableBalance,
-          limit: acct.limit,
-          isoCurrency: acct.isoCurrency,
-          isHidden: false,
-          isClosed: false,
         })
+        return {
+          itemId: existingItemId,
+          insertedAccountCount,
+          discardedAccessToken: args.accessToken,
+        }
       }
     }
 
     await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
       userId: args.userId,
     })
-    return itemId
+    return { itemId, insertedAccountCount }
   },
 })
 
@@ -210,48 +353,21 @@ export const upsertAccounts = internalMutation({
   args: {
     userId: v.id('users'),
     itemId: v.id('plaidItems'),
-    accounts: v.array(
-      v.object({
-        plaidAccountId: v.string(),
-        name: v.string(),
-        officialName: v.optional(v.string()),
-        mask: v.optional(v.string()),
-        type: accountType,
-        subtype: v.optional(v.string()),
-        currentBalance: v.number(),
-        availableBalance: v.optional(v.number()),
-        limit: v.optional(v.number()),
-        isoCurrency: v.string(),
-      }),
-    ),
+    accounts: v.array(linkedAccount),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const item = await ctx.db.get(args.itemId)
+    if (!item) return null
+
+    const candidates = await institutionAccounts(ctx, args.userId, item)
     for (const acct of args.accounts) {
-      const existing = await ctx.db
-        .query('accounts')
-        .withIndex('by_plaid_account_id', (q) =>
-          q.eq('plaidAccountId', acct.plaidAccountId),
-        )
-        .unique()
-      if (existing) {
-        await ctx.db.patch(existing._id, {
-          name: acct.name,
-          officialName: acct.officialName,
-          currentBalance: acct.currentBalance,
-          availableBalance: acct.availableBalance,
-          limit: acct.limit,
-          subtype: acct.subtype,
-        })
-      } else {
-        await ctx.db.insert('accounts', {
-          userId: args.userId,
-          itemId: args.itemId,
-          ...acct,
-          isHidden: false,
-          isClosed: false,
-        })
-      }
+      await upsertLinkedAccount(ctx, {
+        userId: args.userId,
+        itemId: args.itemId,
+        account: acct,
+        candidates,
+      })
     }
     await ctx.db.patch(args.itemId, { lastSyncedAt: Date.now() })
     await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {

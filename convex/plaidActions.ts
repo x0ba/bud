@@ -134,7 +134,10 @@ export const createLinkToken = action({
 })
 
 export const createUpdateLinkToken = action({
-  args: { itemId: v.id('plaidItems') },
+  args: {
+    itemId: v.id('plaidItems'),
+    accountSelectionEnabled: v.optional(v.boolean()),
+  },
   returns: v.object({ linkToken: v.string() }),
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity()
@@ -161,6 +164,9 @@ export const createUpdateLinkToken = action({
       access_token: item.accessToken,
       additional_consented_products: CONSENTED_PRODUCTS,
       webhook,
+      ...(args.accountSelectionEnabled
+        ? { update: { account_selection_enabled: true } }
+        : {}),
     })
     return { linkToken: response.data.link_token }
   },
@@ -204,7 +210,7 @@ export const exchangePublicToken = action({
       isoCurrency: a.balances.iso_currency_code ?? 'USD',
     }))
 
-    const itemId: Id<'plaidItems'> = await ctx.runMutation(
+    const stored = await ctx.runMutation(
       internal.plaidMutations.storeItemAndAccounts,
       {
         userId,
@@ -216,8 +222,18 @@ export const exchangePublicToken = action({
       },
     )
 
-    await ctx.scheduler.runAfter(0, internal.plaidActions.syncItem, { itemId })
-    return { itemId }
+    if (stored.discardedAccessToken) {
+      try {
+        await client.itemRemove({ access_token: stored.discardedAccessToken })
+      } catch (err) {
+        console.error('Failed to remove duplicate Plaid item', err)
+      }
+    }
+
+    await ctx.scheduler.runAfter(0, internal.plaidActions.syncItem, {
+      itemId: stored.itemId,
+    })
+    return { itemId: stored.itemId }
   },
 })
 

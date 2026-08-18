@@ -9,11 +9,13 @@ import { Button } from '#/components/ui/button'
 export function PlaidLinkButton({
   label = 'Connect account',
   itemId,
+  accountSelectionEnabled = false,
   variant = 'default',
   size = 'default',
 }: {
   label?: string
   itemId?: Id<'plaidItems'>
+  accountSelectionEnabled?: boolean
   variant?: 'default' | 'outline' | 'secondary' | 'ghost'
   size?: 'default' | 'sm' | 'xs'
 }) {
@@ -75,7 +77,10 @@ export function PlaidLinkButton({
     try {
       await ensureReady({})
       const res = itemId
-        ? await createUpdateLinkToken({ itemId })
+        ? await createUpdateLinkToken({
+            itemId,
+            accountSelectionEnabled: accountSelectionEnabled || undefined,
+          })
         : await createLinkToken({})
       setLinkToken(res.linkToken)
     } catch (err) {

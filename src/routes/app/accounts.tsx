@@ -294,7 +294,15 @@ function AccountsPage() {
                           </div>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5">
-                          {healthy ? null : (
+                          {healthy ? (
+                            <PlaidLinkButton
+                              label="Add accounts"
+                              itemId={item._id}
+                              accountSelectionEnabled
+                              variant="ghost"
+                              size="sm"
+                            />
+                          ) : (
                             <PlaidLinkButton
                               label="Re-authenticate"
                               itemId={item._id}
