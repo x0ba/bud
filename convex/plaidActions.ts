@@ -420,6 +420,53 @@ export const syncItem = internalAction({
   },
 })
 
+export const removeItem = internalAction({
+  args: { itemId: v.id('plaidItems') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
+      itemId: args.itemId,
+    })
+    if (!item) return null
+
+    try {
+      const client = getPlaidClient()
+      await client.itemRemove({ access_token: item.accessToken })
+    } catch (err) {
+      // Already gone, or Plaid isn't configured in this environment.
+      console.error('Plaid itemRemove failed', plaidErrorCode(err), err)
+    }
+
+    await ctx.runMutation(internal.accounts.purgeItem, { itemId: args.itemId })
+    return null
+  },
+})
+
+export const removeItemForUser = action({
+  args: { itemId: v.id('plaidItems') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Not authenticated')
+
+    const userId = await ctx.runQuery(
+      internal.plaidMutations.getUserByClerkId,
+      { clerkId: identity.subject },
+    )
+    if (!userId) throw new Error('User not ready')
+
+    const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
+      itemId: args.itemId,
+    })
+    if (!item || item.userId !== userId) throw new Error('Item not found')
+
+    await ctx.runAction(internal.plaidActions.removeItem, {
+      itemId: args.itemId,
+    })
+    return null
+  },
+})
+
 export const syncItemForUser = action({
   args: { itemId: v.id('plaidItems') },
   returns: syncItemResult,
