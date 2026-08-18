@@ -47,6 +47,22 @@ npx convex env set PLAID_ENV sandbox
 3. Optional webhook URL (auto-derived from `CONVEX_SITE_URL`):  
    `https://YOUR_DEPLOYMENT.convex.site/plaid/webhook`
 
+### 3. Alpaca (live marks + history)
+
+Investments can mark holdings to the market and backfill daily bars without
+waiting on a Plaid brokerage sync. Paper keys work. Set these on Convex (not
+Vite):
+
+```bash
+npx convex env set ALPACA_API_KEY ...
+npx convex env set ALPACA_API_SECRET ...
+# optional — IEX is the free feed
+npx convex env set ALPACA_FEED iex
+```
+
+When Plaid later resyncs a brokerage account, quantity and cost basis come
+from Plaid and any gap versus the Alpaca mark is recorded on the holding.
+
 ## App routes
 
 | Route                      | Purpose                                            |

@@ -307,6 +307,14 @@ export const syncItem = internalAction({
               }
             }),
           })
+          await ctx.scheduler.runAfter(
+            0,
+            internal.alpacaActions.refreshForUser,
+            {
+              userId: item.userId,
+              backfill: true,
+            },
+          )
         } catch (err) {
           const code = plaidErrorCode(err)
           if (code === 'PRODUCT_NOT_READY' && holdingsAttempt < 3) {

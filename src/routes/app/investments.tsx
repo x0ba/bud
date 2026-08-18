@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQuery } from 'convex/react'
+import { useAction, useMutation, useQuery } from 'convex/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
 import {
@@ -18,7 +19,8 @@ import { CategoryDonut } from '#/components/category-donut'
 import { SearchSelect } from '#/components/search-select'
 import type { SearchSelectOption } from '#/components/search-select'
 import { TrendLineChart, trendExtent } from '#/components/trend-line-chart'
-import { formatDateShort, formatUsdPlain } from '#/lib/money'
+import { Button } from '#/components/ui/button'
+import { formatDateShort, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
 
@@ -52,10 +54,19 @@ function holdingFilter(id: Id<'holdings'>): string {
   return `holding:${id}`
 }
 
+function formatPct(n: number): string {
+  const pct = n * 100
+  const abs = Math.abs(pct).toFixed(2)
+  if (pct > 0) return `+${abs}%`
+  if (pct < 0) return `−${abs}%`
+  return `${abs}%`
+}
+
 export const Route = createFileRoute('/app/investments')({
   loader: () => {
     prewarmQueries(
-      { query: api.investments.portfolio },
+      { query: api.investments.portfolio, args: { today: utcDay() } },
+      { query: api.investments.marketStatus },
       {
         query: api.investments.history,
         args: { range: '3M', today: utcDay() },
@@ -68,8 +79,11 @@ export const Route = createFileRoute('/app/investments')({
 function InvestmentsPage() {
   const [range, setRange] = useState<Range>('3M')
   const [filter, setFilter] = useState(ALL_FILTER)
+  const [refreshing, setRefreshing] = useState(false)
   const today = utcDay()
-  const data = useQuery(api.investments.portfolio)
+  const data = useQuery(api.investments.portfolio, { today })
+  const status = useQuery(api.investments.marketStatus)
+  const refresh = useAction(api.alpacaActions.refreshMarketData)
   const selectedAccountId = filter.startsWith('account:')
     ? (filter.slice('account:'.length) as Id<'accounts'>)
     : undefined
@@ -93,6 +107,7 @@ function InvestmentsPage() {
     holdingId,
   })
   const snapshotNow = useMutation(api.investments.snapshotNow)
+  const autoRefreshed = useRef(false)
 
   const ensuredDay = useRef<string | null>(null)
   useEffect(() => {
@@ -105,6 +120,40 @@ function InvestmentsPage() {
       if (ensuredDay.current === today) ensuredDay.current = null
     })
   }, [data, history, snapshotNow, today])
+
+  useEffect(() => {
+    if (!data || !status?.configured || autoRefreshed.current) return
+    if (data.holdings.length === 0) return
+    const stale =
+      data.quotedAt == null || Date.now() - data.quotedAt > 15 * 60 * 1000
+    if (!stale && data.historyReady) return
+    autoRefreshed.current = true
+    void refresh({ backfill: true, asOf: today }).catch(() => {
+      autoRefreshed.current = false
+    })
+  }, [data, refresh, status, today])
+
+  const runRefresh = () => {
+    setRefreshing(true)
+    void refresh({ backfill: true, asOf: today })
+      .then((result) => {
+        if (!result.configured) {
+          toast.error('Add Alpaca API keys to refresh prices')
+          return
+        }
+        if (result.error) {
+          toast.error(result.error)
+          return
+        }
+        toast.success(
+          result.quotesUpdated > 0
+            ? 'Prices updated from the market'
+            : 'No market quotes for these holdings',
+        )
+      })
+      .catch((e: Error) => toast.error(e.message))
+      .finally(() => setRefreshing(false))
+  }
 
   const filterOptions = useMemo((): Array<SearchSelectOption> => {
     if (!data) return [{ value: ALL_FILTER, label: 'All investments' }]
@@ -156,10 +205,33 @@ function InvestmentsPage() {
     'All investments'
   const chart = trendExtent(history ?? [])
   const viewingAll = filter === ALL_FILTER
+  const quotedAgo = formatSyncedAgo(data?.quotedAt)
 
   const toggleFilter = (next: string) => {
     setFilter((current) => (current === next ? ALL_FILTER : next))
   }
+
+  const heroMeta = (() => {
+    if (viewingAll && data?.dayChange != null) {
+      const label =
+        data.dayChange === 0
+          ? 'Unchanged today'
+          : `${data.dayChange > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(data.dayChange))} today`
+      return quotedAgo ? `${label} · ${quotedAgo}` : label
+    }
+    if (viewingAll && chart) {
+      return chart.delta === 0
+        ? `Unchanged since ${formatDateShort(chart.first.date)}`
+        : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
+    }
+    if (data && data.holdings.length > 0) {
+      return `${data.holdings.length} holding${data.holdings.length === 1 ? '' : 's'} across ${data.byType.length} asset ${data.byType.length === 1 ? 'type' : 'types'}`
+    }
+    if (data) {
+      return `${data.accounts.length} ${data.accounts.length === 1 ? 'account' : 'accounts'} connected · positions need access`
+    }
+    return undefined
+  })()
 
   return (
     <AppShell title="Investments">
@@ -177,15 +249,7 @@ function InvestmentsPage() {
                 <HeroMetric
                   label="Portfolio value"
                   value={formatUsdPlain(data.totalValue)}
-                  meta={
-                    viewingAll && chart
-                      ? chart.delta === 0
-                        ? `Unchanged since ${formatDateShort(chart.first.date)}`
-                        : `${chart.delta > 0 ? 'Up' : 'Down'} ${formatUsdPlain(Math.abs(chart.delta))} since ${formatDateShort(chart.first.date)}`
-                      : data.holdings.length > 0
-                        ? `${data.holdings.length} holding${data.holdings.length === 1 ? '' : 's'} across ${data.byType.length} asset ${data.byType.length === 1 ? 'type' : 'types'}`
-                        : `${data.accounts.length} ${data.accounts.length === 1 ? 'account' : 'accounts'} connected · positions need access`
-                  }
+                  meta={heroMeta}
                 />
               </PageSummary>
 
@@ -229,6 +293,18 @@ function InvestmentsPage() {
                           </button>
                         ))}
                       </div>
+                      {data.holdings.length > 0 ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 px-2 text-[12px]"
+                          disabled={refreshing}
+                          onClick={runRefresh}
+                        >
+                          {refreshing ? 'Refreshing' : 'Refresh prices'}
+                        </Button>
+                      ) : null}
                     </div>
                   }
                 >
@@ -239,7 +315,9 @@ function InvestmentsPage() {
                       title="No history yet"
                       description={
                         filter.startsWith('holding:')
-                          ? 'This position is recorded each day from here. The line grows as days pass.'
+                          ? data.historyReady
+                            ? 'This position is recorded each day from here. The line grows as days pass.'
+                            : 'Market history is still filling in for this ticker.'
                           : data.accounts.length + data.holdings.length > 0
                             ? "Today's value is being recorded. The line grows as days pass."
                             : 'Connect a brokerage — a point is recorded each day from there.'
@@ -386,9 +464,29 @@ function InvestmentsPage() {
                               </div>
                               <div className="text-right">
                                 <p className="amount-cell text-[var(--sea-ink)]">
-                                  {formatUsdPlain(h.institutionValue)}
+                                  {formatUsdPlain(h.markValue)}
                                 </p>
-                                {h.costBasis != null ? (
+                                {h.dayChange != null &&
+                                h.dayChangePct != null ? (
+                                  <p
+                                    className={cn(
+                                      'text-[11px] tabular-nums',
+                                      h.dayChange > 0
+                                        ? 'text-[var(--lagoon)]'
+                                        : h.dayChange < 0
+                                          ? 'text-destructive'
+                                          : 'text-muted-foreground',
+                                    )}
+                                  >
+                                    {h.dayChange > 0
+                                      ? '+'
+                                      : h.dayChange < 0
+                                        ? '−'
+                                        : ''}
+                                    {formatUsdPlain(Math.abs(h.dayChange))} ·{' '}
+                                    {formatPct(h.dayChangePct)}
+                                  </p>
+                                ) : h.costBasis != null ? (
                                   <p className="text-[11px] tabular-nums text-muted-foreground">
                                     cost {formatUsdPlain(h.costBasis)}
                                   </p>
