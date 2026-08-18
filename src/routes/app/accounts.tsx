@@ -644,5 +644,8 @@ function incompleteItemSyncMessage(name: string, result: SyncItemResult) {
   if (result.failed.length === 1 && result.failed[0] === 'holdings') {
     return `Couldn't refresh ${name} holdings`
   }
+  if (result.failed.length === 1 && result.failed[0] === 'liabilities') {
+    return `Couldn't refresh ${name} payments`
+  }
   return `Couldn't finish syncing ${name}`
 }

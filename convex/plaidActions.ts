@@ -312,8 +312,16 @@ export const syncItem = internalAction({
             })),
           })
           completed.push('liabilities')
-        } catch {
-          // Institution may not support liabilities
+        } catch (err) {
+          if (isPlaidLoginRequired(err)) throw err
+          const code = plaidErrorCode(err)
+          if (
+            code !== 'PRODUCTS_NOT_SUPPORTED' &&
+            code !== 'NO_LIABILITY_ACCOUNTS'
+          ) {
+            console.error('Liabilities sync failed', code, err)
+            failed.push('liabilities')
+          }
         }
       }
 
