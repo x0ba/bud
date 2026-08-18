@@ -65,10 +65,25 @@ function AccountsPage() {
   const items = useQuery(api.accounts.listItems)
   const syncItem = useAction(api.plaidActions.syncItemForUser)
 
-  const sync = (itemId: Id<'plaidItems'>) =>
-    void syncItem({ itemId })
-      .then(() => toast.success('Sync started'))
-      .catch((e: Error) => toast.error(e.message))
+  const syncError = (error: unknown) =>
+    error instanceof Error ? error.message : 'Sync failed'
+
+  const sync = (item: Item) =>
+    toast.promise(syncItem({ itemId: item._id }), {
+      loading: `Syncing ${item.institutionName}…`,
+      success: `Synced ${item.institutionName}`,
+      error: syncError,
+    })
+
+  const syncAll = (connections: Array<Item>) =>
+    toast.promise(
+      Promise.all(connections.map((item) => syncItem({ itemId: item._id }))),
+      {
+        loading: 'Syncing all…',
+        success: 'Synced',
+        error: syncError,
+      },
+    )
 
   const view = useMemo(
     () => (accounts && items ? buildView(accounts, items) : null),
@@ -234,7 +249,7 @@ function AccountsPage() {
                     <Button
                       variant="ghost"
                       size="xs"
-                      onClick={() => view.items.forEach((i) => sync(i._id))}
+                      onClick={() => syncAll(view.items)}
                     >
                       Sync all
                     </Button>
@@ -289,7 +304,7 @@ function AccountsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => sync(item._id)}
+                            onClick={() => sync(item)}
                           >
                             Sync
                           </Button>
