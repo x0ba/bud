@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import {
-  findDuplicateAccount,
-  sameInstitution,
-  type AccountIdentity,
-} from './accountIdentity.ts'
+import { findDuplicateAccount, sameInstitution } from './accountIdentity.ts'
+import type { AccountIdentity } from './accountIdentity.ts'
 
 function account(
   partial: Partial<AccountIdentity> &
@@ -41,6 +38,16 @@ describe('sameInstitution', () => {
         { institutionId: 'ins_12', institutionName: 'fidelity' },
       ),
       true,
+    )
+  })
+
+  it('does not treat the placeholder Institution name as a real bank', () => {
+    assert.equal(
+      sameInstitution(
+        { institutionName: 'Institution' },
+        { institutionName: 'Institution' },
+      ),
+      false,
     )
   })
 })
@@ -135,7 +142,7 @@ describe('findDuplicateAccount', () => {
     assert.equal(findDuplicateAccount(incoming, existing), roth)
   })
 
-  it('matches by name when the mask is missing', () => {
+  it('does not match unmasked accounts by name', () => {
     const noMask = account({
       plaidAccountId: 'old-401k',
       name: 'Workplace 401k',
@@ -148,6 +155,6 @@ describe('findDuplicateAccount', () => {
       type: 'investment',
       subtype: '401k',
     })
-    assert.equal(findDuplicateAccount(incoming, [noMask]), noMask)
+    assert.equal(findDuplicateAccount(incoming, [noMask]), undefined)
   })
 })

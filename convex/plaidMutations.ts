@@ -4,11 +4,10 @@ import { internal } from './_generated/api'
 import type { Doc, Id } from './_generated/dataModel'
 import type { MutationCtx } from './_generated/server'
 import { internalMutation, internalQuery } from './_generated/server'
-import {
-  findDuplicateAccount,
-  sameInstitution,
-  type AccountIdentity,
-  type InstitutionIdentity,
+import { findDuplicateAccount, sameInstitution } from './lib/accountIdentity'
+import type {
+  AccountIdentity,
+  InstitutionIdentity,
 } from './lib/accountIdentity'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
