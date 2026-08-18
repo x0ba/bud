@@ -1,7 +1,7 @@
 import type { Id } from '../_generated/dataModel'
 import type { MutationCtx } from '../_generated/server'
 
-const BATCH = 64
+export const PURGE_BATCH = 64
 
 export function withExcludedAccount(
   excluded: Array<string> | undefined,
@@ -31,29 +31,29 @@ export async function purgeAccountChildren(
   const txs = await ctx.db
     .query('transactions')
     .withIndex('by_account_date', (q) => q.eq('accountId', args.accountId))
-    .take(BATCH)
+    .take(PURGE_BATCH)
   for (const tx of txs) {
     await ctx.db.delete(tx._id)
   }
-  if (txs.length === BATCH) return false
+  if (txs.length === PURGE_BATCH) return false
 
   const holdings = await ctx.db
     .query('holdings')
     .withIndex('by_account', (q) => q.eq('accountId', args.accountId))
-    .take(BATCH)
+    .take(PURGE_BATCH)
   for (const holding of holdings) {
     await ctx.db.delete(holding._id)
   }
-  if (holdings.length === BATCH) return false
+  if (holdings.length === PURGE_BATCH) return false
 
   const investmentTxns = await ctx.db
     .query('investmentTxns')
     .withIndex('by_account', (q) => q.eq('accountId', args.accountId))
-    .take(BATCH)
+    .take(PURGE_BATCH)
   for (const txn of investmentTxns) {
     await ctx.db.delete(txn._id)
   }
-  if (investmentTxns.length === BATCH) return false
+  if (investmentTxns.length === PURGE_BATCH) return false
 
   const rules = await ctx.db
     .query('categoryRules')

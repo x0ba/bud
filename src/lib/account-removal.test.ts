@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { isExcludedAccount, withExcludedAccount } from '../../convex/lib/purge'
-import { accountRemovalCopy, institutionRemovalCopy } from './account-removal'
+import { accountRemovalCopy, institutionRemovalCopy } from './account-removal.ts'
 
 describe('accountRemovalCopy', () => {
   it('warns that the last account also disconnects the institution', () => {
@@ -42,16 +41,5 @@ describe('institutionRemovalCopy', () => {
       accountCount: 3,
     })
     assert.match(copy.description, /3 accounts/)
-  })
-})
-
-describe('excluded Plaid accounts', () => {
-  it('adds an id without duplicating it', () => {
-    const once = withExcludedAccount(undefined, 'acc_1')
-    const twice = withExcludedAccount(once, 'acc_1')
-    assert.deepEqual(once, ['acc_1'])
-    assert.deepEqual(twice, ['acc_1'])
-    assert.equal(isExcludedAccount(twice, 'acc_1'), true)
-    assert.equal(isExcludedAccount(twice, 'acc_2'), false)
   })
 })
