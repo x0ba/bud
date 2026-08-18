@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { findDuplicateAccount, sameInstitution } from './accountIdentity.ts'
-import type { AccountIdentity } from './accountIdentity.ts'
+import {
+  findDuplicateAccount,
+  sameInstitution,
+} from '../convex/lib/accountIdentity.ts'
+import type { AccountIdentity } from '../convex/lib/accountIdentity.ts'
 
 function account(
   partial: Partial<AccountIdentity> &

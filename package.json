@@ -14,7 +14,7 @@
     "format": "prettier --write . && eslint --fix",
     "check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test convex/lib/accountIdentity.test.ts",
+    "test": "node --experimental-strip-types --test tests/accountIdentity.test.ts",
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
