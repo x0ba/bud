@@ -358,6 +358,7 @@ export const syncItem = internalAction({
           })
           completed.push('holdings')
         } catch (err) {
+          if (isPlaidLoginRequired(err)) throw err
           const code = plaidErrorCode(err)
           if (code === 'PRODUCT_NOT_READY' && holdingsAttempt < 3) {
             await ctx.scheduler.runAfter(
