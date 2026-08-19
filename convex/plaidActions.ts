@@ -10,6 +10,7 @@ import { action, internalAction } from './_generated/server'
 import {
   getPlaidClient,
   getPlaidWebhookUrl,
+  isPlaidConfigured,
   isPlaidLoginRequired,
   plaidErrorCode,
 } from './lib/plaidClient'
@@ -429,11 +430,19 @@ export const removeItem = internalAction({
     })
     if (!item) return null
 
-    try {
-      const client = getPlaidClient()
-      await client.itemRemove({ access_token: item.accessToken })
-    } catch (err) {
-      if (plaidErrorCode(err) !== 'ITEM_NOT_FOUND') throw err
+    if (isPlaidConfigured()) {
+      try {
+        const client = getPlaidClient()
+        await client.itemRemove({ access_token: item.accessToken })
+      } catch (err) {
+        // ITEM_NOT_FOUND: already gone at Plaid. Anything else (timeout, 5xx,
+        // auth) must not purge — the item may still be live remotely.
+        if (plaidErrorCode(err) !== 'ITEM_NOT_FOUND') throw err
+      }
+    } else {
+      console.warn(
+        `Plaid is not configured; skipping remote unlink for item ${args.itemId}`,
+      )
     }
 
     await ctx.runMutation(internal.accounts.purgeItem, { itemId: args.itemId })
