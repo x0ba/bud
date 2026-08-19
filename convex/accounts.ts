@@ -1,6 +1,9 @@
 import { v } from 'convex/values'
+import { internal } from './_generated/api'
+import { internalMutation } from './_generated/server'
 import { authedMutation, authedQuery } from './lib/customFunctions'
 import { monthBounds } from './lib/money'
+import { purgeAccountChildren, withExcludedAccount } from './lib/purge'
 
 const accountDoc = v.object({
   _id: v.id('accounts'),
@@ -213,6 +216,92 @@ export const setHidden = authedMutation({
     const a = await ctx.db.get(args.accountId)
     if (!a || a.userId !== ctx.user._id) throw new Error('Not found')
     await ctx.db.patch(args.accountId, { isHidden: args.isHidden })
+    return null
+  },
+})
+
+export const remove = authedMutation({
+  args: { accountId: v.id('accounts') },
+  returns: v.object({ disconnectedInstitution: v.boolean() }),
+  handler: async (ctx, args) => {
+    const account = await ctx.db.get(args.accountId)
+    if (!account || account.userId !== ctx.user._id) {
+      throw new Error('Account not found')
+    }
+
+    const item = await ctx.db.get(account.itemId)
+    const siblings = await ctx.db
+      .query('accounts')
+      .withIndex('by_item', (q) => q.eq('itemId', account.itemId))
+      .collect()
+    const isLast = siblings.length <= 1
+
+    if (!isLast && item) {
+      await ctx.db.patch(item._id, {
+        excludedPlaidAccountIds: withExcludedAccount(
+          item.excludedPlaidAccountIds,
+          account.plaidAccountId,
+        ),
+      })
+    }
+
+    await ctx.db.delete(account._id)
+    await ctx.scheduler.runAfter(0, internal.accounts.purgeAccount, {
+      accountId: account._id,
+      userId: ctx.user._id,
+    })
+
+    if (isLast) {
+      await ctx.scheduler.runAfter(0, internal.plaidActions.removeItem, {
+        itemId: account.itemId,
+      })
+    }
+
+    await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
+      userId: ctx.user._id,
+    })
+    return { disconnectedInstitution: isLast }
+  },
+})
+
+export const purgeAccount = internalMutation({
+  args: {
+    accountId: v.id('accounts'),
+    userId: v.id('users'),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const done = await purgeAccountChildren(ctx, args)
+    if (!done) {
+      await ctx.scheduler.runAfter(0, internal.accounts.purgeAccount, args)
+    }
+    return null
+  },
+})
+
+export const purgeItem = internalMutation({
+  args: { itemId: v.id('plaidItems') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const item = await ctx.db.get(args.itemId)
+    if (!item) return null
+
+    const accounts = await ctx.db
+      .query('accounts')
+      .withIndex('by_item', (q) => q.eq('itemId', args.itemId))
+      .collect()
+    for (const account of accounts) {
+      await ctx.db.delete(account._id)
+      await ctx.scheduler.runAfter(0, internal.accounts.purgeAccount, {
+        accountId: account._id,
+        userId: item.userId,
+      })
+    }
+
+    await ctx.db.delete(args.itemId)
+    await ctx.scheduler.runAfter(0, internal.netWorth.snapshotUser, {
+      userId: item.userId,
+    })
     return null
   },
 })

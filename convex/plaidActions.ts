@@ -10,6 +10,7 @@ import { action, internalAction } from './_generated/server'
 import {
   getPlaidClient,
   getPlaidWebhookUrl,
+  isPlaidConfigured,
   isPlaidLoginRequired,
   plaidErrorCode,
 } from './lib/plaidClient'
@@ -417,6 +418,60 @@ export const syncItem = internalAction({
     }
 
     return syncResult({ completed, failed, deferred })
+  },
+})
+
+export const removeItem = internalAction({
+  args: { itemId: v.id('plaidItems') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
+      itemId: args.itemId,
+    })
+    if (!item) return null
+
+    if (isPlaidConfigured()) {
+      try {
+        const client = getPlaidClient()
+        await client.itemRemove({ access_token: item.accessToken })
+      } catch (err) {
+        // ITEM_NOT_FOUND: already gone at Plaid. Anything else (timeout, 5xx,
+        // auth) must not purge — the item may still be live remotely.
+        if (plaidErrorCode(err) !== 'ITEM_NOT_FOUND') throw err
+      }
+    } else {
+      console.warn(
+        `Plaid is not configured; skipping remote unlink for item ${args.itemId}`,
+      )
+    }
+
+    await ctx.runMutation(internal.accounts.purgeItem, { itemId: args.itemId })
+    return null
+  },
+})
+
+export const removeItemForUser = action({
+  args: { itemId: v.id('plaidItems') },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity()
+    if (!identity) throw new Error('Not authenticated')
+
+    const userId = await ctx.runQuery(
+      internal.plaidMutations.getUserByClerkId,
+      { clerkId: identity.subject },
+    )
+    if (!userId) throw new Error('User not ready')
+
+    const item = await ctx.runQuery(internal.plaidMutations.getItemInternal, {
+      itemId: args.itemId,
+    })
+    if (!item || item.userId !== userId) throw new Error('Item not found')
+
+    await ctx.runAction(internal.plaidActions.removeItem, {
+      itemId: args.itemId,
+    })
+    return null
   },
 })
 

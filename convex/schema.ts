@@ -77,6 +77,7 @@ export default defineSchema({
     consentExpiresAt: v.optional(v.number()),
     errorCode: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
+    excludedPlaidAccountIds: v.optional(v.array(v.string())),
   })
     .index('by_user', ['userId'])
     .index('by_plaid_item_id', ['plaidItemId']),
@@ -170,7 +171,9 @@ export default defineSchema({
     createdFrom: v.union(v.literal('correction'), v.literal('manual')),
     timesApplied: v.number(),
     isActive: v.boolean(),
-  }).index('by_user', ['userId']),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_account', ['userId', 'matcher.accountId']),
 
   budgets: defineTable({
     userId: v.id('users'),
@@ -266,7 +269,8 @@ export default defineSchema({
     name: v.optional(v.string()),
   })
     .index('by_user_date', ['userId', 'date'])
-    .index('by_plaid_id', ['plaidInvestmentTransactionId']),
+    .index('by_plaid_id', ['plaidInvestmentTransactionId'])
+    .index('by_account', ['accountId']),
 
   recurringStreams: defineTable({
     userId: v.id('users'),

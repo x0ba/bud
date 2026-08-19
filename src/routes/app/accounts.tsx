@@ -1,10 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useAction, useQuery } from 'convex/react'
+import { useAction, useMutation, useQuery } from 'convex/react'
 import type { FunctionReturnType } from 'convex/server'
-import { useMemo } from 'react'
+import { MoreHorizontal } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { ConfirmDialog } from '#/components/confirm-dialog'
 import {
   DataList,
   EmptyState,
@@ -18,6 +20,17 @@ import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { PlaidLinkButton } from '#/components/plaid-link-button'
 import { Button } from '#/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '#/components/ui/dropdown-menu'
+import {
+  accountRemovalCopy,
+  institutionRemovalCopy,
+  isLastAccountAtInstitution,
+} from '#/lib/account-removal'
 import { cardPaymentStatus, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 import { cn } from '#/lib/utils'
@@ -37,6 +50,9 @@ type Item = FunctionReturnType<typeof api.accounts.listItems>[number]
 type SyncItemResult = FunctionReturnType<
   typeof api.plaidActions.syncItemForUser
 >
+type PendingRemoval =
+  | { kind: 'account'; account: Account; isLast: boolean }
+  | { kind: 'institution'; item: Item }
 
 /**
  * Sections follow what the money *is*, not which institution holds it. A person
@@ -67,6 +83,10 @@ function AccountsPage() {
   const accounts = useQuery(api.accounts.list)
   const items = useQuery(api.accounts.listItems)
   const syncItem = useAction(api.plaidActions.syncItemForUser)
+  const removeAccount = useMutation(api.accounts.remove)
+  const removeItem = useAction(api.plaidActions.removeItemForUser)
+  const [pending, setPending] = useState<PendingRemoval | null>(null)
+  const [removing, setRemoving] = useState(false)
 
   const sync = (item: Item) => {
     const toastId = toast.loading(`Syncing ${item.institutionName}…`)
@@ -90,6 +110,47 @@ function AccountsPage() {
     () => (accounts && items ? buildView(accounts, items) : null),
     [accounts, items],
   )
+
+  const confirmRemoval = () => {
+    if (!pending) return
+    setRemoving(true)
+    const request =
+      pending.kind === 'account'
+        ? removeAccount({ accountId: pending.account._id }).then((result) => {
+            toast.success(
+              result.disconnectedInstitution
+                ? `Removed ${pending.account.name} and disconnected ${pending.account.institutionName ?? 'the institution'}`
+                : `Removed ${pending.account.name}`,
+            )
+          })
+        : removeItem({ itemId: pending.item._id }).then(() => {
+            toast.success(`Disconnected ${pending.item.institutionName}`)
+          })
+    void request
+      .catch((error: unknown) =>
+        toast.error(
+          error instanceof Error ? error.message : 'Could not remove',
+        ),
+      )
+      .finally(() => {
+        setRemoving(false)
+        setPending(null)
+      })
+  }
+
+  const confirmCopy =
+    pending?.kind === 'account'
+      ? accountRemovalCopy({
+          accountName: pending.account.name,
+          institutionName: pending.account.institutionName,
+          isLastAtInstitution: pending.isLast,
+        })
+      : pending
+        ? institutionRemovalCopy({
+            institutionName: pending.item.institutionName,
+            accountCount: pending.item.accountCount,
+          })
+        : null
 
   return (
     <AppShell
@@ -209,6 +270,13 @@ function AccountsPage() {
                         account={account}
                         max={group.max}
                         debt={group.debt}
+                        isLastAtInstitution={isLastAccount(
+                          view.accountCounts,
+                          account.itemId,
+                        )}
+                        onRemove={(isLast) =>
+                          setPending({ kind: 'account', account, isLast })
+                        }
                       />
                     ))}
                   </DataList>
@@ -233,6 +301,13 @@ function AccountsPage() {
                       max={0}
                       debt
                       quiet
+                      isLastAtInstitution={isLastAccount(
+                        view.accountCounts,
+                        account.itemId,
+                      )}
+                      onRemove={(isLast) =>
+                        setPending({ kind: 'account', account, isLast })
+                      }
                     />
                   ))}
                 </DataList>
@@ -317,6 +392,16 @@ function AccountsPage() {
                           >
                             Sync
                           </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-destructive"
+                            onClick={() =>
+                              setPending({ kind: 'institution', item })
+                            }
+                          >
+                            Remove
+                          </Button>
                         </div>
                       </li>
                     )
@@ -327,6 +412,16 @@ function AccountsPage() {
           </PageBody>
         </Page>
       ) : null}
+      <ConfirmDialog
+        open={pending != null}
+        onOpenChange={(open) => {
+          if (!open && !removing) setPending(null)
+        }}
+        title={confirmCopy?.title ?? 'Remove?'}
+        description={confirmCopy?.description ?? ''}
+        confirming={removing}
+        onConfirm={confirmRemoval}
+      />
     </AppShell>
   )
 }
@@ -342,11 +437,15 @@ function AccountRow({
   max,
   debt,
   quiet = false,
+  isLastAtInstitution,
+  onRemove,
 }: {
   account: Account
   max: number
   debt: boolean
   quiet?: boolean
+  isLastAtInstitution: boolean
+  onRemove: (isLast: boolean) => void
 }) {
   const limit = account.limit ?? 0
   const utilization =
@@ -367,90 +466,113 @@ function AccountRow({
 
   return (
     <li>
-      <Link
-        to="/app/accounts/$accountId"
-        params={{ accountId: account._id }}
-        className="data-row no-underline transition-[background-color,transform] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/70 active:scale-[0.995]"
-      >
-        <span className="min-w-0 flex-1">
-          <RowTitle className={quiet ? 'text-muted-foreground' : undefined}>
-            {account.name}
-            {account.mask ? (
-              <span className="font-normal text-muted-foreground">
-                {' '}
-                ···{account.mask}
-              </span>
-            ) : null}
-          </RowTitle>
-          <RowMeta className="capitalize">
-            {kind}
-            {account.nextPaymentDueDate &&
-            (overdue || (days != null && days >= 0)) ? (
-              <span
-                className={cn(
-                  'normal-case',
-                  overdue
-                    ? 'font-medium text-destructive'
-                    : dueSoon
-                      ? 'font-medium text-amber-700'
-                      : undefined,
-                )}
-              >
-                {' · '}
-                {overdue
-                  ? 'past due'
-                  : days === 0
-                    ? 'due today'
-                    : `due in ${days}d`}
-              </span>
-            ) : null}
-          </RowMeta>
-        </span>
-
-        {max > 0 || utilization != null ? (
-          <ShareBar
-            value={account.currentBalance}
-            total={utilization != null ? limit : max}
-            color={
-              hot
-                ? 'var(--chart-3)'
-                : debt
-                  ? 'color-mix(in oklab, var(--sea-ink) 34%, transparent)'
-                  : 'var(--lagoon-deep)'
-            }
-            className="hidden w-14 shrink-0 sm:block"
-          />
-        ) : null}
-
-        <span className="shrink-0 text-right">
-          <span
-            className={cn(
-              'amount-cell block',
-              quiet
-                ? 'text-muted-foreground'
-                : debt
-                  ? 'text-[var(--sea-ink-soft)]'
-                  : 'text-[var(--sea-ink)]',
-            )}
-          >
-            {formatUsdPlain(account.currentBalance)}
+      <div className="data-row transition-[background-color] duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-muted/70">
+        <Link
+          to="/app/accounts/$accountId"
+          params={{ accountId: account._id }}
+          className="flex min-w-0 flex-1 items-center gap-2.5 no-underline transition-transform duration-[150ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.995]"
+        >
+          <span className="min-w-0 flex-1">
+            <RowTitle className={quiet ? 'text-muted-foreground' : undefined}>
+              {account.name}
+              {account.mask ? (
+                <span className="font-normal text-muted-foreground">
+                  {' '}
+                  ···{account.mask}
+                </span>
+              ) : null}
+            </RowTitle>
+            <RowMeta className="capitalize">
+              {kind}
+              {account.nextPaymentDueDate &&
+              (overdue || (days != null && days >= 0)) ? (
+                <span
+                  className={cn(
+                    'normal-case',
+                    overdue
+                      ? 'font-medium text-destructive'
+                      : dueSoon
+                        ? 'font-medium text-amber-700'
+                        : undefined,
+                  )}
+                >
+                  {' · '}
+                  {overdue
+                    ? 'past due'
+                    : days === 0
+                      ? 'due today'
+                      : `due in ${days}d`}
+                </span>
+              ) : null}
+            </RowMeta>
           </span>
-          {utilization != null ? (
+
+          {max > 0 || utilization != null ? (
+            <ShareBar
+              value={account.currentBalance}
+              total={utilization != null ? limit : max}
+              color={
+                hot
+                  ? 'var(--chart-3)'
+                  : debt
+                    ? 'color-mix(in oklab, var(--sea-ink) 34%, transparent)'
+                    : 'var(--lagoon-deep)'
+              }
+              className="hidden w-14 shrink-0 sm:block"
+            />
+          ) : null}
+
+          <span className="shrink-0 text-right">
             <span
               className={cn(
-                'block text-[11px] tabular-nums',
-                hot ? 'text-amber-700' : 'text-muted-foreground',
+                'amount-cell block',
+                quiet
+                  ? 'text-muted-foreground'
+                  : debt
+                    ? 'text-[var(--sea-ink-soft)]'
+                    : 'text-[var(--sea-ink)]',
               )}
             >
-              {Math.round(utilization * 100)}% of {formatUsdPlain(limit)}
+              {formatUsdPlain(account.currentBalance)}
             </span>
-          ) : available != null ? (
-            <span className="block text-[11px] tabular-nums text-muted-foreground">
-              {formatUsdPlain(available)} available
-            </span>
-          ) : null}
-        </span>
-      </Link>
+            {utilization != null ? (
+              <span
+                className={cn(
+                  'block text-[11px] tabular-nums',
+                  hot ? 'text-amber-700' : 'text-muted-foreground',
+                )}
+              >
+                {Math.round(utilization * 100)}% of {formatUsdPlain(limit)}
+              </span>
+            ) : available != null ? (
+              <span className="block text-[11px] tabular-nums text-muted-foreground">
+                {formatUsdPlain(available)} available
+              </span>
+            ) : null}
+          </span>
+        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-xs"
+              aria-label={`Actions for ${account.name}`}
+              className="shrink-0 text-muted-foreground hover:text-[var(--sea-ink)]"
+            >
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              variant="destructive"
+              onSelect={() => onRemove(isLastAtInstitution)}
+            >
+              Remove
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </li>
   )
 }
@@ -489,6 +611,7 @@ function buildView(accounts: Array<Account>, items: Array<Item>) {
 
   return {
     items,
+    accountCounts: new Map(items.map((item) => [item._id, item.accountCount])),
     groups,
     archived,
     alerts: buildAlerts(live, items),
@@ -499,6 +622,13 @@ function buildView(accounts: Array<Account>, items: Array<Item>) {
       { label: 'Invested', value: invested },
     ].filter((stat) => stat.value > 0 && cash != null),
   }
+}
+
+function isLastAccount(
+  counts: Map<Id<'plaidItems'>, number>,
+  itemId: Id<'plaidItems'>,
+) {
+  return isLastAccountAtInstitution(counts.get(itemId))
 }
 
 function buildHero({

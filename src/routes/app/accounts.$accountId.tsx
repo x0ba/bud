@@ -1,7 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { usePaginatedQuery, useQuery } from 'convex/react'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useMutation, usePaginatedQuery, useQuery } from 'convex/react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { api } from '../../../convex/_generated/api'
 import type { Id } from '../../../convex/_generated/dataModel'
+import { ConfirmDialog } from '#/components/confirm-dialog'
 import {
   DataList,
   HeroMetric,
@@ -12,6 +15,11 @@ import {
 import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
+import { Button } from '#/components/ui/button'
+import {
+  accountRemovalCopy,
+  isLastAccountAtInstitution,
+} from '#/lib/account-removal'
 import { cardPaymentStatus, currentMonth, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
@@ -21,6 +29,7 @@ export const Route = createFileRoute('/app/accounts/$accountId')({
     const month = currentMonth()
     prewarmQueries(
       { query: api.accounts.get, args: { accountId } },
+      { query: api.accounts.listItems },
       { query: api.accounts.spendingThisMonth, args: { accountId, month } },
     )
   },
@@ -29,9 +38,14 @@ export const Route = createFileRoute('/app/accounts/$accountId')({
 
 function AccountDetailPage() {
   const { accountId } = Route.useParams()
+  const navigate = useNavigate()
   const account = useQuery(api.accounts.get, {
     accountId: accountId as Id<'accounts'>,
   })
+  const items = useQuery(api.accounts.listItems)
+  const removeAccount = useMutation(api.accounts.remove)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [removing, setRemoving] = useState(false)
   const month = currentMonth()
   const spending = useQuery(api.accounts.spendingThisMonth, {
     accountId: accountId as Id<'accounts'>,
@@ -61,9 +75,51 @@ function AccountDetailPage() {
       : null
   const { days, overdue } = cardPaymentStatus(account)
   const isCard = account.type === 'credit'
+  const item = items?.find((row) => row._id === account.itemId)
+  const isLastAtInstitution = isLastAccountAtInstitution(item?.accountCount)
+  const copy = accountRemovalCopy({
+    accountName: account.name,
+    institutionName: account.institutionName,
+    isLastAtInstitution,
+  })
+
+  const confirmRemoval = () => {
+    setRemoving(true)
+    void removeAccount({ accountId: account._id })
+      .then((result) => {
+        toast.success(
+          result.disconnectedInstitution
+            ? `Removed ${account.name} and disconnected ${account.institutionName ?? 'the institution'}`
+            : `Removed ${account.name}`,
+        )
+        void navigate({ to: '/app/accounts' })
+      })
+      .catch((error: unknown) =>
+        toast.error(
+          error instanceof Error ? error.message : 'Could not remove',
+        ),
+      )
+      .finally(() => {
+        setRemoving(false)
+        setConfirmOpen(false)
+      })
+  }
 
   return (
-    <AppShell title={account.name}>
+    <AppShell
+      title={account.name}
+      actions={
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-destructive"
+          disabled={items === undefined}
+          onClick={() => setConfirmOpen(true)}
+        >
+          Remove
+        </Button>
+      }
+    >
       <Page>
         <PageSummary>
           <HeroMetric
@@ -156,6 +212,16 @@ function AccountDetailPage() {
           </Panel>
         </PageBody>
       </Page>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!open && !removing) setConfirmOpen(false)
+        }}
+        title={copy.title}
+        description={copy.description}
+        confirming={removing}
+        onConfirm={confirmRemoval}
+      />
     </AppShell>
   )
 }

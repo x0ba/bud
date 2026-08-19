@@ -10,6 +10,7 @@ import type {
   InstitutionIdentity,
 } from './lib/accountIdentity'
 import { writeInvestmentSnapshot } from './lib/investmentSnapshots'
+import { isExcludedAccount } from './lib/purge'
 import { looksLikeTransfer, resolveCategory } from './lib/rules'
 
 const accountType = v.union(
@@ -310,8 +311,10 @@ export const storeItemAndAccounts = internalMutation({
     }
 
     const candidates = await institutionAccounts(ctx, args.userId, institution)
+    const excluded = existing?.excludedPlaidAccountIds
     let insertedAccountCount = 0
     for (const acct of args.accounts) {
+      if (isExcludedAccount(excluded, acct.plaidAccountId)) continue
       const result = await upsertLinkedAccount(ctx, {
         userId: args.userId,
         itemId,
@@ -360,7 +363,9 @@ export const upsertAccounts = internalMutation({
     if (!item) return null
 
     const candidates = await institutionAccounts(ctx, args.userId, item)
+    const excluded = item.excludedPlaidAccountIds
     for (const acct of args.accounts) {
+      if (isExcludedAccount(excluded, acct.plaidAccountId)) continue
       await upsertLinkedAccount(ctx, {
         userId: args.userId,
         itemId: args.itemId,
