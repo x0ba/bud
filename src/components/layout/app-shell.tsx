@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import HeaderUser from '#/integrations/clerk/header-user'
+import { FeatureFlagDemo } from '#/integrations/posthog/demo'
 import { cn } from '#/lib/utils'
 import { AppSidebar } from './app-sidebar'
 import { MobileNav } from './mobile-nav'
@@ -74,6 +75,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
           <HeaderSlotContext.Provider value={headerSlot}>
             {children}
           </HeaderSlotContext.Provider>
+          <FeatureFlagDemo />
         </main>
       </div>
       <MobileNav />
