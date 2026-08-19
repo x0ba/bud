@@ -3,3 +3,8 @@ allowBuilds:
   lightningcss: true
   '@sentry/cli': true
   unrs-resolver: true
+
+overrides:
+  '@posthog/core': 1.48.2
+  '@posthog/types': 1.404.1
+  posthog-js: 1.417.4
