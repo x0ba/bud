@@ -54,10 +54,8 @@ function mockCtx(tables: {
             })
             const filtered =
               table === 'categoryRules' && 'matcher.accountId' in eqs
-                ? rows.filter(
-                    (row) =>
-                      'matcher' in row &&
-                      row.matcher.accountId === eqs['matcher.accountId'],
+                ? data.categoryRules.filter(
+                    (row) => row.matcher.accountId === eqs['matcher.accountId'],
                   )
                 : rows
             return {
