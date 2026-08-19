@@ -171,7 +171,9 @@ export default defineSchema({
     createdFrom: v.union(v.literal('correction'), v.literal('manual')),
     timesApplied: v.number(),
     isActive: v.boolean(),
-  }).index('by_user', ['userId']),
+  })
+    .index('by_user', ['userId'])
+    .index('by_user_account', ['userId', 'matcher.accountId']),
 
   budgets: defineTable({
     userId: v.id('users'),

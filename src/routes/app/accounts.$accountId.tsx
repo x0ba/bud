@@ -16,7 +16,10 @@ import { Page, PageBody, PageSummary, Panel } from '#/components/panel'
 import { AppShell } from '#/components/layout/app-shell'
 import { Money } from '#/components/money'
 import { Button } from '#/components/ui/button'
-import { accountRemovalCopy } from '#/lib/account-removal'
+import {
+  accountRemovalCopy,
+  isLastAccountAtInstitution,
+} from '#/lib/account-removal'
 import { cardPaymentStatus, currentMonth, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
 
@@ -72,8 +75,8 @@ function AccountDetailPage() {
       : null
   const { days, overdue } = cardPaymentStatus(account)
   const isCard = account.type === 'credit'
-  const isLastAtInstitution =
-    (items?.find((item) => item._id === account.itemId)?.accountCount ?? 0) <= 1
+  const item = items?.find((row) => row._id === account.itemId)
+  const isLastAtInstitution = isLastAccountAtInstitution(item?.accountCount)
   const copy = accountRemovalCopy({
     accountName: account.name,
     institutionName: account.institutionName,
@@ -108,6 +111,7 @@ function AccountDetailPage() {
           variant="ghost"
           size="sm"
           className="text-muted-foreground hover:text-destructive"
+          disabled={items === undefined}
           onClick={() => setConfirmOpen(true)}
         >
           Remove

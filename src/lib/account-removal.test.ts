@@ -1,6 +1,22 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { accountRemovalCopy, institutionRemovalCopy } from './account-removal.ts'
+import {
+  accountRemovalCopy,
+  institutionRemovalCopy,
+  isLastAccountAtInstitution,
+} from './account-removal.ts'
+
+describe('isLastAccountAtInstitution', () => {
+  it('treats an unknown count as not last so loading does not warn', () => {
+    assert.equal(isLastAccountAtInstitution(undefined), false)
+  })
+
+  it('is last only when the known count is one or zero', () => {
+    assert.equal(isLastAccountAtInstitution(0), true)
+    assert.equal(isLastAccountAtInstitution(1), true)
+    assert.equal(isLastAccountAtInstitution(2), false)
+  })
+})
 
 describe('accountRemovalCopy', () => {
   it('warns that the last account also disconnects the institution', () => {

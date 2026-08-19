@@ -39,10 +39,30 @@ function mockCtx(tables: {
       query(table: keyof typeof data) {
         const rows = data[table]
         return {
-          withIndex() {
+          withIndex(
+            _name: string,
+            apply?: (q: {
+              eq: (field: string, value: unknown) => typeof q
+            }) => unknown,
+          ) {
+            const eqs: Record<string, unknown> = {}
+            apply?.({
+              eq(field, value) {
+                eqs[field] = value
+                return this
+              },
+            })
+            const filtered =
+              table === 'categoryRules' && 'matcher.accountId' in eqs
+                ? rows.filter(
+                    (row) =>
+                      'matcher' in row &&
+                      row.matcher.accountId === eqs['matcher.accountId'],
+                  )
+                : rows
             return {
-              take: async (n: number) => rows.slice(0, n),
-              collect: async () => rows,
+              take: async (n: number) => filtered.slice(0, n),
+              collect: async () => filtered,
             }
           },
         }
@@ -110,5 +130,21 @@ describe('purgeAccountChildren', () => {
       'rule:drop',
       accountId,
     ])
+  })
+
+  it('stops after a full matching-rules batch so the caller can reschedule', async () => {
+    const { ctx, deleted } = mockCtx({
+      categoryRules: docs('rule', PURGE_BATCH).map((row) => ({
+        ...row,
+        matcher: { accountId },
+      })),
+      account: { _id: accountId },
+    })
+
+    const done = await purgeAccountChildren(ctx, { accountId, userId })
+
+    assert.equal(done, false)
+    assert.equal(deleted.length, PURGE_BATCH)
+    assert.equal(deleted.includes(accountId), false)
   })
 })

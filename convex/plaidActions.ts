@@ -433,8 +433,7 @@ export const removeItem = internalAction({
       const client = getPlaidClient()
       await client.itemRemove({ access_token: item.accessToken })
     } catch (err) {
-      // Already gone, or Plaid isn't configured in this environment.
-      console.error('Plaid itemRemove failed', plaidErrorCode(err), err)
+      if (plaidErrorCode(err) !== 'ITEM_NOT_FOUND') throw err
     }
 
     await ctx.runMutation(internal.accounts.purgeItem, { itemId: args.itemId })

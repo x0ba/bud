@@ -29,6 +29,7 @@ import {
 import {
   accountRemovalCopy,
   institutionRemovalCopy,
+  isLastAccountAtInstitution,
 } from '#/lib/account-removal'
 import { cardPaymentStatus, formatSyncedAgo, formatUsdPlain } from '#/lib/money'
 import { prewarmQueries } from '#/lib/prewarm'
@@ -625,7 +626,7 @@ function isLastAccount(
   counts: Map<Id<'plaidItems'>, number>,
   itemId: Id<'plaidItems'>,
 ) {
-  return (counts.get(itemId) ?? 0) <= 1
+  return isLastAccountAtInstitution(counts.get(itemId))
 }
 
 function buildHero({

@@ -1,3 +1,9 @@
+export function isLastAccountAtInstitution(
+  accountCount: number | undefined,
+): boolean {
+  return accountCount != null && accountCount <= 1
+}
+
 export function accountRemovalCopy(args: {
   accountName: string
   institutionName?: string

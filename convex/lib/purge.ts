@@ -57,13 +57,14 @@ export async function purgeAccountChildren(
 
   const rules = await ctx.db
     .query('categoryRules')
-    .withIndex('by_user', (q) => q.eq('userId', args.userId))
-    .collect()
+    .withIndex('by_user_account', (q) =>
+      q.eq('userId', args.userId).eq('matcher.accountId', args.accountId),
+    )
+    .take(PURGE_BATCH)
   for (const rule of rules) {
-    if (rule.matcher.accountId === args.accountId) {
-      await ctx.db.delete(rule._id)
-    }
+    await ctx.db.delete(rule._id)
   }
+  if (rules.length === PURGE_BATCH) return false
 
   const account = await ctx.db.get(args.accountId)
   if (account) await ctx.db.delete(args.accountId)
