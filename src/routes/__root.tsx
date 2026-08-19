@@ -9,6 +9,7 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 
 import ClerkProvider from '../integrations/clerk/provider'
 import ConvexProvider from '../integrations/convex/provider'
+import PostHogProvider from '../integrations/posthog/provider'
 import { Toaster } from '#/components/ui/sonner'
 import { TooltipProvider } from '#/components/ui/tooltip'
 
@@ -46,19 +47,21 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ClerkProvider>
           <ConvexProvider>
-            <TooltipProvider>
-              {children}
-              <Toaster />
-              <TanStackDevtools
-                config={{ position: 'bottom-right' }}
-                plugins={[
-                  {
-                    name: 'Tanstack Router',
-                    render: <TanStackRouterDevtoolsPanel />,
-                  },
-                ]}
-              />
-            </TooltipProvider>
+            <PostHogProvider>
+              <TooltipProvider>
+                {children}
+                <Toaster />
+                <TanStackDevtools
+                  config={{ position: 'bottom-right' }}
+                  plugins={[
+                    {
+                      name: 'Tanstack Router',
+                      render: <TanStackRouterDevtoolsPanel />,
+                    },
+                  ]}
+                />
+              </TooltipProvider>
+            </PostHogProvider>
           </ConvexProvider>
         </ClerkProvider>
         <Scripts />
