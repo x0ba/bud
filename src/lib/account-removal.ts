@@ -27,9 +27,7 @@ export function institutionRemovalCopy(args: {
   accountCount: number
 }): { title: string; description: string } {
   const accounts =
-    args.accountCount === 1
-      ? '1 account'
-      : `${args.accountCount} accounts`
+    args.accountCount === 1 ? '1 account' : `${args.accountCount} accounts`
   return {
     title: `Disconnect ${args.institutionName}?`,
     description: `This removes ${accounts} and their transactions, and unlinks ${args.institutionName} from Bud.`,

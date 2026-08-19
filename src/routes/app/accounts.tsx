@@ -128,7 +128,9 @@ function AccountsPage() {
           })
     void request
       .catch((error: unknown) =>
-        toast.error(error instanceof Error ? error.message : 'Could not remove'),
+        toast.error(
+          error instanceof Error ? error.message : 'Could not remove',
+        ),
       )
       .finally(() => {
         setRemoving(false)
