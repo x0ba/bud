@@ -4,6 +4,9 @@ allowBuilds:
   '@sentry/cli': true
   unrs-resolver: true
 
+ignoredBuiltDependencies:
+  - core-js
+
 overrides:
   '@posthog/core': 1.48.2
   '@posthog/types': 1.404.1
