@@ -4,8 +4,8 @@ import {
   EXAMPLE_FUTURE_FLAG,
   evaluateBooleanFlag,
   resolveBooleanFlag,
-  type FeatureFlagReader,
 } from '../src/integrations/posthog/flags.ts'
+import type { FeatureFlagReader } from '../src/integrations/posthog/flags.ts'
 
 function mockReader(
   impl: FeatureFlagReader['isFeatureEnabled'],

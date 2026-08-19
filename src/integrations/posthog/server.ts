@@ -1,6 +1,7 @@
 import { PostHog } from 'posthog-node'
 import { getPostHogHost, getPostHogProjectToken } from './env'
-import { evaluateBooleanFlag, type FeatureFlagKey } from './flags'
+import { evaluateBooleanFlag } from './flags'
+import type { FeatureFlagKey } from './flags'
 
 let posthogClient: PostHog | null | undefined
 

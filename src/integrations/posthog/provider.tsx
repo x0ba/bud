@@ -20,10 +20,6 @@ function PostHogIdentify() {
   const email = user?.primaryEmailAddress?.emailAddress
 
   useEffect(() => {
-    if (!posthog) {
-      return
-    }
-
     if (isSignedIn && userId) {
       posthog.identify(userId, email ? { email } : undefined)
       return
