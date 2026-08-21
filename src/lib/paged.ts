@@ -27,9 +27,7 @@ type HookState<TQuery extends PaginatedQueryReference> = {
   requests: RequestForQueries
 }
 
-function omitUndefined(
-  args: Record<string, unknown>,
-): Record<string, Value> {
+function omitUndefined(args: Record<string, unknown>): Record<string, Value> {
   const out: Record<string, Value> = {}
   for (const [key, value] of Object.entries(args)) {
     if (value !== undefined) out[key] = value as Value

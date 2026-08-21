@@ -110,9 +110,7 @@ async function paginateFilteredTransactions(
     if (args.accountId) {
       return ctx.db
         .query('transactions')
-        .withIndex('by_account_date', (q) =>
-          q.eq('accountId', args.accountId!),
-        )
+        .withIndex('by_account_date', (q) => q.eq('accountId', args.accountId!))
         .order('desc')
     }
     if (bounds) {
