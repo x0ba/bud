@@ -57,7 +57,13 @@ function transactionMatchesFilters(
 async function paginateFilteredTransactions(
   ctx: QueryCtx,
   userId: Id<'users'>,
-  args: ListFilterArgs & {
+  args: {
+    accountId?: Id<'accounts'>
+    categoryId?: Id<'categories'>
+    search?: string
+    month?: string
+    includeHidden?: boolean
+    includeTransfers?: boolean
     paginationOpts: { numItems: number; cursor: string | null }
   },
 ) {

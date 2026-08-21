@@ -65,6 +65,8 @@ export const Route = createFileRoute('/app/transactions')({
   component: TransactionsPage,
 })
 
+type LedgerPage = (typeof api.transactions.list)['_returnType']
+
 function TransactionsPage() {
   const [search, setSearch] = useState('')
   const [month, setMonth] = useState(currentMonth())
@@ -245,7 +247,11 @@ function TransactionsPage() {
 
               {status === 'CanLoadMore' ? (
                 <div className="px-3 py-3">
-                  <Button variant="outline" size="sm" onClick={loadMore}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => loadMore(PAGE_SIZE)}
+                  >
                     Load more
                   </Button>
                 </div>
